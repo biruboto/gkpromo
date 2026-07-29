@@ -5,7 +5,7 @@
 - `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, orchestrated by `promo/app.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=214` at this handoff).
+- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=221` at this handoff).
 
 ## HUD (`hud.html`)
 
@@ -19,8 +19,8 @@
 ## Promo Composer Layout and Output
 
 - The working canvas is `540x675` (4:5); exports are an exact 2x `1080x1350`. Rendering stays on integer pixel coordinates with `imageSmoothingEnabled = false`.
-- The UI uses a left dock for Basic Settings, Composition, and export; the center live canvas; and a right dock for Logo, Header, Detail Line, Body, CTA, and Footer.
-- Basic Settings generates its template selector from the registry in `promo/templates.js`, currently exposing `FREE PLAY`, `ARCADE EVENTS`, and `ANNOUNCEMENT`, alongside four six-role palettes and a text-boundary overlay. CRT Emulation exposes the CRT finishing controls; animated stars always use standard motion and the initialized deterministic field.
+- The UI uses a left dock for Basic Settings, Composition, and export; the center live canvas; and a right dock for the fixed GK Pixel logo, Header, Detail Line, Body, CTA, and Footer. The Logo panel exposes only the Classic Arcade subtitle toggle.
+- Basic Settings generates its template selector from the registry in `promo/templates.js`, currently exposing `FREE PLAY`, `ARCADE EVENTS`, and `ANNOUNCEMENT`, alongside six six-role palettes and a text-boundary overlay. CRT Emulation exposes the CRT finishing controls; animated stars always use standard motion and the initialized deterministic field.
 - The selected template is applied after the font library initializes, so its defaults override the literal fallback input values in `promo.html` on first load.
 - All templates set CRT Treatment to off but do not change the finishing sliders; CRT settings are selected independently when preparing an export.
 - Exports are PNG and a 15-second 30fps MP4 when the browser supports `MediaRecorder` MP4. The exporter intentionally does not fall back to WebM because iOS saving was the requirement.
@@ -35,7 +35,7 @@
 
 - Palette: `CRT Sunset` (`yuNo`); game style: Starfield; logo: animated GK Pixel; Classic Arcade subtitle on; text boundaries off; fixed standard motion.
 - Fonts: Header `Reactor` at 4x, Detail `Reactor` at 2x, Body `Beachball` at 2x, CTA `ZX Eurostile` at 2x, Footer `Cinema Bold` at 2x. Hours always uses `Matinee` at 2x.
-- Header: `July Free Play Calendar`, with `Free Play` carrying the wave effect. Header is horizontally and vertically centered.
+- Header: `July Free Play Calendar`, with `Free Play` carrying the wave effect and the complete header carrying the default toggleable drop shadow. Header is horizontally and vertically centered.
 - Detail: `Unlimited Credits on All Games!!`, with `Unlimited` carrying the sweep effect. Detail is horizontally centered and top-aligned; scrolling is off by default.
 - Body is vertically centered, left-aligned, and uses `▶` rows, a heart before Pride, leader tabs, and highlighted dates. Its default body border is off.
 - CTA is on by default with `$6 NOON-5PM (ALL AGES)` and `$12 5PM-MIDNIGHT (21+)` on separate lines; its dollar signs are superscripted and its `PM` labels are subscripted. Hours is off by default because the CTA carries the pricing and age details. Footer is centered, uses a superscript `th` in `5th`, and no longer reserves room for a ship.
@@ -45,30 +45,32 @@
 
 - Palette: `Neon Space` (`neon`); game style: Starfield; logo: animated GK Pixel; Classic Arcade subtitle on; text boundaries off; fixed standard motion.
 - CRT: off by default. Its finishing sliders remain independent of the template and can be enabled when preparing an export.
-- Header: `Arcade Events This Week`. Detail line is off by default.
+- Header: `Arcade Events This Week`, with the complete header carrying the default toggleable drop shadow. Detail line is off by default.
 - Body is top-aligned with a rounded border and lists the July 20, 21, 22, and 26 dates with highlighted date lines, followed by their Mario Kart/Killer Queen, UFO 50, Electropop/Chiptune, Crunk Witch/Tonight We Launch!, and Samurai Showdown II events. CTA is on by default in `ZX Eurostile` at 2x, with ATASCII arrowheads around `SUMMER PROMO` and `50% OFF ALL GAMES NOON-5PM` beneath; Hours and footer use the standard venue copy.
 
 ## Promo Defaults: `ANNOUNCEMENT`
 
 - Palette: `Signal Pulse` (`pulse`); game style: Moon Patrol; logo: animated GK Pixel; Classic Arcade subtitle on; text boundaries off; CRT off.
-- Header is `Friday 7/17` and `Closed` on separate lines, with only `Closed` blinking. The centered detail line reads `Until 7PM`. The top-aligned rounded body reads `Opening to the` and `public at7PM (21+)`. Hours is off; the complete two-line address carries a stroke; CTA is off by default.
+- Header is `Friday 7/17` and `Closed` on separate lines, with only `Closed` blinking and the complete header carrying the default toggleable drop shadow. The centered detail line reads `Until 7PM`. The top-aligned rounded body reads `Opening to the` and `public at7PM (21+)`. Hours is off; the complete two-line address carries a stroke; CTA is off by default.
 
 ## Text Rendering, Effects, and Editing
 
 - `promo/app.js` is the ES-module entry point and owns application state, control wiring, export, and initialization. `promo/renderer.js` owns composition and bitmap text rendering; `promo/rich-text-editor.js` owns contenteditable state, token serialization, and special-glyph insertion; `promo/fonts.js` owns the font catalog and picker; `promo/game-backgrounds.js` owns animated backgrounds; `promo/crt.js` owns the WebGL final pass; and `promo/templates.js` owns template data and selector population.
 - The typography model measures bitmap glyph bounds, uses 2 native pixels between body/detail glyphs and 6 native pixels for spaces. Header uses a 1-pixel glyph gap and 6-pixel spaces. Do not replace this with browser font metrics.
 - Header, Detail, Body, and CTA use rich `contenteditable` surfaces backed by hidden source fields. Their source syntax is semantic tokens such as `[[effect:highlight]]text[[/effect]]`; selection effects must be togglable in both directions.
+- Character and animation toolbar buttons mirror the effects at the text cursor. For a selection, a button is active only when that effect applies to the complete selection.
 - Hours and Footer still use source inputs/textareas. They support text effects during rendering, but are not yet rich text editors.
-- Character effects: `highlight`, `underline`, `superscript`, `subscript`, `stroke`, and `shadow`. Stroke and shadow both use the palette `shadow` role. Shadow is full-opacity, one native pixel down/right at the current glyph scale. Underlines are continuous across a run and sit one native pixel below the glyph cell. Superscript and subscript step down one scale, then align their top or bottom ink pixels, respectively, to the normal-size glyph before their contiguous script run, falling back to the following glyph only when needed. Both are unavailable at 1x.
+- Character effects: `highlight`, `underline`, `superscript`, `subscript`, `stroke`, and `shadow`. Stroke and shadow both use the palette `shadow` role. Stroke retains the enclosing field's thickness, including on superscript and subscript glyphs. Shadow is full-opacity, one native pixel down/right at the current glyph scale. Underlines are continuous across a run and sit one native pixel below the glyph cell. Superscript and subscript step down one scale, then align their top or bottom ink pixels, respectively, to the normal-size glyph before their contiguous script run, falling back to the following glyph only when needed. Both are unavailable at 1x.
 - Animation effects: `blink`, `flash` (text/highlight alternation), `reflect`, `wave`, and `sweep`. Reflect uses the same palette-derived band treatment as the animated logo. Effects are token-level, not field-level; a selection crossing a line break applies the effect independently to each line.
-- Body and CTA have paragraph controls for vertical alignment, horizontal alignment, and (Body only) a leader-tab insertion control. Header and Detail use fixed alignment as described above; Footer has no alignment toolbar.
+- Body and CTA have paragraph controls for vertical alignment, horizontal alignment, and (Body only) a leader-tab insertion control. The Body font row also includes a labeled Border picker with the actual square and rounded top-left PETSCII corner glyphs, colored with the current palette text color like the Special Glyphs picker. Header and Detail use fixed alignment as described above; Footer has no alignment toolbar.
 - A leader tab serializes as `[[leader-tab]]`. It splits a line into a left segment and a right-aligned segment and fills intervening space with period glyphs using the active font's actual bitmap spacing. Do not substitute literal spaces or a CSS tab.
 - Detail and Hours support `OFF`, `TICKER`, and `REVEAL` single-line scrolling. Scrolling is directly canvas-rendered, clipped, and snapped to whole pixels. A browser-only vertical tear was reported in the live preview but is absent from export; do not add an offscreen marquee buffer solely to address it.
 - Body borders are optional square or rounded PETSCII-cell borders. They use the measured bounds of actual populated body lines plus one 8px cell of padding, not the full body field.
 
 ## Palette and Logo Rules
 
-- Each palette has exactly six roles: `background`, `text`, `highlight`, `shadow`, `accent`, and `muted`. Palette definitions live in `colors` in `promo.js`.
+- Each palette has exactly six roles: `background`, `text`, `highlight`, `shadow`, `accent`, and `muted`. Palette definitions live in `colors` in `promo/app.js`.
+- The available palettes are CRT Sunset, Neon Space, Signal Pulse, Solar Flare, Emerald Terminal, and Cobalt Gold. Emerald Terminal is the green-screen option; Cobalt Gold pairs deep ultramarine with gold highlights.
 - `text` is the default copy color; `highlight` is contrasting selected text; `shadow` is shared by stroke and drop shadow; `accent` colors the detail line and logo; `muted` supports stars and secondary UI/render details.
 - The animated logo uses `accent` and derives its reflection shades from that color. It does not use an opacity reduction. Text shadows use the same palette `shadow` role.
 

@@ -39,6 +39,12 @@
     .footer-group-heading { margin: 0; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
     .text-toolbar { display: grid; gap: 6px; }
     .font-scale-row { display: grid; grid-template-columns: minmax(116px, 150px) minmax(0, 1fr); gap: 6px; align-items: end; }
+    .body-font-scale-row { grid-template-columns: minmax(116px, 1fr) 112px 72px; }
+    .body-border-picker { min-width: 0; display: grid; grid-template-rows: 12px 26px; gap: 3px; }
+    .body-border-label { color: var(--muted); font-size: 10px; line-height: 12px; }
+    .body-border-picker .border-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .body-border-picker .border-option { min-height: 26px; }
+    .body-border-picker .border-option canvas { width: 16px; height: 16px; image-rendering: pixelated; }
     .text-toolbar select { min-width: 0; }
     .font-picker-native { display: none; }
     .font-picker { position: relative; min-width: 0; }
@@ -134,7 +140,7 @@
         <div class="section-body">
           <fieldset><label for="template">TEMPLATE</label><select id="template"></select></fieldset>
           <div class="theme-row">
-            <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option></select></fieldset>
+            <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option><option value="emerald">Emerald Terminal</option><option value="cobalt">Cobalt Gold</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
           </div>
           <fieldset><label for="gameStyle">GAME STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option></select></fieldset>
@@ -168,7 +174,7 @@
       <details class="control-section">
         <summary>LOGO</summary>
         <div class="section-body">
-          <fieldset><label for="logo">MARK</label><select id="logo"><option value="pixel">GK Pixel</option><option value="plain">GK Plain</option><option value="gradient">GK Gradient</option></select></fieldset>
+          <input id="logo" type="hidden" value="pixel">
           <fieldset class="toggle-field"><label for="classic">CLASSIC ARCADE</label><input id="classic" type="checkbox" checked></fieldset>
         </div>
       </details>
@@ -190,8 +196,7 @@
       <details class="control-section">
         <summary>BODY</summary>
         <div class="section-body text-section">
-          <div class="text-toolbar"><div class="font-scale-row"><select id="font" aria-label="Body font"><option value="Beachball">Beachball</option></select><div class="scale-picker"><input id="bodyScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="bodyScale" role="group" aria-label="Body text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="body"></div></div></div>
-          <div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Body border controls" title="Body border controls"><i data-lucide="frame" aria-hidden="true"></i></span><div class="border-buttons" data-border-toolbar="body"></div></div>
+          <div class="text-toolbar"><div class="font-scale-row body-font-scale-row"><select id="font" aria-label="Body font"><option value="Beachball">Beachball</option></select><div class="scale-picker"><input id="bodyScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="bodyScale" role="group" aria-label="Body text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div><div class="body-border-picker" role="group" aria-label="Body border style"><span class="body-border-label">BORDER</span><div class="border-buttons" data-border-toolbar="body"></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="body"></div></div></div>
           <div class="body-field"><div id="bodyEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Primary content"></div><textarea id="body" class="source-field" maxlength="220" aria-hidden="true" tabindex="-1">[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]
 [[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]
 [[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]</textarea><div id="glyph-grid" class="glyph-groups" aria-live="polite">Loading glyphs...</div></div>
@@ -226,12 +231,12 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=214'],
-      ['fonts', './promo/fonts.js?v=214'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=214'],
-      ['renderer', './promo/renderer.js?v=214'],
-      ['rich text editor', './promo/rich-text-editor.js?v=214'],
-      ['templates', './promo/templates.js?v=214']
+      ['CRT', './promo/crt.js?v=221'],
+      ['fonts', './promo/fonts.js?v=221'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=221'],
+      ['renderer', './promo/renderer.js?v=221'],
+      ['rich text editor', './promo/rich-text-editor.js?v=221'],
+      ['templates', './promo/templates.js?v=221']
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -241,7 +246,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=214');
+      await import('./promo/app.js?v=221');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

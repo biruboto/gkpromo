@@ -1,7 +1,7 @@
 export const templates = {
   'free-play': {
     theme: 'yuNo', gameStyle: 'starfield', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
-    headline: 'July [[effect:wave]]Free Play[[/effect]] Calendar', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
+    headline: '[[effect:shadow]]July [[effect:wave]]Free Play[[/effect]] Calendar[[/effect]]', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]\n[[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]\n[[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]',
     cta: '[[effect:superscript]]$[[/effect]]6 NOON-5[[effect:subscript]]PM[[/effect]] (ALL AGES)\n[[effect:superscript]]$[[/effect]]12 5[[effect:subscript]]PM[[/effect]]-MIDNIGHT (21+)', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
     scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
@@ -12,7 +12,7 @@ export const templates = {
   },
   'arcade-events': {
     theme: 'neon', gameStyle: 'starfield', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
-    headline: 'Arcade Events This Week', detail: '[[effect:underline]]July 20-26[[/effect]]',
+    headline: '[[effect:shadow]]Arcade Events This Week[[/effect]]', detail: '[[effect:underline]]July 20-26[[/effect]]',
     body: '[[effect:highlight]]Monday 7/20[[/effect]]\nMario Kart World Tournament + Killer Queen Community Night\n[[effect:highlight]]Tuesday 7/21[[/effect]]\nLX Entertainment Night: UFO 50\n[[effect:highlight]]Wednesday 7/22[[/effect]]\nElectropop/Chiptune Show\nCrunk Witch + Tonight We Launch!\n[[effect:highlight]]Sunday 7/26[[/effect]]\nSamurai Showdown II Tournament',
     cta: '[[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]]   SUMMER PROMO   [[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]]\n50% OFF ALL GAMES NOON-5PM', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
     scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
@@ -23,7 +23,7 @@ export const templates = {
   },
   announcement: {
     theme: 'pulse', gameStyle: 'moon-patrol', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
-    headline: 'Friday 7/17\n[[effect:blink]]Closed[[/effect]]', detail: 'Until 7PM',
+    headline: '[[effect:shadow]]Friday 7/17\n[[effect:blink]]Closed[[/effect]][[/effect]]', detail: 'Until 7PM',
     body: 'Opening to the\npublic at7PM (21+)',
     cta: 'MORE DETAILS SOON', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '[[effect:stroke]]115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR[[/effect]]\n[[effect:stroke]]www.groundkontrol.com[[/effect]]',
     scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },

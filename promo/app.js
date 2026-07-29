@@ -1,9 +1,9 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=214';
-import { createFontManager } from './fonts.js?v=214';
-import { createGameBackgrounds } from './game-backgrounds.js?v=214';
-import { createPromoRenderer } from './renderer.js?v=214';
-import { createRichTextEditor } from './rich-text-editor.js?v=214';
-import { populateTemplateSelect, templates } from './templates.js?v=214';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=221';
+import { createFontManager } from './fonts.js?v=221';
+import { createGameBackgrounds } from './game-backgrounds.js?v=221';
+import { createPromoRenderer } from './renderer.js?v=221';
+import { createRichTextEditor } from './rich-text-editor.js?v=221';
+import { populateTemplateSelect, templates } from './templates.js?v=221';
 
 const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
@@ -29,6 +29,7 @@ const crtPipeline = createCrtPipeline({
 });
 const SCALE_STEPS = [1, 2, 4];
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
+const BODY_BORDER_GLYPHS = { square: 'petscii-upper-70', rounded: 'petscii-upper-55' };
 function textScale(controlName) { return SCALE_STEPS[Number(controls[controlName].value)] || 1; }
 function syncCrtControls() {
   Object.entries(CRT_CONTROL_IDS).forEach(([name, controlName]) => {
@@ -51,7 +52,9 @@ const colors = {
   yuNo: { background: '#12131c', text: '#c7d4f2', highlight: '#f6e6a6', shadow: '#70405a', accent: '#e7855b', muted: '#59637a' },
   neon: { background: '#071722', text: '#9be7e5', highlight: '#f8e9a7', shadow: '#654a88', accent: '#ea759d', muted: '#386574' },
   pulse: { background: '#1a1020', text: '#f0c7de', highlight: '#c7eeb8', shadow: '#6a3e66', accent: '#6fcbc1', muted: '#7d537a' },
-  solar: { background: '#1a150d', text: '#f2d89c', highlight: '#cfefa7', shadow: '#774c3b', accent: '#e76f51', muted: '#71654b' }
+  solar: { background: '#1a150d', text: '#f2d89c', highlight: '#cfefa7', shadow: '#774c3b', accent: '#e76f51', muted: '#71654b' },
+  emerald: { background: '#07130e', text: '#b9f6c7', highlight: '#f4ffd6', shadow: '#1e5c45', accent: '#35d07f', muted: '#4f9270' },
+  cobalt: { background: '#101427', text: '#d9e2ff', highlight: '#ffd56a', shadow: '#394b87', accent: '#5b8cff', muted: '#7181ad' }
 };
 function syncThemePreview() {
   const palette = colors[controls.theme.value];
@@ -66,6 +69,7 @@ function syncThemePreview() {
     const glyphData = legacyGlyphs.get(tile.dataset.glyphId);
     if (glyphData) drawGlyphTile(tile.querySelector('canvas'), glyphData);
   });
+  drawBorderGlyphPreviews();
 }
 const logoImages = Object.fromEntries(Object.entries({
   pixel: './assets/images/gklogo.png',
@@ -106,6 +110,13 @@ const promoRenderer = createPromoRenderer({
   getFonts: () => ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont }),
   getTextScale: textScale, animationState, leaderTabToken: LEADER_TAB_TOKEN
 });
+function drawBorderGlyphPreviews() {
+  document.querySelectorAll('[data-border-style]').forEach(button => {
+    const glyphData = legacyGlyphs.get(BODY_BORDER_GLYPHS[button.dataset.borderStyle]);
+    const glyphCanvas = button.querySelector('canvas');
+    if (glyphData && glyphCanvas) promoRenderer.drawLegacyGlyphPreview(glyphCanvas, glyphData, colors[controls.theme.value].text);
+  });
+}
 const richTextEditor = createRichTextEditor({
   controls, legacyGlyphs, leaderTabToken: LEADER_TAB_TOKEN, getTextScale: textScale,
   getGlyphColor: () => colors[controls.theme.value].text,
@@ -113,7 +124,7 @@ const richTextEditor = createRichTextEditor({
 });
 const {
   applyCharacterEffect, drawGlyphTile, hydrateBodyEditor, hydrateCtaEditor, hydrateDetailEditor,
-  hydrateHeaderEditor, hydrateInlineRichEditor, insertBodyLeaderTab, loadLegacyGlyphs, syncCharacterToolAvailability
+  hydrateHeaderEditor, hydrateInlineRichEditor, insertBodyLeaderTab, loadLegacyGlyphs, syncCharacterToolAvailability, syncEffectToolbarState
 } = richTextEditor;
 
 controls.theme.addEventListener('change', syncThemePreview); syncThemePreview();
@@ -160,7 +171,7 @@ function syncBodyBorderControls() {
   document.querySelectorAll('[data-border-toolbar="body"] [data-border-style]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.borderStyle === bodyBorderStyle)));
 }
 async function applyTemplate(template) {
-  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = template.logo; controls.classic.checked = template.classic;
+  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = 'pixel'; controls.classic.checked = template.classic;
   controls.boundaries.checked = template.boundaries; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
@@ -172,7 +183,7 @@ async function applyTemplate(template) {
     toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
-  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
+  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState();
   await Promise.all(Object.entries(template.fonts).map(([controlName, fontName]) => {
     const option = [...controls[controlName].options].find(item => item.textContent === fontName);
     if (!option) return Promise.resolve();
@@ -262,6 +273,7 @@ function populateToolbars() {
       } else {
         button.title = `${section} character control ${index + 1}`; button.setAttribute('aria-label', `${section} character control ${index + 1}`);
       }
+      if (button.dataset.characterControl) button.setAttribute('aria-pressed', 'false');
       return button;
     });
     toolbar.replaceChildren(...buttons);
@@ -282,6 +294,7 @@ function populateToolbars() {
       } else {
         button.title = `${section} animation control ${index + 1}`; button.setAttribute('aria-label', `${section} animation control ${index + 1}`);
       }
+      if (button.dataset.animationControl) button.setAttribute('aria-pressed', 'false');
       return button;
     });
     toolbar.replaceChildren(...buttons);
@@ -290,13 +303,13 @@ function populateToolbars() {
     const buttons = ['square', 'rounded'].map(style => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'border-option';
       button.dataset.borderStyle = style; button.title = `${style} body border`; button.setAttribute('aria-label', `${style} body border`);
-      const iconElement = document.createElement('i'); iconElement.dataset.lucide = style === 'square' ? 'square' : 'rounded-corner'; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = style === 'square' ? 'S' : 'R'; button.append(iconElement);
+      const glyphCanvas = document.createElement('canvas'); glyphCanvas.width = glyphCanvas.height = 16; glyphCanvas.setAttribute('aria-hidden', 'true'); button.append(glyphCanvas);
       button.addEventListener('click', () => { bodyBorderStyle = bodyBorderStyle === style ? 'none' : style; syncBodyBorderControls(); });
       return button;
     });
     toolbar.replaceChildren(...buttons);
   });
-  syncCharacterToolAvailability(); syncBodyBorderControls();
+  drawBorderGlyphPreviews(); syncCharacterToolAvailability(); syncEffectToolbarState(); syncBodyBorderControls();
   window.lucide?.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 } });
 }
 populateToolbars();
@@ -326,4 +339,4 @@ async function initializeFonts() {
     controls.status.textContent = `Font library could not load: ${error.message}`;
   }
 }
-hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
+hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().then(drawBorderGlyphPreviews).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);

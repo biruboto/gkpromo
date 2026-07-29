@@ -28,7 +28,6 @@ export function createPromoRenderer({
   const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
   const LOGO_REFLECTION_LEVELS = [.8, 1, 1.32, 1.6];
   let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455';
-  const textStyles = { headline: { shadow: true }, body: { shadow: false } };
   function superscriptScale(scale) { return Math.max(1, Math.round(scale / 2)); }
   function glyphIndexFor(character) {
     const codepoint = character.codePointAt(0);
@@ -193,8 +192,9 @@ export function createPromoRenderer({
       const image = glyphLayout.effects.includes('reflect') ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
       const strokeImage = glyphLayout.effects.includes('stroke') ? glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, activeStrokeColor) : glyph(glyphLayout.character, activeStrokeColor, font, fontKey) : null;
       if (strokeImage) {
+        const strokeThickness = scale;
         for (const offsetY of [-1, 0, 1]) for (const offsetX of [-1, 0, 1]) {
-          if (offsetX || offsetY) ctx.drawImage(strokeImage, start + glyphLayout.x + offsetX * glyphScale, glyphY + offsetY * glyphScale, 8 * glyphScale, 8 * glyphScale);
+          if (offsetX || offsetY) ctx.drawImage(strokeImage, start + glyphLayout.x + offsetX * strokeThickness, glyphY + offsetY * strokeThickness, 8 * glyphScale, 8 * glyphScale);
         }
       }
       if (forceShadow || glyphLayout.effects.includes('shadow')) {
@@ -217,8 +217,8 @@ export function createPromoRenderer({
       ctx.fillRect(segment.start, segment.y + 9 * segment.thickness, segment.end - segment.start, segment.thickness);
     });
   }
-  function styledText(style, value, x, y, color, shadowColor, scale = 1, align = 'left', font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
-    text(value, x, y, color, scale, align, font, fontKey, spacing, textStyles[style].shadow, shadowColor);
+  function styledText(_style, value, x, y, color, shadowColor, scale = 1, align = 'left', font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
+    text(value, x, y, color, scale, align, font, fontKey, spacing, false, shadowColor);
   }
   function leaderText(value, x, width, y, color, shadowColor, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
     const parts = leaderLineParts(value);

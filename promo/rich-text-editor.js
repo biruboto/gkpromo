@@ -420,6 +420,46 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       const control = { header: controls.headline, detail: controls.detail }[section];
       toggleInputEffect(control, effect);
     }
+    syncEffectToolbarState(section);
+  }
+  const TEXT_EDITOR_SECTIONS = ['header', 'detail', 'body', 'cta', 'footer', 'hours'];
+  function editorForSection(section) {
+    return { header: controls.headerEditor, detail: controls.detailEditor, body: controls.bodyEditor, cta: controls.ctaEditor, footer: controls.footerEditor, hours: controls.hoursEditor }[section];
+  }
+  function sourceForSection(section) {
+    return { header: controls.headline, detail: controls.detail, body: controls.body, cta: controls.cta, footer: controls.footer, hours: controls.hours }[section];
+  }
+  function selectionSection() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    return TEXT_EDITOR_SECTIONS.find(section => editorForSection(section).contains(range.commonAncestorContainer)) || null;
+  }
+  function selectionOffsets(editor, range) {
+    const before = document.createRange(); before.selectNodeContents(editor); before.setEnd(range.startContainer, range.startOffset);
+    return { start: bodyNodeLength(before.cloneContents()), end: bodyNodeLength(before.cloneContents()) + bodyNodeLength(range.cloneContents()) };
+  }
+  function effectsAtSelection(section) {
+    const selection = window.getSelection(); const editor = editorForSection(section); const source = sourceForSection(section);
+    if (!selection.rangeCount || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) return new Set();
+    const range = selection.getRangeAt(0); const { start, end } = selectionOffsets(editor, range); const units = bodyStyledUnits(source.value);
+    let selected = [];
+    if (range.collapsed) {
+      const next = units.find(unit => unit.raw !== '\n' && unit.start <= start && unit.end > start);
+      const previous = [...units].reverse().find(unit => unit.raw !== '\n' && unit.end === start);
+      selected = next ? [next] : previous ? [previous] : [];
+    } else selected = units.filter(unit => unit.raw !== '\n' && unit.start < end && unit.end > start);
+    if (!selected.length) return new Set();
+    return new Set(selected[0].effects.filter(effect => selected.every(unit => unit.effects.includes(effect))));
+  }
+  function syncEffectToolbarState(section = selectionSection()) {
+    TEXT_EDITOR_SECTIONS.forEach(toolbarSection => {
+      const activeEffects = toolbarSection === section ? effectsAtSelection(toolbarSection) : new Set();
+      document.querySelectorAll(`[data-character-toolbar="${toolbarSection}"] [data-character-control], [data-animation-toolbar="${toolbarSection}"] [data-animation-control]`).forEach(button => {
+        const effect = button.dataset.characterControl || button.dataset.animationControl;
+        button.setAttribute('aria-pressed', String(activeEffects.has(effect)));
+      });
+    });
   }
   function syncCharacterToolAvailability() {
     ['header', 'detail', 'body', 'cta', 'footer', 'hours'].forEach(section => {
@@ -509,6 +549,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     if (selection.rangeCount && controls.detailEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedDetailRange = selection.getRangeAt(0).cloneRange();
     if (selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedCtaRange = selection.getRangeAt(0).cloneRange();
     ['hours', 'footer'].forEach(section => saveInlineRichSelection(section));
+    syncEffectToolbarState();
   });
   return {
     applyCharacterEffect,
@@ -520,6 +561,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     hydrateInlineRichEditor,
     insertBodyLeaderTab,
     loadLegacyGlyphs,
+    syncEffectToolbarState,
     syncCharacterToolAvailability
   };
 }
