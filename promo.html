@@ -137,6 +137,13 @@
   <main class="app">
     <aside class="dock left-dock" aria-label="Primary promotion controls">
       <div><h1>GK Promo Composer</h1></div>
+      <details class="control-section" open>
+        <summary>FILE</summary>
+        <div class="section-body">
+          <div class="actions"><button id="projectSave" type="button">SAVE PROJECT</button><button id="projectLoad" type="button">LOAD PROJECT</button><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div>
+          <input id="projectFile" type="file" accept=".gkp,application/json" hidden>
+        </div>
+      </details>
       <details class="control-section">
         <summary>BASIC SETTINGS</summary>
         <div class="section-body">
@@ -164,8 +171,6 @@
           <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow">100%</output></label><input id="crtGlow" type="range" min="0" max="200" step="1" value="100"></fieldset>
         </div>
       </details>
-      <div class="actions"><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div>
-      <p class="hint">Artwork uses a 540 x 675 grid. Exports render at an exact 2x to 1080 x 1350.</p>
     </aside>
     <section class="preview" aria-label="Animated Instagram post preview">
       <div class="preview-header"><strong>LIVE COMPOSITION</strong><span>1080 x 1350 / 4:5</span></div>
@@ -233,12 +238,12 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=224'],
-      ['fonts', './promo/fonts.js?v=224'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=224'],
-      ['renderer', './promo/renderer.js?v=224'],
-      ['rich text editor', './promo/rich-text-editor.js?v=224'],
-      ['templates', './promo/templates.js?v=224']
+      ['CRT', './promo/crt.js?v=225'],
+      ['fonts', './promo/fonts.js?v=225'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=225'],
+      ['renderer', './promo/renderer.js?v=225'],
+      ['rich text editor', './promo/rich-text-editor.js?v=225'],
+      ['templates', './promo/templates.js?v=225']
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -248,7 +253,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=224');
+      await import('./promo/app.js?v=225');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

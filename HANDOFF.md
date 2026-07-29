@@ -5,7 +5,7 @@
 - `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, orchestrated by `promo/app.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=224` at this handoff).
+- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=225` at this handoff).
 
 ## HUD (`hud.html`)
 
@@ -24,6 +24,7 @@
 - The selected template is applied after the font library initializes, so its defaults override the literal fallback input values in `promo.html` on first load.
 - All templates set CRT Mode to off but do not change the finishing sliders; CRT settings are selected independently when preparing an export.
 - Exports are PNG and a 15-second 30fps MP4 when the browser supports `MediaRecorder` MP4. The exporter intentionally does not fall back to WebM because iOS saving was the requirement.
+- `SAVE PROJECT` downloads a versioned, pretty-printed JSON project with the `.gkp` extension. It contains all editable copy source tokens and composer settings; `LOAD PROJECT` validates it before applying the full state. The rich-copy source remains in the established token syntax rather than being converted to Markdown.
 - The current composer uses a flat palette background and animated stars. No transparency or background gradient is applied.
 - The detail field collapses to its rendered copy height plus an 8-pixel buffer. The body begins 8 pixels below it when shown, or 24 pixels below its position when hidden, and expands to the footer whenever CTA is hidden. With CTA enabled, the body grows to fit up to 10 rendered lines before the CTA is placed beneath it.
 - A single Enter in the Body editor creates one rendered line break; intentionally empty paragraphs remain blank lines.
