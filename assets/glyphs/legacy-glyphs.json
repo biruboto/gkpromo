@@ -1,0 +1,1573 @@
+{
+  "glyphSize": 8,
+  "glyphs": [
+    {
+      "id": "atascii-00",
+      "system": "ATASCII",
+      "slot": "0x00",
+      "internalSlot": "0x40",
+      "bitmap": [
+        0,
+        54,
+        127,
+        127,
+        62,
+        28,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "atascii-01",
+      "system": "ATASCII",
+      "slot": "0x01",
+      "internalSlot": "0x41",
+      "bitmap": [
+        24,
+        24,
+        24,
+        31,
+        31,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-02",
+      "system": "ATASCII",
+      "slot": "0x02",
+      "internalSlot": "0x42",
+      "bitmap": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "atascii-03",
+      "system": "ATASCII",
+      "slot": "0x03",
+      "internalSlot": "0x43",
+      "bitmap": [
+        24,
+        24,
+        24,
+        248,
+        248,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-04",
+      "system": "ATASCII",
+      "slot": "0x04",
+      "internalSlot": "0x44",
+      "bitmap": [
+        24,
+        24,
+        24,
+        248,
+        248,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-05",
+      "system": "ATASCII",
+      "slot": "0x05",
+      "internalSlot": "0x45",
+      "bitmap": [
+        0,
+        0,
+        0,
+        248,
+        248,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-06",
+      "system": "ATASCII",
+      "slot": "0x06",
+      "internalSlot": "0x46",
+      "bitmap": [
+        3,
+        7,
+        14,
+        28,
+        56,
+        112,
+        224,
+        192
+      ]
+    },
+    {
+      "id": "atascii-07",
+      "system": "ATASCII",
+      "slot": "0x07",
+      "internalSlot": "0x47",
+      "bitmap": [
+        192,
+        224,
+        112,
+        56,
+        28,
+        14,
+        7,
+        3
+      ]
+    },
+    {
+      "id": "atascii-08",
+      "system": "ATASCII",
+      "slot": "0x08",
+      "internalSlot": "0x48",
+      "bitmap": [
+        1,
+        3,
+        7,
+        15,
+        31,
+        63,
+        127,
+        255
+      ]
+    },
+    {
+      "id": "atascii-09",
+      "system": "ATASCII",
+      "slot": "0x09",
+      "internalSlot": "0x49",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        15,
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "id": "atascii-0A",
+      "system": "ATASCII",
+      "slot": "0x0A",
+      "internalSlot": "0x4A",
+      "bitmap": [
+        128,
+        192,
+        224,
+        240,
+        248,
+        252,
+        254,
+        255
+      ]
+    },
+    {
+      "id": "atascii-0B",
+      "system": "ATASCII",
+      "slot": "0x0B",
+      "internalSlot": "0x4B",
+      "bitmap": [
+        15,
+        15,
+        15,
+        15,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-0C",
+      "system": "ATASCII",
+      "slot": "0x0C",
+      "internalSlot": "0x4C",
+      "bitmap": [
+        240,
+        240,
+        240,
+        240,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-0D",
+      "system": "ATASCII",
+      "slot": "0x0D",
+      "internalSlot": "0x4D",
+      "bitmap": [
+        255,
+        255,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-0E",
+      "system": "ATASCII",
+      "slot": "0x0E",
+      "internalSlot": "0x4E",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "atascii-0F",
+      "system": "ATASCII",
+      "slot": "0x0F",
+      "internalSlot": "0x4F",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        240,
+        240,
+        240,
+        240
+      ]
+    },
+    {
+      "id": "atascii-10",
+      "system": "ATASCII",
+      "slot": "0x10",
+      "internalSlot": "0x50",
+      "bitmap": [
+        0,
+        28,
+        28,
+        119,
+        119,
+        8,
+        28,
+        0
+      ]
+    },
+    {
+      "id": "atascii-11",
+      "system": "ATASCII",
+      "slot": "0x11",
+      "internalSlot": "0x51",
+      "bitmap": [
+        0,
+        0,
+        0,
+        31,
+        31,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-12",
+      "system": "ATASCII",
+      "slot": "0x12",
+      "internalSlot": "0x52",
+      "bitmap": [
+        0,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-13",
+      "system": "ATASCII",
+      "slot": "0x13",
+      "internalSlot": "0x53",
+      "bitmap": [
+        24,
+        24,
+        24,
+        255,
+        255,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-14",
+      "system": "ATASCII",
+      "slot": "0x14",
+      "internalSlot": "0x54",
+      "bitmap": [
+        0,
+        0,
+        60,
+        126,
+        126,
+        126,
+        60,
+        0
+      ]
+    },
+    {
+      "id": "atascii-15",
+      "system": "ATASCII",
+      "slot": "0x15",
+      "internalSlot": "0x55",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "atascii-16",
+      "system": "ATASCII",
+      "slot": "0x16",
+      "internalSlot": "0x56",
+      "bitmap": [
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192
+      ]
+    },
+    {
+      "id": "atascii-17",
+      "system": "ATASCII",
+      "slot": "0x17",
+      "internalSlot": "0x57",
+      "bitmap": [
+        0,
+        0,
+        0,
+        255,
+        255,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-18",
+      "system": "ATASCII",
+      "slot": "0x18",
+      "internalSlot": "0x58",
+      "bitmap": [
+        24,
+        24,
+        24,
+        255,
+        255,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-19",
+      "system": "ATASCII",
+      "slot": "0x19",
+      "internalSlot": "0x59",
+      "bitmap": [
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240
+      ]
+    },
+    {
+      "id": "atascii-1A",
+      "system": "ATASCII",
+      "slot": "0x1A",
+      "internalSlot": "0x5A",
+      "bitmap": [
+        24,
+        24,
+        24,
+        31,
+        31,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-1B",
+      "system": "ATASCII",
+      "slot": "0x1B",
+      "internalSlot": "0x5B",
+      "bitmap": [
+        120,
+        96,
+        120,
+        96,
+        126,
+        24,
+        30,
+        0
+      ]
+    },
+    {
+      "id": "atascii-1C",
+      "system": "ATASCII",
+      "slot": "0x1C",
+      "internalSlot": "0x5C",
+      "bitmap": [
+        0,
+        24,
+        60,
+        126,
+        24,
+        24,
+        24,
+        0
+      ]
+    },
+    {
+      "id": "atascii-1D",
+      "system": "ATASCII",
+      "slot": "0x1D",
+      "internalSlot": "0x5D",
+      "bitmap": [
+        0,
+        24,
+        24,
+        24,
+        126,
+        60,
+        24,
+        0
+      ]
+    },
+    {
+      "id": "atascii-1E",
+      "system": "ATASCII",
+      "slot": "0x1E",
+      "internalSlot": "0x5E",
+      "bitmap": [
+        0,
+        24,
+        48,
+        126,
+        48,
+        24,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-1F",
+      "system": "ATASCII",
+      "slot": "0x1F",
+      "internalSlot": "0x5F",
+      "bitmap": [
+        0,
+        24,
+        12,
+        126,
+        12,
+        24,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "atascii-60",
+      "system": "ATASCII",
+      "slot": "0x60",
+      "internalSlot": "0x60",
+      "bitmap": [
+        0,
+        24,
+        60,
+        126,
+        126,
+        60,
+        24,
+        0
+      ]
+    },
+    {
+      "id": "atascii-7B",
+      "system": "ATASCII",
+      "slot": "0x7B",
+      "internalSlot": "0x7B",
+      "bitmap": [
+        0,
+        24,
+        60,
+        126,
+        126,
+        24,
+        60,
+        0
+      ]
+    },
+    {
+      "id": "atascii-7C",
+      "system": "ATASCII",
+      "slot": "0x7C",
+      "internalSlot": "0x7C",
+      "bitmap": [
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "atascii-7D",
+      "system": "ATASCII",
+      "slot": "0x7D",
+      "internalSlot": "0x7D",
+      "bitmap": [
+        0,
+        126,
+        120,
+        124,
+        110,
+        102,
+        6,
+        0
+      ]
+    },
+    {
+      "id": "atascii-7E",
+      "system": "ATASCII",
+      "slot": "0x7E",
+      "internalSlot": "0x7E",
+      "bitmap": [
+        8,
+        24,
+        56,
+        120,
+        56,
+        24,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "atascii-7F",
+      "system": "ATASCII",
+      "slot": "0x7F",
+      "internalSlot": "0x7F",
+      "bitmap": [
+        16,
+        24,
+        28,
+        30,
+        28,
+        24,
+        16,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-40",
+      "system": "PETSCII",
+      "slot": "0x40",
+      "bitmap": [
+        0,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-41",
+      "system": "PETSCII",
+      "slot": "0x41",
+      "bitmap": [
+        8,
+        28,
+        62,
+        127,
+        127,
+        28,
+        62,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-42",
+      "system": "PETSCII",
+      "slot": "0x42",
+      "bitmap": [
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-43",
+      "system": "PETSCII",
+      "slot": "0x43",
+      "bitmap": [
+        0,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-44",
+      "system": "PETSCII",
+      "slot": "0x44",
+      "bitmap": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-45",
+      "system": "PETSCII",
+      "slot": "0x45",
+      "bitmap": [
+        0,
+        255,
+        255,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-46",
+      "system": "PETSCII",
+      "slot": "0x46",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-47",
+      "system": "PETSCII",
+      "slot": "0x47",
+      "bitmap": [
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48,
+        48
+      ]
+    },
+    {
+      "id": "petscii-upper-48",
+      "system": "PETSCII",
+      "slot": "0x48",
+      "bitmap": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ]
+    },
+    {
+      "id": "petscii-upper-49",
+      "system": "PETSCII",
+      "slot": "0x49",
+      "bitmap": [
+        0,
+        0,
+        0,
+        224,
+        240,
+        56,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-4a",
+      "system": "PETSCII",
+      "slot": "0x4A",
+      "bitmap": [
+        24,
+        24,
+        28,
+        15,
+        7,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-4b",
+      "system": "PETSCII",
+      "slot": "0x4B",
+      "bitmap": [
+        24,
+        24,
+        56,
+        240,
+        224,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-4c",
+      "system": "PETSCII",
+      "slot": "0x4C",
+      "bitmap": [
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-4d",
+      "system": "PETSCII",
+      "slot": "0x4D",
+      "bitmap": [
+        192,
+        224,
+        112,
+        56,
+        28,
+        14,
+        7,
+        3
+      ]
+    },
+    {
+      "id": "petscii-upper-4e",
+      "system": "PETSCII",
+      "slot": "0x4E",
+      "bitmap": [
+        3,
+        7,
+        14,
+        28,
+        56,
+        112,
+        224,
+        192
+      ]
+    },
+    {
+      "id": "petscii-upper-4f",
+      "system": "PETSCII",
+      "slot": "0x4F",
+      "bitmap": [
+        255,
+        255,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192
+      ]
+    },
+    {
+      "id": "petscii-upper-50",
+      "system": "PETSCII",
+      "slot": "0x50",
+      "bitmap": [
+        255,
+        255,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "petscii-upper-51",
+      "system": "PETSCII",
+      "slot": "0x51",
+      "bitmap": [
+        0,
+        60,
+        126,
+        126,
+        126,
+        126,
+        60,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-52",
+      "system": "PETSCII",
+      "slot": "0x52",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        255,
+        255,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-53",
+      "system": "PETSCII",
+      "slot": "0x53",
+      "bitmap": [
+        54,
+        127,
+        127,
+        127,
+        62,
+        28,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-54",
+      "system": "PETSCII",
+      "slot": "0x54",
+      "bitmap": [
+        96,
+        96,
+        96,
+        96,
+        96,
+        96,
+        96,
+        96
+      ]
+    },
+    {
+      "id": "petscii-upper-55",
+      "system": "PETSCII",
+      "slot": "0x55",
+      "bitmap": [
+        0,
+        0,
+        0,
+        7,
+        15,
+        28,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-56",
+      "system": "PETSCII",
+      "slot": "0x56",
+      "bitmap": [
+        195,
+        231,
+        126,
+        60,
+        60,
+        126,
+        231,
+        195
+      ]
+    },
+    {
+      "id": "petscii-upper-57",
+      "system": "PETSCII",
+      "slot": "0x57",
+      "bitmap": [
+        0,
+        60,
+        126,
+        102,
+        102,
+        126,
+        60,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-58",
+      "system": "PETSCII",
+      "slot": "0x58",
+      "bitmap": [
+        24,
+        24,
+        102,
+        102,
+        24,
+        24,
+        60,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-59",
+      "system": "PETSCII",
+      "slot": "0x59",
+      "bitmap": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ]
+    },
+    {
+      "id": "petscii-upper-5a",
+      "system": "PETSCII",
+      "slot": "0x5A",
+      "bitmap": [
+        8,
+        28,
+        62,
+        127,
+        62,
+        28,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-5b",
+      "system": "PETSCII",
+      "slot": "0x5B",
+      "bitmap": [
+        24,
+        24,
+        24,
+        255,
+        255,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-5c",
+      "system": "PETSCII",
+      "slot": "0x5C",
+      "bitmap": [
+        192,
+        192,
+        48,
+        48,
+        192,
+        192,
+        48,
+        48
+      ]
+    },
+    {
+      "id": "petscii-upper-5d",
+      "system": "PETSCII",
+      "slot": "0x5D",
+      "bitmap": [
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-5e",
+      "system": "PETSCII",
+      "slot": "0x5E",
+      "bitmap": [
+        0,
+        0,
+        3,
+        62,
+        118,
+        54,
+        54,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-5f",
+      "system": "PETSCII",
+      "slot": "0x5F",
+      "bitmap": [
+        255,
+        127,
+        63,
+        31,
+        15,
+        7,
+        3,
+        1
+      ]
+    },
+    {
+      "id": "petscii-upper-60",
+      "system": "PETSCII",
+      "slot": "0x60",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-61",
+      "system": "PETSCII",
+      "slot": "0x61",
+      "bitmap": [
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240,
+        240
+      ]
+    },
+    {
+      "id": "petscii-upper-62",
+      "system": "PETSCII",
+      "slot": "0x62",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-63",
+      "system": "PETSCII",
+      "slot": "0x63",
+      "bitmap": [
+        255,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-64",
+      "system": "PETSCII",
+      "slot": "0x64",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-65",
+      "system": "PETSCII",
+      "slot": "0x65",
+      "bitmap": [
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192
+      ]
+    },
+    {
+      "id": "petscii-upper-66",
+      "system": "PETSCII",
+      "slot": "0x66",
+      "bitmap": [
+        204,
+        204,
+        51,
+        51,
+        204,
+        204,
+        51,
+        51
+      ]
+    },
+    {
+      "id": "petscii-upper-67",
+      "system": "PETSCII",
+      "slot": "0x67",
+      "bitmap": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "petscii-upper-68",
+      "system": "PETSCII",
+      "slot": "0x68",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        204,
+        204,
+        51,
+        51
+      ]
+    },
+    {
+      "id": "petscii-upper-69",
+      "system": "PETSCII",
+      "slot": "0x69",
+      "bitmap": [
+        255,
+        254,
+        252,
+        248,
+        240,
+        224,
+        192,
+        128
+      ]
+    },
+    {
+      "id": "petscii-upper-6a",
+      "system": "PETSCII",
+      "slot": "0x6A",
+      "bitmap": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "petscii-upper-6b",
+      "system": "PETSCII",
+      "slot": "0x6B",
+      "bitmap": [
+        24,
+        24,
+        24,
+        31,
+        31,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-6c",
+      "system": "PETSCII",
+      "slot": "0x6C",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        15,
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "id": "petscii-upper-6d",
+      "system": "PETSCII",
+      "slot": "0x6D",
+      "bitmap": [
+        24,
+        24,
+        24,
+        31,
+        31,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-6e",
+      "system": "PETSCII",
+      "slot": "0x6E",
+      "bitmap": [
+        0,
+        0,
+        0,
+        248,
+        248,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-6f",
+      "system": "PETSCII",
+      "slot": "0x6F",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-70",
+      "system": "PETSCII",
+      "slot": "0x70",
+      "bitmap": [
+        0,
+        0,
+        0,
+        31,
+        31,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-71",
+      "system": "PETSCII",
+      "slot": "0x71",
+      "bitmap": [
+        24,
+        24,
+        24,
+        255,
+        255,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-72",
+      "system": "PETSCII",
+      "slot": "0x72",
+      "bitmap": [
+        0,
+        0,
+        0,
+        255,
+        255,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-73",
+      "system": "PETSCII",
+      "slot": "0x73",
+      "bitmap": [
+        24,
+        24,
+        24,
+        248,
+        248,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "petscii-upper-74",
+      "system": "PETSCII",
+      "slot": "0x74",
+      "bitmap": [
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192
+      ]
+    },
+    {
+      "id": "petscii-upper-75",
+      "system": "PETSCII",
+      "slot": "0x75",
+      "bitmap": [
+        224,
+        224,
+        224,
+        224,
+        224,
+        224,
+        224,
+        224
+      ]
+    },
+    {
+      "id": "petscii-upper-76",
+      "system": "PETSCII",
+      "slot": "0x76",
+      "bitmap": [
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7
+      ]
+    },
+    {
+      "id": "petscii-upper-77",
+      "system": "PETSCII",
+      "slot": "0x77",
+      "bitmap": [
+        255,
+        255,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-78",
+      "system": "PETSCII",
+      "slot": "0x78",
+      "bitmap": [
+        255,
+        255,
+        255,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-79",
+      "system": "PETSCII",
+      "slot": "0x79",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-7a",
+      "system": "PETSCII",
+      "slot": "0x7A",
+      "bitmap": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        255,
+        255
+      ]
+    },
+    {
+      "id": "petscii-upper-7b",
+      "system": "PETSCII",
+      "slot": "0x7B",
+      "bitmap": [
+        0,
+        0,
+        0,
+        0,
+        240,
+        240,
+        240,
+        240
+      ]
+    },
+    {
+      "id": "petscii-upper-7c",
+      "system": "PETSCII",
+      "slot": "0x7C",
+      "bitmap": [
+        15,
+        15,
+        15,
+        15,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-7d",
+      "system": "PETSCII",
+      "slot": "0x7D",
+      "bitmap": [
+        24,
+        24,
+        24,
+        248,
+        248,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-7e",
+      "system": "PETSCII",
+      "slot": "0x7E",
+      "bitmap": [
+        240,
+        240,
+        240,
+        240,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "petscii-upper-7f",
+      "system": "PETSCII",
+      "slot": "0x7F",
+      "bitmap": [
+        240,
+        240,
+        240,
+        240,
+        15,
+        15,
+        15,
+        15
+      ]
+    }
+  ]
+}

@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcade Systems Online</title>
+  <style>
+    :root { --space: #0c0a20; --shadow: #020208; --wire: #00ddff; --accent: #ffdd44; --text: #ccccff; --grid: #2c2898; --teal: #88ffee; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--space); }
+    #stage { position: fixed; inset: 0; display: grid; place-items: center; background: var(--space); }
+    #screen { position: relative; width: min(100vw, calc(100vh * 1.428571)); aspect-ratio: 320 / 224; overflow: hidden; }
+    #scene, #hud { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+    #scene canvas { display: block; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+    #hud { pointer-events: none; }
+    #dev { position: fixed; z-index: 4; top: 12px; right: 12px; width: 260px; padding: 12px; color: var(--text); background: var(--space); border: 1px solid var(--wire); font: 12px/1.4 monospace; box-shadow: 0 0 0 2px var(--shadow); }
+    #dev[hidden] { display: none; }
+    #dev h2 { margin: 0 0 10px; color: var(--accent); font-size: 13px; letter-spacing: 0; }
+    #dev label { display: block; margin-top: 9px; color: var(--wire); }
+    #dev select, #dev input { width: 100%; margin-top: 3px; padding: 5px; color: var(--text); border: 1px solid var(--grid); background: var(--shadow); font: inherit; }
+    .color-field { display: flex; align-items: stretch; gap: 6px; margin-top: 3px; }
+    .color-field select { flex: 1; width: auto !important; margin-top: 0 !important; }
+    #color-preview { width: 30px; flex: 0 0 30px; border: 1px solid var(--text); background: var(--space); }
+    #palette-randomize, #boot-replay { width: 100%; margin-top: 12px; padding: 7px; color: var(--space); border: 1px solid var(--accent); background: var(--accent); font: inherit; font-weight: bold; cursor: pointer; }
+    #boot-replay { margin-top: 8px; color: var(--text); border-color: var(--grid); background: var(--shadow); }
+    #palette-randomize:hover, #boot-replay:hover { color: var(--text); background: var(--wire); border-color: var(--wire); }
+    #atascii-sheet { display: block; width: 100%; height: auto; margin-top: 4px; border: 1px solid var(--grid); background: var(--shadow); image-rendering: pixelated; }
+    #atascii-selected { display: block; margin-top: 4px; color: var(--accent); font-size: 10px; }
+    #dev p { margin: 11px 0 0; color: var(--teal); font-size: 10px; }
+  </style>
+</head>
+<body>
+  <main id="stage"><div id="screen"><div id="scene"></div><canvas id="hud" width="320" height="224"></canvas></div></main>
+  <aside id="dev" hidden>
+    <h2>HUD DEBUG</h2>
+    <label>PALETTE<select id="palette-picker"></select></label>
+    <label>ELEMENT<select id="role-picker"></select></label>
+    <label>COLOR<div class="color-field"><select id="color-picker"></select><span id="color-preview" title="Selected color"></span></div></label>
+    <button id="palette-randomize" type="button">RANDOMIZE</button>
+    <button id="boot-replay" type="button">REPLAY BOOT</button>
+    <label>BITMAP FONT<select id="font-picker"></select></label>
+    <label>ATASCII TILES<canvas id="atascii-sheet" width="128" height="64" title="Raw glyph slots 0x00 through 0x7F, left to right"></canvas><output id="atascii-selected">SELECTED: 0x00</output></label>
+    <p>F1 toggles this panel. R replays the boot sequence. Palette changes apply live and are not part of the 320x224 output.</p>
+  </aside>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js';
+
+    const W = 320, H = 224;
+    const OUTER_FRAME = { x: 4, y: 4, width: 312, height: 216 };
+    const SHIP_VIEWPORT = { x: 10, y: 48, width: 192, height: 160 };
+    const SHIP_CONTENT_VIEWPORT = { x: SHIP_VIEWPORT.x + 3, y: SHIP_VIEWPORT.y + 3, width: SHIP_VIEWPORT.width - 6, height: SHIP_VIEWPORT.height - 6 };
+    const HUD_TILES = { topLeft: 0x51, horizontal: 0x52, topRight: 0x45, leftVertical: 0x7c, rightVertical: 0x7c, bottomLeft: 0x5a, bottomRight: 0x43 };
+    const FALLBACK_PALETTE = ['020208', '06060f', '0c0a20', '14103a', '1e1860', '2c2898', '4848d0', '7070ff', 'ff4488', 'ff88cc', '00ddff', '88ffee', 'ffdd44', 'ff8822', 'ccccff', 'ffffff'];
+    const ROLE_LABELS = {
+      space: 'Space', logoShadowDeep: 'Logo Shadow Deep', logoReflectionBase: 'Logo Reflection Base',
+      wireframe: 'Wireframe', grid: 'Debug Border',
+      frame: 'HUD Frame', frameAccent: 'HUD Corners', hudPrimary: 'HUD Primary', hudSecondary: 'HUD Secondary',
+      hudStatus: 'HUD Status', hudDim: 'HUD Dim', barFill: 'Meter Fill', barOutline: 'Meter Outline', scanHighlight: 'Diagnostic Highlight', calloutHeader: 'Callout Header'
+    };
+    const ROLE_DEFAULTS = {
+      'neon-space': { space: 9, logoShadowDeep: 8, logoReflectionBase: 7, wireframe: 5, grid: 7, frame: 7, frameAccent: 3, hudPrimary: 4, hudSecondary: 5, hudStatus: 3, hudDim: 8, barFill: 5, barOutline: 7, scanHighlight: 5, calloutHeader: 0 },
+      'cosmic-space': { space: 2, logoShadowDeep: 0, logoReflectionBase: 7, wireframe: 10, grid: 5, frame: 6, frameAccent: 12, hudPrimary: 14, hudSecondary: 10, hudStatus: 12, hudDim: 3, barFill: 10, barOutline: 5, scanHighlight: 11, calloutHeader: 8 }
+    };
+    const paletteState = { name: 'cosmic-space', colors: FALLBACK_PALETTE, assignments: { ...ROLE_DEFAULTS['cosmic-space'] } };
+    const savedAssignments = new Map();
+    const colorNumber = role => parseInt(paletteState.colors[paletteState.assignments[role]], 16);
+    const colorCss = role => `#${paletteState.colors[paletteState.assignments[role]]}`;
+    const hud = document.querySelector('#hud');
+    const ctx = hud.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const dev = document.querySelector('#dev');
+    const picker = document.querySelector('#font-picker');
+    const palettePicker = document.querySelector('#palette-picker');
+    const rolePicker = document.querySelector('#role-picker');
+    const colorPicker = document.querySelector('#color-picker');
+    const colorPreview = document.querySelector('#color-preview');
+    const randomizePalette = document.querySelector('#palette-randomize');
+    const replayBoot = document.querySelector('#boot-replay');
+    const atasciiSheet = document.querySelector('#atascii-sheet');
+    const atasciiSelected = document.querySelector('#atascii-selected');
+    let selectedAtasciiGlyph = 0;
+    const logo = new Image(); let logoReady = false;
+    const logoPixels = document.createElement('canvas');
+    const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
+    const LOGO_REFLECTION_LEVELS = [.7, 1, 1.32, 1.6];
+    function logoReflectionColors() {
+      const value = colorNumber('logoReflectionBase'); const rgb = [value >> 16, (value >> 8) & 255, value & 255];
+      return LOGO_REFLECTION_LEVELS.map(level => rgb.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1))));
+    }
+    function quantizeLogo(time = 0) {
+      if (!logo.naturalWidth) return;
+      logoPixels.width = logo.naturalWidth; logoPixels.height = logo.naturalHeight;
+      const logoCtx = logoPixels.getContext('2d'); logoCtx.drawImage(logo, 0, 0);
+      const image = logoCtx.getImageData(0, 0, logoPixels.width, logoPixels.height);
+      const reflection = logoReflectionColors(); const phase = Math.floor(time * 4) % reflection.length;
+      const shadowValue = colorNumber('logoShadowDeep'); const shadow = [shadowValue >> 16, (shadowValue >> 8) & 255, shadowValue & 255];
+      for (let index = 0; index < image.data.length; index += 4) {
+        if (!image.data[index + 3]) continue;
+        const pixel = index / 4; const x = pixel % logoPixels.width;
+        const sourceColor = `${image.data[index]},${image.data[index + 1]},${image.data[index + 2]}`;
+        const band = LOGO_COLOR_BANDS[sourceColor] ?? 3;
+        const color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? shadow : reflection[(band - 1 + phase) % reflection.length];
+        image.data[index] = color[0]; image.data[index + 1] = color[1]; image.data[index + 2] = color[2];
+      }
+      logoCtx.putImageData(image, 0, 0); logoReady = true;
+    }
+    logo.onload = quantizeLogo;
+    logo.src = './assets/images/gklogo.png';
+    const HUD_FONT_FILES = {
+      'Reactor': '330.h', 'Reactor Heavy': '325.h', 'Reactor Heavy Shine': '323.h', 'Reactor Heavy Stripe': '324.h',
+      'Reactor Leak': '326.h', 'Reactor Oblique': '327.h', 'Reactor Serif': '328.h', 'Reactor Zone': '329.h'
+    };
+    const FONT_NAMES = Object.keys(HUD_FONT_FILES);
+    const state = { fontData: null, technicalFontData: null, fontName: 'Reactor', loaded: false, glyphCache: new Map() };
+    let atasciiGlyphsPromise = null;
+    const SYSTEM_PHASE_DURATION = 8;
+    const BOOT_STAGES = [
+      { name: 'void', duration: 1.4 },
+      { name: 'signal', duration: 2.4 },
+      { name: 'acquire', duration: 2.1 },
+      { name: 'systems', duration: SYSTEM_PHASE_DURATION * 4 },
+      { name: 'ready', duration: 6.5 }
+    ];
+    const BOOT_DURATION = BOOT_STAGES.reduce((total, stage) => total + stage.duration, 0);
+    const SYSTEM_LOADS = [
+      { label: 'CORE', amount: 1, point: [0, 0, 0], distance: 3.6, radius: 12, callout: [88, 116], calloutSide: 'right' },
+      { label: 'DRIVE', amount: 1, point: [0, -2.1, .15], distance: 3.1, radius: 10, callout: [88, 130], calloutSide: 'right' },
+      { label: 'WPN', amount: 1, point: [-1.68, -.84, .1], distance: 3.3, radius: 10, callout: [80, 122], calloutSide: 'right' },
+      { label: 'LINK', amount: 1, point: [0, 1.26, .1], distance: 3.4, radius: 10, callout: [80, 138], calloutSide: 'right', lineOrigin: 'lowerLeft' }
+    ];
+    let bootTime = performance.now();
+    function clamp(value) { return Math.max(0, Math.min(1, value)); }
+    function bootState(now) {
+      const elapsed = (now - bootTime) / 1000;
+      let cursor = 0;
+      for (let index = 0; index < BOOT_STAGES.length; index++) {
+        const stage = BOOT_STAGES[index];
+        if (elapsed < cursor + stage.duration || index === BOOT_STAGES.length - 1) {
+          return { ...stage, index, start: cursor, elapsed, local: clamp((elapsed - cursor) / stage.duration), total: clamp(elapsed / BOOT_DURATION) };
+        }
+        cursor += stage.duration;
+      }
+    }
+    function replaySequence() { bootTime = performance.now(); }
+    function systemLoadState(sequence) {
+      const progress = sequence.name === 'systems' ? sequence.local : sequence.name === 'ready' ? 1 : 0;
+      const loads = SYSTEM_LOADS.map((system, index) => ({ ...system, phase: clamp(progress * SYSTEM_LOADS.length - index) }));
+      return { progress, loads };
+    }
+    function subsystemFocus(sequence) {
+      if (sequence.name !== 'systems') return null;
+      const { progress, loads } = systemLoadState(sequence);
+      const raw = progress * loads.length;
+      const index = Math.min(loads.length - 1, Math.floor(raw));
+      return { index, current: loads[index], previous: index ? loads[index - 1] : null, blend: clamp(raw - index) };
+    }
+
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1);
+    renderer.setSize(W, H, false);
+    renderer.autoClear = false;
+    document.querySelector('#scene').appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const shipScene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(colorNumber('space'), .06);
+    shipScene.fog = scene.fog;
+    const camera = new THREE.PerspectiveCamera(42, W / H, .1, 100);
+    camera.position.set(0, .15, 9);
+    const backgroundCamera = new THREE.PerspectiveCamera(42, W / H, .1, 100);
+    backgroundCamera.position.set(0, .15, 9); backgroundCamera.lookAt(0, 0, 0);
+    const cameraAim = new THREE.Vector3();
+    const cameraPosition = new THREE.Vector3();
+    const cameraFromAim = new THREE.Vector3();
+    const cameraFromPosition = new THREE.Vector3();
+    const cameraToAim = new THREE.Vector3();
+    const cameraToPosition = new THREE.Vector3();
+    const root = new THREE.Group(); root.position.x = -1.35; root.scale.setScalar(.82); shipScene.add(root);
+    const cyan = new THREE.LineBasicMaterial({ color: colorNumber('wireframe'), transparent: true, opacity: 0 });
+    const shipPixels = new Image();
+    shipPixels.onload = () => {
+      const source = document.createElement('canvas'); source.width = shipPixels.naturalWidth; source.height = shipPixels.naturalHeight;
+      const sourceCtx = source.getContext('2d'); sourceCtx.drawImage(shipPixels, 0, 0);
+      const pixels = sourceCtx.getImageData(0, 0, source.width, source.height).data;
+      const background = [pixels[0], pixels[1], pixels[2]]; const voxelSize = .42; const filled = new Set();
+      for (let y = 0; y < source.height; y++) for (let x = 0; x < source.width; x++) {
+        const index = (y * source.width + x) * 4;
+        const difference = Math.abs(pixels[index] - background[0]) + Math.abs(pixels[index + 1] - background[1]) + Math.abs(pixels[index + 2] - background[2]);
+        if (difference >= 40) filled.add(`${x},${y}`);
+      }
+      const lines = []; const boundaryVertices = new Map(); const depth = voxelSize / 2;
+      const point = (u, v, z) => lines.push((u - source.width / 2) * voxelSize, (source.height / 2 - v) * voxelSize, z);
+      const segment = (u1, v1, u2, v2, z) => { point(u1, v1, z); point(u2, v2, z); };
+      const boundary = (u1, v1, u2, v2) => {
+        segment(u1, v1, u2, v2, -depth); segment(u1, v1, u2, v2, depth);
+        const start = `${u1},${v1}`; const end = `${u2},${v2}`;
+        if (!boundaryVertices.has(start)) boundaryVertices.set(start, new Set());
+        if (!boundaryVertices.has(end)) boundaryVertices.set(end, new Set());
+        boundaryVertices.get(start).add(end); boundaryVertices.get(end).add(start);
+      };
+      filled.forEach(cell => {
+        const [x, y] = cell.split(',').map(Number);
+        if (!filled.has(`${x - 1},${y}`)) boundary(x, y, x, y + 1);
+        if (!filled.has(`${x + 1},${y}`)) boundary(x + 1, y, x + 1, y + 1);
+        if (!filled.has(`${x},${y - 1}`)) boundary(x, y, x + 1, y);
+        if (!filled.has(`${x},${y + 1}`)) boundary(x, y + 1, x + 1, y + 1);
+      });
+      boundaryVertices.forEach((neighbors, vertex) => {
+        const [u, v] = vertex.split(',').map(Number); const points = [...neighbors].map(neighbor => neighbor.split(',').map(Number));
+        if (points.length === 2 && (points[0][0] === points[1][0] || points[0][1] === points[1][1])) return;
+        point(u, v, -depth); point(u, v, depth);
+      });
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(lines, 3)); root.add(new THREE.LineSegments(geometry, cyan));
+    };
+    shipPixels.src = './assets/images/ship.png';
+    const seeded = value => {
+      const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453;
+      return sample - Math.floor(sample);
+    };
+    // Static stars establish depth while nearer stars drift towards the camera.
+    const starColors = [0xddeeff, 0x8dd8ff, 0xffb1da];
+    const staticStars = [];
+    const driftingStars = [];
+    starColors.forEach((color, layerIndex) => {
+      const positions = new Float32Array(42 * 3);
+      for (let index = 0; index < positions.length; index += 3) { const seed = layerIndex * 100 + index; positions[index] = (seeded(seed) - .5) * 15; positions[index + 1] = (seeded(seed + 1) - .5) * 9; positions[index + 2] = -4 - seeded(seed + 2) * 5; }
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      staticStars.push(new THREE.Points(geometry, new THREE.PointsMaterial({ color, size: .045, transparent: true, opacity: 0 })));
+    });
+    staticStars.forEach(field => scene.add(field));
+    starColors.forEach((color, layerIndex) => {
+      const positions = new Float32Array(18 * 3); const seeds = new Float32Array(18 * 3);
+      for (let index = 0; index < 18; index++) { const seed = 500 + layerIndex * 50 + index * 3; seeds[index * 3] = seeded(seed); seeds[index * 3 + 1] = seeded(seed + 1); seeds[index * 3 + 2] = seeded(seed + 2); }
+      const geometry = new THREE.BufferGeometry(); const attribute = new THREE.BufferAttribute(positions, 3); geometry.setAttribute('position', attribute);
+      const field = new THREE.Points(geometry, new THREE.PointsMaterial({ color, size: .055, transparent: true, opacity: 0 })); scene.add(field); driftingStars.push({ positions, seeds, attribute, material: field.material });
+    });
+    const twinklePositions = new Float32Array(18 * 3); const twinkleColors = new Float32Array(18 * 3); const twinklePhases = [];
+    for (let index = 0; index < twinklePositions.length; index += 3) { const seed = 900 + index; twinklePositions[index] = (seeded(seed) - .5) * 13; twinklePositions[index + 1] = (seeded(seed + 1) - .5) * 8; twinklePositions[index + 2] = -3 - seeded(seed + 2) * 5; twinklePhases.push(seeded(seed + 3) * Math.PI * 2); }
+    const twinkleGeometry = new THREE.BufferGeometry(); const twinkleAttribute = new THREE.BufferAttribute(twinkleColors, 3);
+    twinkleGeometry.setAttribute('position', new THREE.BufferAttribute(twinklePositions, 3)); twinkleGeometry.setAttribute('color', twinkleAttribute);
+    const twinkleField = new THREE.Points(twinkleGeometry, new THREE.PointsMaterial({ vertexColors: true, size: .09, transparent: true, opacity: 0 }));
+    scene.add(twinkleField);
+    const twinkleBaseColors = starColors.map(color => new THREE.Color(color));
+
+    const GLYPH_SIZE = 8, GLYPH_GAP = 1;
+    function rawGlyphImage(glyphCode, color, fontData = state.fontData, fontKey = state.fontName) {
+      const cacheKey = `${fontKey}:${glyphCode}:${color}`;
+      if (state.glyphCache.has(cacheKey)) return state.glyphCache.get(cacheKey);
+      const canvas = document.createElement('canvas');
+      canvas.width = GLYPH_SIZE; canvas.height = GLYPH_SIZE;
+      const glyphOffset = glyphCode * GLYPH_SIZE;
+      const glyphCtx = canvas.getContext('2d');
+      glyphCtx.fillStyle = color;
+      for (let row = 0; row < GLYPH_SIZE; row++) {
+        const bits = fontData?.[glyphOffset + row] || 0;
+        for (let column = 0; column < GLYPH_SIZE; column++) {
+          if (bits & (1 << (GLYPH_SIZE - 1 - column))) glyphCtx.fillRect(column, row, 1, 1);
+        }
+      }
+      state.glyphCache.set(cacheKey, canvas); return canvas;
+    }
+    function atasciiGlyphCode(character) {
+      const codepoint = character.codePointAt(0);
+      return codepoint >= 32 && codepoint <= 126 ? codepoint - 32 : 31;
+    }
+    function glyphImage(character, color) { return rawGlyphImage(atasciiGlyphCode(character), color); }
+    function rawGlyph(glyphCode, x, y, color) { ctx.drawImage(rawGlyphImage(glyphCode, color), x, y, GLYPH_SIZE, GLYPH_SIZE); }
+    function tiledBorder(frame) {
+      const right = frame.x + frame.width - GLYPH_SIZE;
+      const bottom = frame.y + frame.height - GLYPH_SIZE;
+      const color = colorCss('frame');
+      rawGlyph(HUD_TILES.topLeft, frame.x, frame.y, color);
+      rawGlyph(HUD_TILES.topRight, right, frame.y, color);
+      rawGlyph(HUD_TILES.bottomLeft, frame.x, bottom, color);
+      rawGlyph(HUD_TILES.bottomRight, right, bottom, color);
+      for (let x = frame.x + GLYPH_SIZE; x < right; x += GLYPH_SIZE) {
+        rawGlyph(HUD_TILES.horizontal, x, frame.y, color);
+        rawGlyph(HUD_TILES.horizontal, x, bottom, color);
+      }
+      for (let y = frame.y + GLYPH_SIZE; y < bottom; y += GLYPH_SIZE) {
+        rawGlyph(HUD_TILES.leftVertical, frame.x, y, color);
+        rawGlyph(HUD_TILES.rightVertical, right, y, color);
+      }
+    }
+    function tiledViewportBorder() { tiledBorder(SHIP_VIEWPORT); }
+    function renderAtasciiSheet() {
+      if (!state.fontData) return;
+      const sheetCtx = atasciiSheet.getContext('2d');
+      sheetCtx.clearRect(0, 0, atasciiSheet.width, atasciiSheet.height);
+      for (let glyphCode = 0; glyphCode < 128; glyphCode++) {
+        const x = glyphCode % 16 * GLYPH_SIZE; const y = Math.floor(glyphCode / 16) * GLYPH_SIZE;
+        sheetCtx.drawImage(rawGlyphImage(glyphCode, colorCss('hudSecondary')), x, y);
+      }
+      const selectedX = selectedAtasciiGlyph % 16 * GLYPH_SIZE; const selectedY = Math.floor(selectedAtasciiGlyph / 16) * GLYPH_SIZE;
+      sheetCtx.strokeStyle = colorCss('hudStatus'); sheetCtx.strokeRect(selectedX + .5, selectedY + .5, GLYPH_SIZE - 1, GLYPH_SIZE - 1);
+      atasciiSelected.textContent = `SELECTED: 0x${selectedAtasciiGlyph.toString(16).toUpperCase().padStart(2, '0')}`;
+    }
+    function measure(value, scale = 1) { return Math.max(0, [...value].length * (GLYPH_SIZE + GLYPH_GAP) - GLYPH_GAP) * scale; }
+    function text(text, x, y, color, scale = 1, align = 'left') {
+      if (!state.fontData) return;
+      let pen = Math.round(x - (align === 'center' ? measure(text, scale) / 2 : align === 'right' ? measure(text, scale) : 0));
+      for (const character of text) {
+        ctx.drawImage(glyphImage(character, color), pen, y, GLYPH_SIZE * scale, GLYPH_SIZE * scale);
+        pen += (GLYPH_SIZE + GLYPH_GAP) * scale;
+      }
+    }
+    function line(x1, y1, x2, y2, color) { ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x1 + .5, y1 + .5); ctx.lineTo(x2 + .5, y2 + .5); ctx.stroke(); }
+    function pixelLine(x1, y1, x2, y2, color) {
+      let x = Math.round(x1), y = Math.round(y1); const targetX = Math.round(x2), targetY = Math.round(y2);
+      const stepX = x < targetX ? 1 : -1, stepY = y < targetY ? 1 : -1;
+      const deltaX = Math.abs(targetX - x), deltaY = -Math.abs(targetY - y); let error = deltaX + deltaY;
+      ctx.fillStyle = color;
+      while (true) {
+        ctx.fillRect(x, y, 1, 1);
+        if (x === targetX && y === targetY) break;
+        const doubledError = error * 2;
+        if (doubledError >= deltaY) { error += deltaY; x += stepX; }
+        if (doubledError <= deltaX) { error += deltaX; y += stepY; }
+      }
+    }
+    const TECH_GLYPH_SIZE = 4, TECH_GLYPH_GAP = 1;
+    function technicalMeasure(value) { return Math.max(0, [...value].length * (TECH_GLYPH_SIZE + TECH_GLYPH_GAP) - TECH_GLYPH_GAP); }
+    function technicalGlyphImage(character, color) {
+      if (!state.technicalFontData) return null;
+      const glyphCode = atasciiGlyphCode(character); const cacheKey = `bitty-4:${glyphCode}:${color}`;
+      if (state.glyphCache.has(cacheKey)) return state.glyphCache.get(cacheKey);
+      const canvas = document.createElement('canvas'); canvas.width = TECH_GLYPH_SIZE; canvas.height = TECH_GLYPH_SIZE;
+      const glyphCtx = canvas.getContext('2d'); glyphCtx.fillStyle = color; const glyphOffset = glyphCode * GLYPH_SIZE;
+      for (let row = 0; row < TECH_GLYPH_SIZE; row++) for (let column = 0; column < TECH_GLYPH_SIZE; column++) {
+        let filled = false;
+        for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow++) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn++) {
+          if (state.technicalFontData[glyphOffset + sourceRow] & (1 << (GLYPH_SIZE - 1 - sourceColumn))) filled = true;
+        }
+        if (filled) glyphCtx.fillRect(column, row, 1, 1);
+      }
+      state.glyphCache.set(cacheKey, canvas); return canvas;
+    }
+    function technicalText(value, x, y, color) {
+      if (!state.technicalFontData) return;
+      let pen = Math.round(x);
+      for (const character of value) {
+        ctx.drawImage(technicalGlyphImage(character, color), pen, y);
+        pen += TECH_GLYPH_SIZE + TECH_GLYPH_GAP;
+      }
+    }
+    function drawTechnicalBlock(focus, x, y, typingProgress) {
+      const tick = focus.index + 1; const hex = value => value.toString(16).toUpperCase().padStart(2, '0');
+      const header = `${focus.current.label}/SYS`;
+      const lineOne = `#${hex((tick * 19 + focus.current.radius) % 256)}/${hex((tick * 7 + 31) % 256)}`;
+      const lineTwo = `+${hex((tick * 11 + 89) % 256)}-${hex((tick * 5 + 173) % 256)}`;
+      let remainingCharacters = Math.floor((header.length + lineOne.length + lineTwo.length) * typingProgress);
+      const typed = value => { const visible = value.slice(0, Math.max(0, Math.min(value.length, remainingCharacters))); remainingCharacters -= visible.length; return visible; };
+      const visibleHeader = typed(header); const visibleLineOne = typed(lineOne); const visibleLineTwo = typed(lineTwo);
+      ctx.globalAlpha = .65;
+      technicalText(visibleHeader, x, y, colorCss('calloutHeader'));
+      if (visibleHeader.length === header.length) pixelLine(x, y + TECH_GLYPH_SIZE, x + technicalMeasure(header) - 1, y + TECH_GLYPH_SIZE, colorCss('calloutHeader'));
+      ctx.globalAlpha = 1;
+      technicalText(visibleLineOne, x, y + 6, colorCss('hudPrimary')); technicalText(visibleLineTwo, x, y + 12, colorCss('hudPrimary'));
+    }
+    function bar(x, y, width, level, active, outlineRole = 'barOutline', fillRole = 'barFill') { ctx.strokeStyle = colorCss(outlineRole); ctx.strokeRect(x + .5, y + .5, width, 6); if (active) { ctx.fillStyle = colorCss(fillRole); ctx.fillRect(x + 2, y + 2, Math.floor((width - 3) * level), 3); } }
+    const BRAILLE_FRAMES = [0x0b, 0x19, 0x39, 0x38, 0x3c, 0x34, 0x26, 0x27, 0x07, 0x0f];
+    const BRAILLE_DOTS = [[0, 0], [0, 2], [0, 4], [2, 0], [2, 2], [2, 4], [0, 6], [2, 6]];
+    function brailleSpinner(x, y, time) {
+      const frame = BRAILLE_FRAMES[Math.floor(time * 12) % BRAILLE_FRAMES.length];
+      ctx.fillStyle = colorCss('hudSecondary');
+      BRAILLE_DOTS.forEach(([dotX, dotY], index) => {
+        if (frame & (1 << index)) ctx.fillRect(x + dotX, y + dotY, 1, 1);
+      });
+    }
+    function hexScan(x, y, sequence) {
+      const focus = subsystemFocus(sequence);
+      const sample = Math.floor(sequence.elapsed * .5);
+      const yaw = Math.round((root.rotation.y / (Math.PI * 2)) * 16) * 16;
+      const pitch = Math.round((root.rotation.x / (Math.PI * 2)) * 16) * 16;
+      const altitude = Math.round((root.position.y + 1) * 12) * 8;
+      const range = Math.round(camera.position.length() * 4) * 8;
+      const system = (focus?.index ?? 4) * 17;
+      const hex = value => value.toString(16).toUpperCase().padStart(2, '0');
+      const drift = sample & 0x07;
+      text(`${hex((yaw + drift) & 0xff)}-${hex((pitch + system) & 0xff)}`, x, y, colorCss('hudSecondary'));
+      text(`${hex((altitude + system) & 0xff)}-${hex((range + drift) & 0xff)}`, x, y + 10, colorCss('hudSecondary'));
+    }
+    function romCheck(x, y, sequence) {
+      const { loads } = systemLoadState(sequence);
+      const complete = loads[loads.length - 1].phase >= 1;
+      const step = Math.floor(sequence.elapsed * 2) % 16;
+      text('ROM', x, y, colorCss('hudSecondary'));
+      const dataX = x + measure('ROM ') + 1;
+      if (complete) {
+        text('PASS', dataX, y, colorCss('hudSecondary'));
+        return;
+      }
+      const address = step * 0x40;
+      const checksum = ((address >> 2) ^ (address * 7) ^ 0x5a) & 0xff;
+      const addressText = address.toString(16).toUpperCase().padStart(3, '0');
+      const checksumText = checksum.toString(16).toUpperCase().padStart(2, '0');
+      text(`${addressText}-${checksumText}`, dataX, y, colorCss('hudPrimary'));
+    }
+    function pixelRing(x, y, radius, color) {
+      ctx.fillStyle = color;
+      for (let angle = 0; angle < 360; angle += 12) {
+        const radians = angle * Math.PI / 180;
+        ctx.fillRect(Math.round(x + Math.cos(radians) * radius), Math.round(y + Math.sin(radians) * radius), 1, 1);
+      }
+    }
+    function drawFocusOverlay(sequence) {
+      const focus = subsystemFocus(sequence);
+      const zoomSettledAt = 1 / SYSTEM_PHASE_DURATION;
+      const blinkEndsAt = zoomSettledAt + .1;
+      if (!focus || focus.blend < zoomSettledAt) return;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(SHIP_CONTENT_VIEWPORT.x, SHIP_CONTENT_VIEWPORT.y, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height); ctx.clip();
+      const projectPoint = coordinates => {
+        const point = root.localToWorld(new THREE.Vector3(...coordinates)).project(camera);
+        return [Math.round((point.x * .5 + .5) * W), Math.round((-point.y * .5 + .5) * H)];
+      };
+      const highlights = focus.current.highlights || [focus.current.point];
+      const projectedHighlights = highlights.map(projectPoint);
+      const blinkComplete = focus.blend >= blinkEndsAt;
+      if (blinkComplete || Math.floor(sequence.elapsed * 10) % 2) {
+        ctx.globalAlpha = .55;
+        projectedHighlights.forEach(([highlightX, highlightY]) => pixelRing(highlightX, highlightY, focus.current.radius, colorCss('scanHighlight')));
+      }
+      if (!blinkComplete) { ctx.restore(); return; }
+      const [blockX, blockY] = focus.current.callout;
+      const blockWidth = technicalMeasure(`${focus.current.label}/SYS`);
+      const lineEndX = focus.current.calloutSide === 'right' ? blockX + blockWidth + 3 : blockX - 3;
+      const lineEndY = blockY + 5;
+      const [highlightX, highlightY] = projectedHighlights.reduce((nearest, point) => {
+        const nearestDistance = (nearest[0] - lineEndX) ** 2 + (nearest[1] - lineEndY) ** 2;
+        const pointDistance = (point[0] - lineEndX) ** 2 + (point[1] - lineEndY) ** 2;
+        return pointDistance < nearestDistance ? point : nearest;
+      });
+      const distance = Math.max(1, Math.hypot(lineEndX - highlightX, lineEndY - highlightY));
+      const startX = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightX - focus.current.radius * .7) : Math.round(highlightX + (lineEndX - highlightX) / distance * focus.current.radius);
+      const startY = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightY + focus.current.radius * .7) : Math.round(highlightY + (lineEndY - highlightY) / distance * focus.current.radius);
+      ctx.globalAlpha = 1; pixelLine(startX, startY, lineEndX, lineEndY, colorCss('hudStatus'));
+      drawTechnicalBlock(focus, blockX, blockY, clamp((focus.blend - blinkEndsAt) / .3));
+      ctx.restore();
+    }
+    function drawHud(sequence) {
+      ctx.clearRect(0, 0, W, H);
+      if (sequence.name === 'void') return;
+      const time = sequence.elapsed;
+      const signalProgress = sequence.name === 'signal' ? sequence.local : 1;
+      ctx.globalAlpha = signalProgress;
+      if (logoReady) { quantizeLogo(time); ctx.drawImage(logoPixels, 32, 14, 256, 18); }
+      const allSystemsGo = systemLoadState(sequence).loads.at(-1).phase >= 1;
+      if (allSystemsGo) {
+        const go = 'ALL SYSTEMS GO';
+        const sideWidth = GLYPH_SIZE * 2;
+        const totalWidth = sideWidth + 3 + measure(go) + 3 + sideWidth;
+        const startX = Math.round((W - totalWidth) / 2);
+        const red = colorCss('calloutHeader');
+        ctx.globalAlpha = Math.floor(time * 4) % 2 ? 1 : .3;
+        rawGlyph(0x7e, startX, 36, red); rawGlyph(0x7e, startX + GLYPH_SIZE, 36, red);
+        text(go, startX + sideWidth + 3, 36, red);
+        const rightX = startX + sideWidth + 3 + measure(go) + 3;
+        rawGlyph(0x7f, rightX, 36, red); rawGlyph(0x7f, rightX + GLYPH_SIZE, 36, red);
+        ctx.globalAlpha = signalProgress;
+      } else {
+        const check = 'SYSTEMS CHECK'; const checkX = Math.round((W - measure(check) - 14) / 2);
+        const visibleCheck = check.slice(0, Math.ceil(check.length * signalProgress));
+        text(visibleCheck, checkX, 36, colorCss('hudSecondary')); brailleSpinner(checkX + measure(check) + 5, 36, time);
+      }
+      if (sequence.name === 'signal') { ctx.globalAlpha = 1; return; }
+      const acquireProgress = sequence.name === 'acquire' ? sequence.local : 1;
+      ctx.globalAlpha = acquireProgress;
+      tiledBorder(OUTER_FRAME);
+      tiledViewportBorder();
+      text('GK-99', 17, 62, colorCss('hudStatus')); text('"WARDEN"', 17, 72, colorCss('hudPrimary')); hexScan(17, 86, sequence); romCheck(210, 207, sequence);
+      const tx = 210;
+      if (sequence.name === 'acquire') { ctx.globalAlpha = 1; return; }
+      const { progress: systemsProgress, loads } = systemLoadState(sequence);
+      ctx.globalAlpha = 1;
+      const aggregate = loads.reduce((total, item) => total + item.phase, 0) / loads.length;
+      const rows = [
+        ['SYS', aggregate, `${String(Math.round(aggregate * 100)).padStart(3, '0')}%`, 'hudStatus'],
+        ...loads.map(({ label, phase }) => {
+          if (phase >= 1) return [label, phase, 'OK', 'hudSecondary'];
+          if (phase > 0) return [label, phase, 'CHK', Math.floor(time * 6) % 2 ? 'hudStatus' : 'hudDim'];
+          return [label, phase, 'IDLE', 'hudDim'];
+        })
+      ];
+      rows.forEach(([label, phase, status, statusRole], index) => {
+        const y = 62 + index * 24;
+        const isAggregate = index === 0;
+        const active = isAggregate || phase > 0;
+        const labelRole = isAggregate ? 'hudStatus' : active ? 'hudPrimary' : 'hudDim';
+        text(label, tx, y, colorCss(labelRole)); text(status, 304, y, colorCss(statusRole), 1, 'right');
+        bar(tx, y + 12, 94, isAggregate ? phase : loads[index - 1].amount * phase, active, active ? 'barOutline' : 'hudDim');
+      });
+      drawFocusOverlay(sequence);
+      ctx.globalAlpha = 1;
+    }
+    function defaultAssignments(name, colors) {
+      if (ROLE_DEFAULTS[name]) return { ...ROLE_DEFAULTS[name] };
+      return Object.fromEntries(Object.keys(ROLE_LABELS).map((role, index) => [role, index % colors.length]));
+    }
+    function syncColorPicker() {
+      colorPicker.replaceChildren();
+      paletteState.colors.forEach((hex, index) => {
+        const option = document.createElement('option'); option.value = index; option.textContent = `#${hex.toUpperCase()}`;
+        option.style.backgroundColor = `#${hex}`; option.style.color = Number.parseInt(hex.slice(0, 2), 16) * .299 + Number.parseInt(hex.slice(2, 4), 16) * .587 + Number.parseInt(hex.slice(4, 6), 16) * .114 > 150 ? '#020208' : '#ffffff';
+        colorPicker.append(option);
+      });
+      colorPicker.value = String(paletteState.assignments[rolePicker.value]);
+      const selected = paletteState.colors[paletteState.assignments[rolePicker.value]];
+      colorPreview.style.backgroundColor = `#${selected}`; colorPreview.title = `#${selected.toUpperCase()}`;
+    }
+    function applyPalette() {
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty('--space', colorCss('space')); rootStyle.setProperty('--shadow', colorCss('logoShadowDeep'));
+      rootStyle.setProperty('--wire', colorCss('wireframe')); rootStyle.setProperty('--accent', colorCss('hudStatus'));
+      rootStyle.setProperty('--text', colorCss('hudPrimary')); rootStyle.setProperty('--grid', colorCss('grid')); rootStyle.setProperty('--teal', colorCss('hudSecondary'));
+      scene.fog.color.setHex(colorNumber('space')); cyan.color.setHex(colorNumber('wireframe'));
+      state.glyphCache.clear(); quantizeLogo(); syncColorPicker(); renderAtasciiSheet();
+    }
+    function randomizeAssignments() {
+      const indexes = paletteState.colors.map((_, index) => index);
+      const shuffle = values => {
+        for (let index = values.length - 1; index > 0; index--) {
+          const swapIndex = Math.floor(Math.random() * (index + 1));
+          [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
+        }
+        return values;
+      };
+      let cycle = shuffle([...indexes]);
+      Object.keys(ROLE_LABELS).forEach((role, index) => {
+        if (index && index % cycle.length === 0) cycle = shuffle([...indexes]);
+        paletteState.assignments[role] = cycle[index % cycle.length];
+      });
+      applyPalette();
+    }
+    async function loadPalette(name) {
+      savedAssignments.set(paletteState.name, { ...paletteState.assignments });
+      const response = await fetch(`./assets/palettes/${encodeURIComponent(name)}.hex`);
+      if (!response.ok) throw new Error(`Could not load ${name}`);
+      const colors = (await response.text()).match(/[0-9a-f]{6}/ig)?.map(hex => hex.toLowerCase()) || [];
+      if (!colors.length) throw new Error(`No hex values found in ${name}`);
+      paletteState.name = name; paletteState.colors = colors;
+      paletteState.assignments = savedAssignments.get(name) || defaultAssignments(name, colors);
+      applyPalette();
+    }
+    async function populatePalettes() {
+      const response = await fetch('./assets/palettes/index.json'); const names = await response.json();
+      names.forEach(name => { const option = document.createElement('option'); option.value = name; option.textContent = name; palettePicker.append(option); });
+      Object.entries(ROLE_LABELS).forEach(([role, label]) => { const option = document.createElement('option'); option.value = role; option.textContent = label; rolePicker.append(option); });
+      palettePicker.value = paletteState.name; rolePicker.value = 'space'; syncColorPicker();
+      palettePicker.addEventListener('change', () => loadPalette(palettePicker.value).catch(console.error));
+      rolePicker.addEventListener('change', syncColorPicker);
+      colorPicker.addEventListener('change', () => { paletteState.assignments[rolePicker.value] = Number(colorPicker.value); applyPalette(); });
+      randomizePalette.addEventListener('click', randomizeAssignments);
+      await loadPalette(paletteState.name);
+    }
+    function parseHeaderFont(source) {
+      const values = source.match(/0x[0-9a-f]{2}/ig) || [];
+      if (values.length < 768) throw new Error('Header font data is incomplete');
+      return Uint8Array.from(values.slice(0, 768), value => Number.parseInt(value.slice(2), 16));
+    }
+    function loadAtasciiGlyphs() {
+      if (!atasciiGlyphsPromise) {
+        atasciiGlyphsPromise = fetch('./assets/glyphs/legacy-glyphs.json').then(async response => {
+          if (!response.ok) throw new Error(`ATASCII glyph request returned ${response.status}`);
+          return (await response.json()).glyphs;
+        });
+      }
+      return atasciiGlyphsPromise;
+    }
+    function hudFontData(printableGlyphs, legacyGlyphs) {
+      const fontData = new Uint8Array(128 * GLYPH_SIZE);
+      fontData.set(printableGlyphs);
+      legacyGlyphs.forEach(glyph => {
+        if (glyph.system !== 'ATASCII' || !glyph.internalSlot) return;
+        const glyphCode = Number.parseInt(glyph.internalSlot, 16);
+        fontData.set(glyph.bitmap, glyphCode * GLYPH_SIZE);
+      });
+      return fontData;
+    }
+    async function loadFont(name) {
+      const file = HUD_FONT_FILES[name];
+      if (!file) throw new Error(`Unknown HUD font ${name}`);
+      const [response, legacyGlyphs] = await Promise.all([fetch(`./assets/font-data-h/${file}`), loadAtasciiGlyphs()]);
+      if (!response.ok) throw new Error(`Could not load ${name}`);
+      state.fontData = hudFontData(parseHeaderFont(await response.text()), legacyGlyphs);
+      state.fontName = name; state.glyphCache.clear(); state.loaded = true; renderAtasciiSheet();
+    }
+    async function loadTechnicalFont() {
+      const response = await fetch('./assets/font-data-h/031.h');
+      if (!response.ok) throw new Error('Could not load Bitty');
+      state.technicalFontData = parseHeaderFont(await response.text());
+    }
+    async function populateFonts() {
+      FONT_NAMES.forEach(name => { const option = document.createElement('option'); option.value = name; option.textContent = name; picker.append(option); });
+      picker.value = state.fontName;
+      picker.addEventListener('change', () => loadFont(picker.value).catch(console.error));
+      await loadFont(state.fontName);
+    }
+    document.addEventListener('keydown', event => {
+      if (event.key === 'F1') { event.preventDefault(); dev.hidden = !dev.hidden; }
+      if (event.key.toLowerCase() === 'r' && !event.metaKey && !event.ctrlKey && !event.altKey) replaySequence();
+    });
+    replayBoot.addEventListener('click', replaySequence);
+    atasciiSheet.addEventListener('click', event => {
+      const bounds = atasciiSheet.getBoundingClientRect();
+      const column = Math.max(0, Math.min(15, Math.floor((event.clientX - bounds.left) / bounds.width * 16)));
+      const row = Math.max(0, Math.min(7, Math.floor((event.clientY - bounds.top) / bounds.height * 8)));
+      selectedAtasciiGlyph = row * 16 + column; renderAtasciiSheet();
+    });
+    populatePalettes().catch(error => { console.error(error); });
+    populateFonts().catch(error => { console.error(error); });
+    loadTechnicalFont().catch(error => { console.error(error); });
+    function updateStars(sequence) {
+      const signalProgress = sequence.index > 1 ? 1 : sequence.name === 'signal' ? sequence.local : 0;
+      const staticOpacity = sequence.name === 'void' ? .16 : .68;
+      staticStars.forEach(field => { field.material.opacity = staticOpacity; });
+      driftingStars.forEach(layer => {
+        layer.material.opacity = signalProgress * .9;
+        for (let index = 0; index < layer.seeds.length / 3; index++) {
+          const position = index * 3;
+          const speed = .55 + layer.seeds[position + 2] * .95;
+          const travel = (sequence.elapsed * speed + layer.seeds[position + 2] * 19) % 19;
+          layer.positions[position] = (layer.seeds[position] - .5) * 13;
+          layer.positions[position + 1] = (layer.seeds[position + 1] - .5) * 8;
+          layer.positions[position + 2] = -12 + travel;
+        }
+        layer.attribute.needsUpdate = true;
+      });
+      for (let index = 0; index < twinklePhases.length; index++) {
+        const intensity = (.14 + Math.max(0, Math.sin(sequence.elapsed * 2.1 + twinklePhases[index]) - .77) * 3.75) * signalProgress;
+        const color = twinkleBaseColors[index % twinkleBaseColors.length]; const position = index * 3;
+        twinkleColors[position] = color.r * intensity; twinkleColors[position + 1] = color.g * intensity; twinkleColors[position + 2] = color.b * intensity;
+      }
+      twinkleAttribute.needsUpdate = true;
+    }
+    function updateShip(sequence) {
+      const acquisition = sequence.index > 2 ? 1 : sequence.name === 'acquire' ? clamp(sequence.local * 1.35) : 0;
+      const eased = acquisition * acquisition * (3 - 2 * acquisition);
+      cyan.opacity = eased;
+      root.visible = acquisition > 0;
+      root.scale.setScalar(.45 + eased * .37);
+      root.rotation.y = sequence.elapsed * .65 * eased;
+      root.rotation.x = Math.sin(sequence.elapsed * .8) * .08 * eased;
+      root.position.y = Math.sin(sequence.elapsed * 1.5) * .12 - .2 + (1 - eased) * .7;
+    }
+    function setCameraShot(shot, aim, position) {
+      if (!shot) {
+        aim.set(0, 0, 0); position.set(0, .15, 9);
+        return;
+      }
+      aim.set(...shot.point); root.localToWorld(aim);
+      position.copy(aim); position.y += .1; position.z += shot.distance;
+    }
+    function updateCamera(sequence) {
+      root.updateMatrixWorld(true);
+      const focus = subsystemFocus(sequence);
+      if (sequence.name === 'ready') {
+        setCameraShot(SYSTEM_LOADS[SYSTEM_LOADS.length - 1], cameraFromAim, cameraFromPosition);
+        setCameraShot(null, cameraToAim, cameraToPosition);
+        const transition = clamp(sequence.local / .28);
+        const blend = transition * transition * (3 - 2 * transition);
+        cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend);
+        cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend);
+      } else if (!focus) {
+        setCameraShot(null, cameraAim, cameraPosition);
+      } else {
+        setCameraShot(focus.previous, cameraFromAim, cameraFromPosition);
+        setCameraShot(focus.current, cameraToAim, cameraToPosition);
+        const transition = clamp(focus.blend * SYSTEM_PHASE_DURATION);
+        const blend = transition * transition * (3 - 2 * transition);
+        cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend);
+        cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend);
+      }
+      camera.position.copy(cameraPosition); camera.lookAt(cameraAim);
+    }
+    function renderScene() {
+      renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera);
+      renderer.clearDepth();
+      renderer.setScissor(SHIP_CONTENT_VIEWPORT.x, H - SHIP_CONTENT_VIEWPORT.y - SHIP_CONTENT_VIEWPORT.height, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height);
+      renderer.setScissorTest(true); renderer.render(shipScene, camera); renderer.setScissorTest(false);
+    }
+    function frame(now) {
+      const sequence = bootState(now);
+      updateStars(sequence); updateShip(sequence); updateCamera(sequence); renderScene();
+      if (state.loaded) drawHud(sequence);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

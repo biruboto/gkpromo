@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GK Font Cull</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #070b12;
+      --surface: #0d1622;
+      --surface-hover: #14243a;
+      --line: #2b4159;
+      --ink: #e7f5ff;
+      --muted: #8ba2b7;
+      --cyan: #34d9ed;
+      --green: #7be495;
+      --red: #ff7777;
+    }
+
+    * { box-sizing: border-box; }
+    body { min-width: 320px; margin: 0; background: var(--page); color: var(--ink); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    button, select { font: inherit; }
+    button { min-height: 40px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); cursor: pointer; }
+    button:hover { background: var(--surface-hover); border-color: var(--cyan); }
+    button:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    .app { width: min(1120px, 100%); min-height: 100vh; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 20px; }
+    .topbar, .footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    h1 { margin: 0; font-size: 18px; letter-spacing: .04em; }
+    .summary { color: var(--muted); font-size: 12px; }
+    .workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 260px; border: 1px solid var(--line); background: var(--surface); }
+    .preview { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .font-nav { padding: 14px 16px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+    .font-nav button { width: 38px; min-height: 34px; font-size: 19px; }
+    select { width: 100%; min-height: 34px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 4px; background: #09111b; color: var(--ink); }
+    .canvas-wrap { min-height: 360px; padding: 28px; display: grid; place-items: center; overflow: auto; background: #09111b; }
+    canvas { width: min(100%, 760px); height: auto; display: block; image-rendering: pixelated; background: #05080d; border: 1px solid #354d67; box-shadow: 0 18px 42px #0008; }
+    .font-meta { min-height: 48px; padding: 13px 16px; display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .font-meta strong { color: var(--cyan); font-weight: 600; }
+
+    .review { padding: 18px; border-left: 1px solid var(--line); display: grid; grid-template-rows: auto auto 1fr auto; align-content: start; gap: 12px; }
+    .review h2 { margin: 0; font-size: 12px; letter-spacing: .07em; }
+    .current-state { min-height: 24px; color: var(--muted); font-size: 11px; }
+    .current-state[data-state="keep"] { color: var(--green); }
+    .current-state[data-state="discard"] { color: var(--red); }
+    .decision-buttons { display: grid; gap: 8px; }
+    .decision-buttons button { min-height: 56px; font-size: 14px; font-weight: 700; }
+    .keep { border-color: #3a8454; color: var(--green); }
+    .discard { border-color: #8c4848; color: var(--red); }
+    .decision-buttons button.active { box-shadow: inset 0 0 0 1px currentColor; background: #152b25; }
+    .decision-buttons .discard.active { background: #301c21; }
+    .key { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+    .review-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .export { padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+    .export button { min-height: 34px; font-size: 11px; }
+    .clear { color: var(--muted); }
+    .status { min-height: 18px; color: var(--muted); font-size: 11px; }
+
+    @media (max-width: 720px) {
+      .app { padding: 16px; gap: 14px; }
+      .workspace { grid-template-columns: 1fr; }
+      .review { border-top: 1px solid var(--line); border-left: 0; }
+      .canvas-wrap { min-height: 280px; padding: 16px; }
+      .footer { align-items: flex-start; flex-direction: column; gap: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>GK FONT CULL</h1>
+      <output id="summary" class="summary" aria-live="polite">Loading font catalog...</output>
+    </header>
+
+    <section class="workspace" aria-label="Font review workspace">
+      <section class="preview" aria-label="Font sample">
+        <div class="font-nav">
+          <button id="previous" type="button" title="Previous font" aria-label="Previous font">&#8592;</button>
+          <select id="font-picker" aria-label="Choose a bitmap font"><option>Loading fonts...</option></select>
+          <button id="next" type="button" title="Next font" aria-label="Next font">&#8594;</button>
+        </div>
+        <div class="canvas-wrap"><canvas id="sample" width="760" height="450" aria-label="Selected font preview"></canvas></div>
+        <div class="font-meta"><span id="font-name">Loading...</span><strong id="position">0 / 0</strong></div>
+      </section>
+
+      <aside class="review" aria-label="Review controls">
+        <h2>REVIEW</h2>
+        <output id="current-state" class="current-state">UNDECIDED</output>
+        <div class="decision-buttons">
+          <button id="keep" class="keep" type="button">KEEP<span class="key">K</span></button>
+          <button id="discard" class="discard" type="button">DISCARD<span class="key">D</span></button>
+        </div>
+        <p class="review-note">Each decision is saved in this browser and advances to the next unreviewed font. Use the selector or arrow buttons to revisit any font.</p>
+        <div class="export">
+          <button id="export-kept" type="button">DOWNLOAD KEPT JSON</button>
+          <button id="clear-decisions" class="clear" type="button">CLEAR ALL DECISIONS</button>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="footer"><span class="status">K keep · D discard · Left/Right change font</span><output id="load-status" class="status" aria-live="polite"></output></footer>
+  </main>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'gk-font-cull-decisions-v1';
+      const SAMPLE_HEADLINE = [
+        'LOREM IPSUM',
+        'DOLOR SIT AMET'
+      ];
+      const SAMPLE_LINES = [
+        'consectetur adipiscing elit. Sed do',
+        'eiusmod tempor incididunt ut labore',
+        'et dolore magna aliqua.',
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
+        'The quick brown fox jumps over',
+        'the lazy dog.'
+      ];
+      const canvas = document.querySelector('#sample');
+      const ctx = canvas.getContext('2d');
+      const picker = document.querySelector('#font-picker');
+      const summary = document.querySelector('#summary');
+      const fontName = document.querySelector('#font-name');
+      const position = document.querySelector('#position');
+      const stateLabel = document.querySelector('#current-state');
+      const loadStatus = document.querySelector('#load-status');
+      const keepButton = document.querySelector('#keep');
+      const discardButton = document.querySelector('#discard');
+      let fonts = [];
+      let index = 0;
+      let fontData = null;
+      let decisions = readDecisions();
+      let requestId = 0;
+      const fontCache = new Map();
+
+      function readDecisions() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch { return {}; }
+      }
+      function saveDecisions() { localStorage.setItem(STORAGE_KEY, JSON.stringify(decisions)); }
+      function parseHeaderFont(source) {
+        const values = source.match(/0x[0-9a-f]{2}/ig) || [];
+        if (values.length < 768) throw new Error('header font data is incomplete');
+        return Uint8Array.from(values.slice(0, 768), value => Number.parseInt(value.slice(2), 16));
+      }
+      function count(state) { return Object.values(decisions).filter(value => value === state).length; }
+      function updateSummary() { summary.textContent = `${count('keep')} kept · ${count('discard')} discarded · ${fonts.length - Object.keys(decisions).length} remaining`; }
+      function drawGlyph(data, char, x, y, scale, color) {
+        const code = char.charCodeAt(0);
+        const glyph = code >= 32 && code <= 126 ? code - 32 : 0;
+        ctx.fillStyle = color;
+        for (let row = 0; row < 8; row++) {
+          const bits = data[glyph * 8 + row];
+          for (let column = 0; column < 8; column++) if (bits & (0x80 >> column)) ctx.fillRect(x + column * scale, y + row * scale, scale, scale);
+        }
+      }
+      function fitScale(data, text, maxWidth, desired) {
+        const longest = Math.max(...text.map(line => line.length));
+        return Math.max(1, Math.min(desired, Math.floor(maxWidth / Math.max(1, longest * 9))));
+      }
+      function drawText(data, text, x, y, scale, color) {
+        for (let column = 0; column < text.length; column++) drawGlyph(data, text[column], x + column * 9 * scale, y, scale, color);
+      }
+      function render() {
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = '#05080d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (!fontData) return;
+        const headlineScale = fitScale(fontData, SAMPLE_HEADLINE, canvas.width - 64, 4);
+        const bodyScale = fitScale(fontData, SAMPLE_LINES, canvas.width - 64, 2);
+        let y = 38;
+        SAMPLE_HEADLINE.forEach(line => { drawText(fontData, line, 32, y, headlineScale, '#7be495'); y += 11 * headlineScale; });
+        y = 156;
+        SAMPLE_LINES.slice(0, 3).forEach(line => { drawText(fontData, line, 32, y, bodyScale, '#e7f5ff'); y += 11 * bodyScale; });
+        y += 20;
+        drawText(fontData, SAMPLE_LINES[3], 32, y, bodyScale, '#34d9ed');
+        y += 11 * bodyScale + 20;
+        drawText(fontData, SAMPLE_LINES[4], 32, y, bodyScale, '#8ba2b7');
+        drawText(fontData, SAMPLE_LINES[5], 32, y + 11 * bodyScale, bodyScale, '#8ba2b7');
+      }
+      function updateControls() {
+        const font = fonts[index];
+        const decision = font ? decisions[font.file] : null;
+        fontName.textContent = font ? font.name : 'No font selected';
+        position.textContent = fonts.length ? `${index + 1} / ${fonts.length}` : '0 / 0';
+        stateLabel.textContent = decision ? decision.toUpperCase() : 'UNDECIDED';
+        stateLabel.dataset.state = decision || '';
+        keepButton.classList.toggle('active', decision === 'keep');
+        discardButton.classList.toggle('active', decision === 'discard');
+        picker.value = String(index);
+        updateSummary();
+      }
+      async function selectFont(nextIndex) {
+        if (!fonts.length) return;
+        index = (nextIndex + fonts.length) % fonts.length;
+        const selected = fonts[index];
+        const id = ++requestId;
+        updateControls();
+        loadStatus.textContent = `Loading ${selected.name}...`;
+        try {
+          let data = fontCache.get(selected.file);
+          if (!data) {
+            const response = await fetch(`./assets/font-data-h/${selected.file}`);
+            if (!response.ok) throw new Error(`request returned ${response.status}`);
+            data = parseHeaderFont(await response.text());
+            fontCache.set(selected.file, data);
+          }
+          if (id !== requestId) return;
+          fontData = data;
+          render();
+          loadStatus.textContent = '';
+        } catch (error) {
+          if (id !== requestId) return;
+          loadStatus.textContent = `Could not load ${selected.name}: ${error.message}`;
+        }
+      }
+      function nextUnreviewed() {
+        const offset = fonts.slice(index + 1).findIndex(font => !decisions[font.file]);
+        selectFont(offset === -1 ? index + 1 : index + offset + 1);
+      }
+      function decide(decision) {
+        const selected = fonts[index];
+        if (!selected) return;
+        decisions[selected.file] = decision;
+        saveDecisions();
+        updateControls();
+        nextUnreviewed();
+      }
+      function downloadKept() {
+        const kept = fonts.filter(font => decisions[font.file] === 'keep');
+        const blob = new Blob([JSON.stringify(kept, null, 2) + '\n'], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = 'gk-kept-fonts.json'; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      async function initialize() {
+        try {
+          const response = await fetch('./assets/font-data-h/index.json');
+          if (!response.ok) throw new Error(`font index returned ${response.status}`);
+          fonts = await response.json();
+          picker.replaceChildren(...fonts.map((font, fontIndex) => new Option(font.name, String(fontIndex))));
+          updateSummary();
+          const firstUnreviewed = fonts.findIndex(font => !decisions[font.file]);
+          selectFont(firstUnreviewed === -1 ? 0 : firstUnreviewed);
+        } catch (error) { loadStatus.textContent = `Could not load font catalog: ${error.message}`; }
+      }
+      document.querySelector('#previous').addEventListener('click', () => selectFont(index - 1));
+      document.querySelector('#next').addEventListener('click', () => selectFont(index + 1));
+      picker.addEventListener('change', () => selectFont(Number(picker.value)));
+      keepButton.addEventListener('click', () => decide('keep'));
+      discardButton.addEventListener('click', () => decide('discard'));
+      document.querySelector('#export-kept').addEventListener('click', downloadKept);
+      document.querySelector('#clear-decisions').addEventListener('click', () => {
+        if (!confirm('Clear every keep and discard decision?')) return;
+        decisions = {}; saveDecisions(); updateControls();
+      });
+      document.addEventListener('keydown', event => {
+        if (event.target.matches('select')) return;
+        if (event.key === 'k' || event.key === 'K') decide('keep');
+        else if (event.key === 'd' || event.key === 'D') decide('discard');
+        else if (event.key === 'ArrowLeft') { event.preventDefault(); selectFont(index - 1); }
+        else if (event.key === 'ArrowRight') { event.preventDefault(); selectFont(index + 1); }
+      });
+      initialize();
+    })();
+  </script>
+</body>
+</html>
