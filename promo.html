@@ -112,11 +112,13 @@
     @keyframes editor-reflect { 50% { filter: brightness(1.35); } }
     @keyframes editor-wave { 50% { transform: translateY(-.35em); } }
     @keyframes editor-sweep { 50% { color: #ffdf4d; } }
+    @keyframes editor-spin { 0%, 2% { transform: scaleX(1); } 5% { transform: scaleX(.14); } 8% { transform: scaleX(-1); } 11% { transform: scaleX(.14); } 14%, 100% { transform: scaleX(1); } }
     .editor-effect-blink { animation: editor-blink 1s steps(1, end) infinite; }
     .editor-effect-flash { animation: editor-flash .5s steps(1, end) infinite; }
     .editor-effect-reflect { animation: editor-reflect .75s steps(1, end) infinite; }
     .editor-effect-wave { display: inline-block; animation: editor-wave .5s steps(2, end) infinite; }
     .editor-effect-sweep { animation: editor-sweep 1s steps(1, end) infinite; }
+    .editor-effect-spin { display: inline-block; transform-origin: center; animation: editor-spin 6.4s steps(4, end) infinite; }
     button { min-height: 32px; border: 1px solid #3d5974; border-radius: 3px; background: #102031; color: var(--ink); cursor: pointer; font: inherit; }
     button:hover { background: #17304a; border-color: var(--accent); } button.primary, button[aria-pressed="true"] { border-color: var(--accent); background: #003948; }
     button:disabled { cursor: not-allowed; opacity: .35; } button:disabled:hover { border-color: #3d5974; background: #102031; }
@@ -150,8 +152,8 @@
       <details class="control-section">
         <summary>CRT EMULATION</summary>
         <div class="section-body">
-          <fieldset><label for="crtLook">CRT LOOK</label><select id="crtLook"><option value="custom" selected>Custom</option><option value="arcade">Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
-          <fieldset><label for="crt">CRT TREATMENT</label><select id="crt"><option value="off" selected>Off</option><option value="soft">CRT-Pi Soft</option><option value="strong">CRT-Pi Strong</option></select></fieldset>
+          <fieldset><label for="crtLook">CRT PRESET</label><select id="crtLook"><option value="custom" selected>Custom</option><option value="arcade">Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
+          <fieldset><label for="crt">MODE</label><select id="crt"><option value="off" selected>Off</option><option value="soft">CRT-Pi Soft</option><option value="strong">CRT-Pi Strong</option></select></fieldset>
           <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve">100%</output></label><input id="crtCurve" type="range" min="0" max="150" step="1" value="100"></fieldset>
           <fieldset><label class="range-label" for="crtRgb">RGB SEPARATION <output data-crt-output="rgb">45%</output></label><input id="crtRgb" type="range" min="0" max="100" step="1" value="45"></fieldset>
           <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline">100%</output></label><input id="crtScanline" type="range" min="0" max="100" step="1" value="100"></fieldset>
@@ -231,12 +233,12 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=221'],
-      ['fonts', './promo/fonts.js?v=221'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=221'],
-      ['renderer', './promo/renderer.js?v=221'],
-      ['rich text editor', './promo/rich-text-editor.js?v=221'],
-      ['templates', './promo/templates.js?v=221']
+      ['CRT', './promo/crt.js?v=224'],
+      ['fonts', './promo/fonts.js?v=224'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=224'],
+      ['renderer', './promo/renderer.js?v=224'],
+      ['rich text editor', './promo/rich-text-editor.js?v=224'],
+      ['templates', './promo/templates.js?v=224']
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -246,7 +248,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=221');
+      await import('./promo/app.js?v=224');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

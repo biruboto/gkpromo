@@ -16,6 +16,7 @@ export function createPromoRenderer({
   const HOURS_SCALE = 2;
   const HOURS_ADDRESS_GAP = 4;
   const TICKER_SPEED = 28, REVEAL_PAUSE = .7, MOTION_SPEED = 1;
+  const SPIN_PERIOD = 6.4, SPIN_STAGGER = .12, SPIN_DURATION = .72;
   const SHADOW_ALPHA = 1;
   const glyphCache = new Map();
   const glyphBoundsCache = new Map();
@@ -189,21 +190,33 @@ export function createPromoRenderer({
       const glyphColor = isSwept || glyphLayout.effects.includes('flash') && Math.floor(animationState.time * 2) % 2 ? activeHighlightColor : glyphLayout.effects.includes('highlight') ? activeHighlightColor : color;
       const waveOffset = glyphLayout.effects.includes('wave') ? Math.round(Math.sin(animationState.time * 8 - glyphIndex * .85) * 2) * glyphScale : 0;
       const glyphY = y + glyphLayout.yOffset + waveOffset;
+      const spinElapsed = ((animationState.time - glyphIndex * SPIN_STAGGER) % SPIN_PERIOD + SPIN_PERIOD) % SPIN_PERIOD;
+      const isSpinning = glyphLayout.effects.includes('spin') && spinElapsed < SPIN_DURATION;
+      const spinAngle = isSpinning ? spinElapsed / SPIN_DURATION * Math.PI * 2 : 0;
+      const spinRatio = isSpinning ? .1 + .9 * Math.abs(Math.cos(spinAngle)) : 1;
+      const spinReversed = isSpinning && Math.cos(spinAngle) < 0;
+      const drawGlyphImage = (glyphImage, drawX, drawY) => {
+        const glyphWidth = 8 * glyphScale, spinWidth = Math.max(1, Math.round(glyphWidth * spinRatio));
+        const spinX = Math.round(drawX + (glyphWidth - spinWidth) / 2);
+        if (!spinReversed) { ctx.drawImage(glyphImage, spinX, drawY, spinWidth, 8 * glyphScale); return; }
+        ctx.save(); ctx.translate(spinX + spinWidth, drawY); ctx.scale(-1, 1);
+        ctx.drawImage(glyphImage, 0, 0, spinWidth, 8 * glyphScale); ctx.restore();
+      };
       const image = glyphLayout.effects.includes('reflect') ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
       const strokeImage = glyphLayout.effects.includes('stroke') ? glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, activeStrokeColor) : glyph(glyphLayout.character, activeStrokeColor, font, fontKey) : null;
       if (strokeImage) {
         const strokeThickness = scale;
         for (const offsetY of [-1, 0, 1]) for (const offsetX of [-1, 0, 1]) {
-          if (offsetX || offsetY) ctx.drawImage(strokeImage, start + glyphLayout.x + offsetX * strokeThickness, glyphY + offsetY * strokeThickness, 8 * glyphScale, 8 * glyphScale);
+          if (offsetX || offsetY) drawGlyphImage(strokeImage, start + glyphLayout.x + offsetX * strokeThickness, glyphY + offsetY * strokeThickness);
         }
       }
       if (forceShadow || glyphLayout.effects.includes('shadow')) {
         const shadowImage = glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, shadowColor) : glyph(glyphLayout.character, shadowColor, font, fontKey);
         ctx.save(); ctx.globalAlpha *= SHADOW_ALPHA;
-        ctx.drawImage(shadowImage, start + glyphLayout.x + glyphScale, glyphY + glyphScale, 8 * glyphScale, 8 * glyphScale);
+        drawGlyphImage(shadowImage, start + glyphLayout.x + glyphScale, glyphY + glyphScale);
         ctx.restore();
       }
-      ctx.drawImage(image, start + glyphLayout.x, glyphY, 8 * glyphScale, 8 * glyphScale);
+      drawGlyphImage(image, start + glyphLayout.x, glyphY);
       if (glyphLayout.underlineRun) {
         const segment = underlineSegments.at(-1);
         const glyphStart = Math.round(start + glyphLayout.x);

@@ -32,7 +32,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span');
-        span.dataset.effect = effect; if (effect === 'shadow') span.className = 'editor-effect-shadow'; else if (effect === 'highlight') span.className = 'editor-effect-highlight'; else if (effect === 'underline') span.className = 'editor-effect-underline'; else if (effect === 'superscript') span.className = 'editor-effect-superscript'; else if (effect === 'subscript') span.className = 'editor-effect-subscript'; else if (effect === 'stroke') span.className = 'editor-effect-stroke'; else if (['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect)) span.className = `editor-effect-${effect}`;
+        span.dataset.effect = effect; if (effect === 'shadow') span.className = 'editor-effect-shadow'; else if (effect === 'highlight') span.className = 'editor-effect-highlight'; else if (effect === 'underline') span.className = 'editor-effect-underline'; else if (effect === 'superscript') span.className = 'editor-effect-superscript'; else if (effect === 'subscript') span.className = 'editor-effect-subscript'; else if (effect === 'stroke') span.className = 'editor-effect-stroke'; else if (['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect)) span.className = `editor-effect-${effect}`;
         targets.at(-1).append(span); targets.push(span);
       } else {
         const glyphData = legacyGlyphs.get(marker);
@@ -53,7 +53,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
         targets.at(-1).append(span); targets.push(span);
       } else appendText(match[0]);
       position = expression.lastIndex;
@@ -69,7 +69,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
         targets.at(-1).append(span); targets.push(span);
       } else appendText(match[0]);
       position = expression.lastIndex;
@@ -85,7 +85,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
         targets.at(-1).append(span); targets.push(span);
       } else {
         const glyphData = legacyGlyphs.get(marker);
@@ -108,7 +108,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
         targets.at(-1).append(span); targets.push(span);
       } else {
         const glyphData = legacyGlyphs.get(marker);

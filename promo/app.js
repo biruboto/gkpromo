@@ -1,9 +1,9 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=221';
-import { createFontManager } from './fonts.js?v=221';
-import { createGameBackgrounds } from './game-backgrounds.js?v=221';
-import { createPromoRenderer } from './renderer.js?v=221';
-import { createRichTextEditor } from './rich-text-editor.js?v=221';
-import { populateTemplateSelect, templates } from './templates.js?v=221';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=224';
+import { createFontManager } from './fonts.js?v=224';
+import { createGameBackgrounds } from './game-backgrounds.js?v=224';
+import { createPromoRenderer } from './renderer.js?v=224';
+import { createRichTextEditor } from './rich-text-editor.js?v=224';
+import { populateTemplateSelect, templates } from './templates.js?v=224';
 
 const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
@@ -130,7 +130,7 @@ const {
 controls.theme.addEventListener('change', syncThemePreview); syncThemePreview();
 controls.crtLook.addEventListener('change', () => {
   applyCrtLook(controls.crtLook.value);
-  if (controls.crtLook.value !== 'custom') controls.status.textContent = `${controls.crtLook.selectedOptions[0].textContent} CRT look applied.`;
+  if (controls.crtLook.value !== 'custom') controls.status.textContent = `${controls.crtLook.selectedOptions[0].textContent} CRT preset applied.`;
 });
 controls.crt.addEventListener('change', () => { controls.crtLook.value = 'custom'; });
 Object.values(CRT_CONTROL_IDS).forEach(controlName => controls[controlName].addEventListener('input', () => { controls.crtLook.value = 'custom'; syncCrtControls(); }));
@@ -282,10 +282,10 @@ function populateToolbars() {
     const section = toolbar.dataset.animationToolbar;
     const buttons = Array.from({ length: 7 }, (_, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'animation-slot';
-      if (index < 5) {
-        const animation = ['blink', 'flash', 'reflect', 'wave', 'sweep'][index];
-        const icon = { blink: 'eye-off', flash: 'contrast', reflect: 'scan-line', wave: 'waves', sweep: 'move-right' }[animation];
-        const label = { blink: 'blink', flash: 'alternate text and highlight', reflect: 'reflect', wave: 'wave', sweep: 'sweep highlight' }[animation];
+      if (index < 6) {
+        const animation = ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'][index];
+        const icon = { blink: 'eye-off', flash: 'contrast', reflect: 'scan-line', wave: 'waves', sweep: 'move-right', spin: 'flip-horizontal-2' }[animation];
+        const label = { blink: 'blink', flash: 'alternate text and highlight', reflect: 'reflect', wave: 'wave', sweep: 'sweep highlight', spin: 'spin across selected text' }[animation];
         button.dataset.animationControl = animation; button.title = `${section} ${label} selected text`;
         button.setAttribute('aria-label', `${section} ${label} selected text`);
         const iconElement = document.createElement('i'); iconElement.dataset.lucide = icon; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = animation[0].toUpperCase(); button.append(iconElement);
