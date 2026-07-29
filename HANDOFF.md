@@ -5,7 +5,7 @@
 - `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, orchestrated by `promo/app.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=225` at this handoff).
+- When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=228` at this handoff).
 
 ## HUD (`hud.html`)
 

@@ -1,9 +1,9 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=225';
-import { createFontManager } from './fonts.js?v=225';
-import { createGameBackgrounds } from './game-backgrounds.js?v=225';
-import { createPromoRenderer } from './renderer.js?v=225';
-import { createRichTextEditor } from './rich-text-editor.js?v=225';
-import { populateTemplateSelect, templates } from './templates.js?v=225';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=228';
+import { createFontManager } from './fonts.js?v=228';
+import { createGameBackgrounds } from './game-backgrounds.js?v=228';
+import { createPromoRenderer } from './renderer.js?v=228';
+import { createRichTextEditor } from './rich-text-editor.js?v=228';
+import { populateTemplateSelect, templates } from './templates.js?v=228';
 
 const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
@@ -18,7 +18,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
@@ -89,7 +89,7 @@ const moonLanderImages = Object.fromEntries(Object.entries({
   mountain: './assets/images/mlmtn.png',
   city: './assets/images/mlcity.png'
 }).map(([name, source]) => { const image = new Image(); image.src = source; return [name, image]; }));
-let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null;
+let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null, titleFont = null;
 const contentVisibility = { detail: true, cta: false, hours: true };
 const scrollModes = { detail: 'off', hours: 'reveal' };
 const textAlignments = { header: 'center', detail: 'center', body: 'left', cta: 'center', footer: 'center' };
@@ -106,6 +106,7 @@ const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createF
     else if (target === 'cta') ctaFont = font;
     else if (target === 'footer') footerFont = font;
     else if (target === 'hours') hoursFont = font;
+    else if (target === 'title') { titleFont = font; renderComposerTitle(); }
     else bodyFont = font;
   }
 });
@@ -123,6 +124,44 @@ function drawBorderGlyphPreviews() {
     const glyphData = legacyGlyphs.get(BODY_BORDER_GLYPHS[button.dataset.borderStyle]);
     const glyphCanvas = button.querySelector('canvas');
     if (glyphData && glyphCanvas) promoRenderer.drawLegacyGlyphPreview(glyphCanvas, glyphData, colors[controls.theme.value].text);
+  });
+}
+function renderComposerTitle() {
+  if (!titleFont) return;
+  const title = 'GK Promo Composer';
+  const canvasElement = controls.composerTitle;
+  const titleContext = canvasElement.getContext('2d');
+  const glyphBounds = character => {
+    const index = character.codePointAt(0) - 0x20;
+    let left = 8, right = -1, top = 8, bottom = -1;
+    for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) {
+      if ((titleFont[index * 8 + row] || 0) & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); top = Math.min(top, row); bottom = Math.max(bottom, row); }
+    }
+    return right < 0 ? null : { left, right, top, bottom, width: right - left + 1 };
+  };
+  const layout = scale => {
+    let width = 0, previousWasGlyph = false;
+    const glyphs = [...title].map(character => {
+      if (character === ' ') { width += 4 * scale; previousWasGlyph = false; return null; }
+      const bounds = glyphBounds(character);
+      if (!bounds) return null;
+      if (previousWasGlyph) width += scale;
+      const glyph = { character, bounds, x: width };
+      width += bounds.width * scale; previousWasGlyph = true;
+      return glyph;
+    }).filter(Boolean);
+    return { glyphs, width };
+  };
+  let scale = 2, titleLayout = layout(scale);
+  if (titleLayout.width > canvasElement.width) { scale = 1; titleLayout = layout(scale); }
+  titleContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  titleContext.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#eaf9ff';
+  const y = Math.floor((canvasElement.height - 8 * scale) / 2);
+  titleLayout.glyphs.forEach(({ character, bounds, x }) => {
+    const index = character.codePointAt(0) - 0x20;
+    for (let row = bounds.top; row <= bounds.bottom; row++) for (let column = bounds.left; column <= bounds.right; column++) {
+      if ((titleFont[index * 8 + row] || 0) & (128 >> column)) titleContext.fillRect(x + (column - bounds.left) * scale, y + row * scale, scale, scale);
+    }
   });
 }
 const richTextEditor = createRichTextEditor({
@@ -495,7 +534,8 @@ async function initializeFonts() {
     const matinee = fonts.find(font => font.name === 'Matinee') || fonts.find(font => font.name === 'Reactor') || fonts[0];
     await Promise.all([
       ...[['font', 'body'], ['headerFont', 'header'], ['detailFont', 'detail'], ['ctaFont', 'cta'], ['footerFont', 'footer']].map(([controlName, target]) => loadSelectedFont(controlName, target, false)),
-      loadFont(matinee.file, matinee.name, 'hours', false)
+      loadFont(matinee.file, matinee.name, 'hours', false),
+      loadFont('293.h', 'Precinct 90', 'title', false)
     ]);
     await applyTemplate(templates[controls.template.value]);
     controls.projectSave.disabled = false;
