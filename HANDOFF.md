@@ -5,7 +5,7 @@
 - `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, rendered by `promo.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing `promo.js`, advance its cache-busting query in `promo.html` (`promo.js?v=198` at this handoff).
+- When editing `promo.js`, advance its cache-busting query in `promo.html` (`promo.js?v=201` at this handoff).
 
 ## HUD (`hud.html`)
 
@@ -27,7 +27,7 @@
 - The detail field collapses to its rendered copy height plus an 8-pixel buffer. The body begins 8 pixels below it when shown, or 24 pixels below its position when hidden, and expands to the footer whenever CTA is hidden. With CTA enabled, the body grows to fit up to 10 rendered lines before the CTA is placed beneath it.
 - CTA copy wraps to at most two nonempty lines inside its button without truncating its rich-text source. A single Enter creates a preserved CTA line break; a two-line CTA grows its own field without shifting the body or footer.
 - CTA buttons render 8 canvas pixels below their selected vertical alignment point.
-- CRT Treatment is an optional WebGL final pass with `Off`, `CRT-Pi Soft`, and `CRT-Pi Strong` presets. Its curated CRT Look choices are Arcade Cabinet, Broadcast Monitor, Warm Tube, and Chroma Shift; editing a CRT control returns the selection to Custom. Arcade Cabinet sets Curvature `130%`, RGB Separation `50%`, Scanline Depth `40%`, Bloom `120%`, and Phosphor Glow `170%`. It transforms the clean 540x675 composition into the 1080x1350 export frame, then uses that same frame for preview, PNG, and MP4 output. Its Curvature, RGB Separation, Scanline Depth, Bloom, and Phosphor Glow controls are direct shader parameters. It uses an original shader modeled on CRT-Pi behavior, not copied RetroArch source. Text boundaries remain preview-only and are not treated or exported. If WebGL is unavailable, rendering falls back to the clean composition.
+- CRT Treatment is an optional WebGL final pass with `Off`, `CRT-Pi Soft`, and `CRT-Pi Strong` presets. Its curated CRT Look choices are Arcade Cabinet, Broadcast Monitor, Warm Tube, and Chroma Shift; editing a CRT control returns the selection to Custom. Arcade Cabinet sets Curvature `130%`, RGB Separation `50%`, Scanline Depth `40%`, Aperture Mask `50%`, Vignette `120%`, Signal Drift `7%`, Bloom `120%`, and Phosphor Glow `170%`. It transforms the clean 540x675 composition into the 1080x1350 export frame, then uses that same frame for preview, PNG, and MP4 output. Its Curvature, RGB Separation, Scanline Depth, Aperture Mask, Vignette, Signal Drift, Bloom, and Phosphor Glow controls are direct shader parameters. It uses an original shader modeled on CRT-Pi behavior, not copied RetroArch source. Text boundaries remain preview-only and are not treated or exported. If WebGL is unavailable, rendering falls back to the clean composition.
 
 ## Promo Defaults: `FREE PLAY`
 

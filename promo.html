@@ -125,7 +125,7 @@
 <body>
   <main class="app">
     <aside class="dock left-dock" aria-label="Primary promotion controls">
-      <div><h1>GK Promo Composer</h1><p class="eyebrow">Portrait animation for feed promotions</p></div>
+      <div><h1>GK Promo Composer</h1></div>
       <details class="control-section">
         <summary>BASIC SETTINGS</summary>
         <div class="section-body">
@@ -145,6 +145,9 @@
           <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve">100%</output></label><input id="crtCurve" type="range" min="0" max="150" step="1" value="100"></fieldset>
           <fieldset><label class="range-label" for="crtRgb">RGB SEPARATION <output data-crt-output="rgb">45%</output></label><input id="crtRgb" type="range" min="0" max="100" step="1" value="45"></fieldset>
           <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline">100%</output></label><input id="crtScanline" type="range" min="0" max="100" step="1" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtMask">APERTURE MASK <output data-crt-output="mask">45%</output></label><input id="crtMask" type="range" min="0" max="100" step="1" value="45"></fieldset>
+          <fieldset><label class="range-label" for="crtVignette">VIGNETTE <output data-crt-output="vignette">100%</output></label><input id="crtVignette" type="range" min="0" max="200" step="1" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtDrift">SIGNAL DRIFT <output data-crt-output="drift">0%</output></label><input id="crtDrift" type="range" min="0" max="100" step="1" value="0"></fieldset>
           <fieldset><label class="range-label" for="crtBloom">BLOOM <output data-crt-output="bloom">100%</output></label><input id="crtBloom" type="range" min="0" max="150" step="1" value="100"></fieldset>
           <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow">100%</output></label><input id="crtGlow" type="range" min="0" max="200" step="1" value="100"></fieldset>
         </div>
@@ -210,6 +213,6 @@ www.groundkontrol.com</textarea>
     </aside>
   </main>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
-  <script src="./promo.js?v=198" defer></script>
+  <script src="./promo.js?v=201" defer></script>
 </body>
 </html>

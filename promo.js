@@ -24,7 +24,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtBloom', 'crtGlow', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 const SCALE_STEPS = [1, 2, 4];
 const SHADOW_ALPHA = 1;
@@ -34,12 +34,12 @@ const fontFavorites = new Set((() => { try { return JSON.parse(localStorage.getI
 const fontLoadVersions = new Map();
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const CRT_STRENGTHS = { soft: .58, strong: 1 };
-const CRT_CONTROL_IDS = { curve: 'crtCurve', rgb: 'crtRgb', scanline: 'crtScanline', bloom: 'crtBloom', glow: 'crtGlow' };
+const CRT_CONTROL_IDS = { curve: 'crtCurve', rgb: 'crtRgb', scanline: 'crtScanline', mask: 'crtMask', vignette: 'crtVignette', drift: 'crtDrift', bloom: 'crtBloom', glow: 'crtGlow' };
 const CRT_LOOKS = {
-  arcade: { treatment: 'strong', controls: { curve: '130', rgb: '50', scanline: '40', bloom: '120', glow: '170' } },
-  broadcast: { treatment: 'soft', controls: { curve: '10', rgb: '20', scanline: '30', bloom: '65', glow: '65' } },
-  tube: { treatment: 'strong', controls: { curve: '88', rgb: '30', scanline: '58', bloom: '135', glow: '180' } },
-  chroma: { treatment: 'soft', controls: { curve: '35', rgb: '88', scanline: '44', bloom: '85', glow: '95' } }
+  arcade: { treatment: 'strong', controls: { curve: '130', rgb: '50', scanline: '40', mask: '50', vignette: '120', drift: '7', bloom: '120', glow: '170' } },
+  broadcast: { treatment: 'soft', controls: { curve: '10', rgb: '20', scanline: '30', mask: '45', vignette: '100', drift: '0', bloom: '65', glow: '65' } },
+  tube: { treatment: 'strong', controls: { curve: '88', rgb: '30', scanline: '58', mask: '45', vignette: '100', drift: '0', bloom: '135', glow: '180' } },
+  chroma: { treatment: 'soft', controls: { curve: '35', rgb: '88', scanline: '44', mask: '45', vignette: '100', drift: '0', bloom: '85', glow: '95' } }
 };
 const CRT_VERTEX_SHADER = `
   attribute vec2 aPosition;
@@ -59,8 +59,12 @@ const CRT_FRAGMENT_SHADER = `
   uniform float uCurve;
   uniform float uSeparation;
   uniform float uScanlines;
+  uniform float uMask;
+  uniform float uVignette;
+  uniform float uDrift;
   uniform float uBloom;
   uniform float uGlow;
+  uniform float uTime;
 
   vec3 sampleFrame(vec2 coordinate) {
     return texture2D(uSource, clamp(coordinate, 0.0, 1.0)).rgb;
@@ -80,6 +84,7 @@ const CRT_FRAGMENT_SHADER = `
     vec2 sourceCoord = vec2(warped.x / outputAspect, warped.y) * .5 + .5;
     float edge = 1.0 - smoothstep(.97, 1.05, max(abs(warped.x / outputAspect), abs(warped.y)));
     vec2 texel = 1.0 / uSourceSize;
+    sourceCoord.x += sin(sourceCoord.y * 190.0 + uTime * 5.0) * texel.x * 2.0 * uStrength * uDrift;
     vec3 center = sampleFrame(sourceCoord);
     vec3 horizontal = (sampleFrame(sourceCoord - vec2(texel.x, 0.0)) + center * 2.0 + sampleFrame(sourceCoord + vec2(texel.x, 0.0))) * .25;
     vec3 bloom = (brightFrame(sourceCoord - vec2(texel.x, 0.0)) + brightFrame(sourceCoord + vec2(texel.x, 0.0)) + brightFrame(sourceCoord - vec2(0.0, texel.y)) + brightFrame(sourceCoord + vec2(0.0, texel.y))) * .25;
@@ -100,9 +105,10 @@ const CRT_FRAGMENT_SHADER = `
     if (triad < 1.0) mask.r = 1.0;
     else if (triad < 2.0) mask.g = 1.0;
     else mask.b = 1.0;
-    mask = mix(vec3(1.0), mask, .45 * uStrength);
-    float vignette = 1.0 - .16 * uStrength * uCurve * smoothstep(.2, 1.55, radius);
-    color *= beam * mask * vignette * edge;
+    mask = mix(vec3(1.0), mask, uMask * uStrength);
+    float vignette = 1.0 - .16 * uStrength * uCurve * uVignette * smoothstep(.2, 1.55, radius);
+    float signalRoll = 1.0 + sin(sourceCoord.y * 14.0 - uTime * 2.0) * .035 * uStrength * uDrift;
+    color *= beam * mask * vignette * signalRoll * edge;
     color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
     gl_FragColor = vec4(color, 1.0);
   }
@@ -184,7 +190,7 @@ const templates = {
     theme: 'neon', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     headline: 'Arcade Events This Week', detail: '[[effect:underline]]July 20-26[[/effect]]',
     body: '[[effect:highlight]]Monday 7/20[[/effect]]\nMario Kart World Tournament + Killer Queen Community Night\n[[effect:highlight]]Tuesday 7/21[[/effect]]\nLX Entertainment Night: UFO 50\n[[effect:highlight]]Wednesday 7/22[[/effect]]\nElectropop/Chiptune Show\nCrunk Witch + Tonight We Launch!\n[[effect:highlight]]Sunday 7/26[[/effect]]\nSamurai Showdown II Tournament',
-    cta: '[[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]]SUMMER PROMO[[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]]\n50% OFF ALL GAMES NOON-5PM', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
+    cta: '[[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]]   SUMMER PROMO   [[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]]\n50% OFF ALL GAMES NOON-5PM', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
     scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
     alignments: { header: 'center', detail: 'center', body: 'center', cta: 'center', footer: 'center' },
     verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'center', footer: 'bottom' },
@@ -585,8 +591,12 @@ function createCrtRenderer() {
       curve: gl.getUniformLocation(program, 'uCurve'),
       separation: gl.getUniformLocation(program, 'uSeparation'),
       scanlines: gl.getUniformLocation(program, 'uScanlines'),
+      mask: gl.getUniformLocation(program, 'uMask'),
+      vignette: gl.getUniformLocation(program, 'uVignette'),
+      drift: gl.getUniformLocation(program, 'uDrift'),
       bloom: gl.getUniformLocation(program, 'uBloom'),
-      glow: gl.getUniformLocation(program, 'uGlow')
+      glow: gl.getUniformLocation(program, 'uGlow'),
+      time: gl.getUniformLocation(program, 'uTime')
     };
   } catch (error) {
     console.warn('CRT renderer unavailable:', error);
@@ -608,8 +618,9 @@ function renderCrtPiFrame() {
   gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
   gl.uniform1i(source, 0); gl.uniform2f(sourceSize, W, H); gl.uniform2f(outputSize, EXPORT_W, EXPORT_H); gl.uniform1f(renderer.strength, strength);
   gl.uniform1f(renderer.curve, crtSetting('curve')); gl.uniform1f(renderer.separation, crtSetting('rgb'));
-  gl.uniform1f(renderer.scanlines, crtSetting('scanline')); gl.uniform1f(renderer.bloom, crtSetting('bloom'));
-  gl.uniform1f(renderer.glow, crtSetting('glow'));
+  gl.uniform1f(renderer.scanlines, crtSetting('scanline')); gl.uniform1f(renderer.mask, crtSetting('mask'));
+  gl.uniform1f(renderer.vignette, crtSetting('vignette')); gl.uniform1f(renderer.drift, crtSetting('drift'));
+  gl.uniform1f(renderer.bloom, crtSetting('bloom')); gl.uniform1f(renderer.glow, crtSetting('glow')); gl.uniform1f(renderer.time, activeAnimationTime);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   return crtCanvas;
 }
