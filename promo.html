@@ -87,6 +87,7 @@
     .source-field { display: none; }
     .rich-editor { width: 100%; min-height: 92px; padding: 7px 8px; overflow-wrap: anywhere; white-space: pre-wrap; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--ink); font: inherit; line-height: 1.45; }
     .inline-rich-editor { min-height: 32px; padding: 7px 8px; overflow: hidden; white-space: pre; }
+    .cta-rich-editor { min-height: 46px; overflow-wrap: anywhere; white-space: pre-wrap; }
     .field-heading > .rich-editor { flex: 1 1 auto; min-width: 0; }
     .rich-editor:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
     .editor-glyph { display: inline; margin: 0; color: inherit; font: inherit; }
@@ -95,6 +96,7 @@
     .editor-effect-highlight { color: #ffdf4d; }
     .editor-effect-underline { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
     .editor-effect-superscript { position: relative; top: -.4em; font-size: 50%; }
+    .editor-effect-subscript { font-size: 50%; }
     .editor-effect-stroke { text-shadow: -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, -1px 0 0 #000, 1px 0 0 #000, -1px 1px 0 #000, 0 1px 0 #000, 1px 1px 0 #000; }
     @keyframes editor-blink { 50% { visibility: hidden; } }
     @keyframes editor-flash { 50% { color: #ffdf4d; } }
@@ -127,7 +129,7 @@
       <details class="control-section">
         <summary>BASIC SETTINGS</summary>
         <div class="section-body">
-          <fieldset><label for="template">TEMPLATE</label><select id="template"><option value="free-play" selected>FREE PLAY</option></select></fieldset>
+          <fieldset><label for="template">TEMPLATE</label><select id="template"><option value="free-play" selected>FREE PLAY</option><option value="arcade-events">ARCADE EVENTS</option></select></fieldset>
           <div class="theme-row">
             <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
@@ -138,7 +140,6 @@
       <details class="control-section">
         <summary>COMPOSITION</summary>
         <div class="section-body">
-          <fieldset><label for="speed">MOTION</label><select id="speed"><option value="0.65">Slow</option><option value="1" selected>Standard</option><option value="1.5">Fast</option></select></fieldset>
           <fieldset><label for="crtLook">CRT LOOK</label><select id="crtLook"><option value="custom" selected>Custom</option><option value="arcade">Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
           <fieldset><label for="crt">CRT TREATMENT</label><select id="crt"><option value="off" selected>Off</option><option value="soft">CRT-Pi Soft</option><option value="strong">CRT-Pi Strong</option></select></fieldset>
           <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve">100%</output></label><input id="crtCurve" type="range" min="0" max="150" step="1" value="100"></fieldset>
@@ -146,7 +147,6 @@
           <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline">100%</output></label><input id="crtScanline" type="range" min="0" max="100" step="1" value="100"></fieldset>
           <fieldset><label class="range-label" for="crtBloom">BLOOM <output data-crt-output="bloom">100%</output></label><input id="crtBloom" type="range" min="0" max="150" step="1" value="100"></fieldset>
           <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow">100%</output></label><input id="crtGlow" type="range" min="0" max="200" step="1" value="100"></fieldset>
-          <button id="refresh" type="button">NEW STAR FIELD</button>
         </div>
       </details>
       <div class="actions"><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div>
@@ -163,12 +163,6 @@
         <div class="section-body">
           <fieldset><label for="logo">MARK</label><select id="logo"><option value="pixel">GK Pixel</option><option value="plain">GK Plain</option><option value="gradient">GK Gradient</option></select></fieldset>
           <fieldset class="toggle-field"><label for="classic">CLASSIC ARCADE</label><input id="classic" type="checkbox" checked></fieldset>
-        </div>
-      </details>
-      <details class="control-section">
-        <summary>TRANSMISSION</summary>
-        <div class="section-body">
-          <fieldset class="toggle-field"><label for="transmission">SHOW TRANSMISSION</label><input id="transmission" type="checkbox"></fieldset>
         </div>
       </details>
       <details class="control-section">
@@ -200,7 +194,7 @@
         <summary>CALL TO ACTION</summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="ctaFont" aria-label="Call to action font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="ctaScale" type="hidden" value="0"><div class="scale-toggle" data-scale-toggle="ctaScale" role="group" aria-label="Call to action text scale"><button type="button" data-scale-value="0" aria-pressed="true">1x</button><button type="button" data-scale-value="1" aria-pressed="false">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="cta"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="cta"></div></div></div>
-          <div class="field-heading"><label class="visually-hidden" for="cta">Call to action copy</label><input id="cta" maxlength="30" value="JOIN THE SIGNAL"><button id="ctaToggle" type="button" aria-pressed="false"></button></div>
+          <div class="field-heading"><label class="visually-hidden" for="ctaEditor">Call to action copy</label><div id="ctaEditor" class="rich-editor cta-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Call to action copy"></div><textarea id="cta" class="source-field" aria-hidden="true" tabindex="-1">JOIN THE SIGNAL</textarea><button id="ctaToggle" type="button" aria-pressed="false"></button></div>
         </div>
       </details>
       <details class="control-section">
@@ -216,6 +210,6 @@ www.groundkontrol.com</textarea>
     </aside>
   </main>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
-  <script src="./promo.js?v=168" defer></script>
+  <script src="./promo.js?v=198" defer></script>
 </body>
 </html>

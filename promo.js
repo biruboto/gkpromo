@@ -1,19 +1,17 @@
 const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
 const HEADER_LOGO_Y = 24, CLASSIC_ARCADE_Y = 74;
-const COPY_TOP_Y = 160, TEXT_FIELD_X = 24, TEXT_FIELD_WIDTH = W - 48;
+const COPY_TOP_Y = 120, TEXT_FIELD_X = 24, TEXT_FIELD_WIDTH = W - 48;
 const BODY_FIELD_X = TEXT_FIELD_X + 8, BODY_FIELD_WIDTH = TEXT_FIELD_WIDTH - 12;
 const HEADER_FIELD_HEIGHT = 80, DETAIL_FIELD_HEIGHT = 48, BODY_FIELD_HEIGHT = 192, CTA_FIELD_HEIGHT = 64;
+const MAX_BODY_LINES_WITH_CTA = 10;
+const CTA_VERTICAL_OFFSET = 8;
+const EMPTY_DETAIL_BODY_GAP = 24;
 const FOOTER_FIELD_Y = 572, FOOTER_FIELD_HEIGHT = 76;
 const FOOTER_TEXT_WIDTH = 414;
 const HOURS_SCALE = 2;
 const HOURS_ADDRESS_GAP = 4;
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
-const TICKER_SPEED = 28, REVEAL_PAUSE = .7;
-const TRANSMISSION_Y = 108, TRANSMISSION_OSCILLATOR_X = 40, TRANSMISSION_TEXT_X = 82;
-const TRANSMISSION_PIXEL_SCALE = 2;
-const TRANSMISSION_RECEIVE_COLUMNS = 14, TRANSMISSION_DECODE_COLUMNS = 5;
-const TRANSMISSION_ANIMATION_HEIGHT = 8;
-const TRANSMISSION_ANIMATION_ROWS = TRANSMISSION_ANIMATION_HEIGHT / TRANSMISSION_PIXEL_SCALE;
+const TICKER_SPEED = 28, REVEAL_PAUSE = .7, MOTION_SPEED = 1;
 const canvas = document.querySelector('#preview');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
@@ -26,7 +24,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'transmission', 'theme', 'themePreview', 'template', 'boundaries', 'speed', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtBloom', 'crtGlow', 'refresh', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtBloom', 'crtGlow', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 const SCALE_STEPS = [1, 2, 4];
 const SHADOW_ALPHA = 1;
@@ -38,7 +36,7 @@ const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const CRT_STRENGTHS = { soft: .58, strong: 1 };
 const CRT_CONTROL_IDS = { curve: 'crtCurve', rgb: 'crtRgb', scanline: 'crtScanline', bloom: 'crtBloom', glow: 'crtGlow' };
 const CRT_LOOKS = {
-  arcade: { treatment: 'strong', controls: { curve: '118', rgb: '18', scanline: '72', bloom: '120', glow: '150' } },
+  arcade: { treatment: 'strong', controls: { curve: '130', rgb: '50', scanline: '40', bloom: '120', glow: '170' } },
   broadcast: { treatment: 'soft', controls: { curve: '10', rgb: '20', scanline: '30', bloom: '65', glow: '65' } },
   tube: { treatment: 'strong', controls: { curve: '88', rgb: '30', scanline: '58', bloom: '135', glow: '180' } },
   chroma: { treatment: 'soft', controls: { curve: '35', rgb: '88', scanline: '44', bloom: '85', glow: '95' } }
@@ -160,7 +158,7 @@ const classicPixels = document.createElement('canvas');
 const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
 const LOGO_REFLECTION_LEVELS = [.8, 1, 1.32, 1.6];
 const reactorBase64 = 'AAAAAAAAAAA4ODg4ADg4AO7uZswAAAAAACT+bGz+SAAAGP7A/g7+GADm7Bgwbs4A/ubgfuzs/gA4OBgwAAAAAB44MHBwMDgeeBwMDg4MHHgAGH48fhgAAAA4OP44OAAAAAAAADg4GDAAAAB+AAAAAAAAAAAAODgAAAcOHDhw4AD+zt7uzs7+ADh4ODg4OHwA/s4O/sDO/gD+Dg5+Dg7+AM7Ozv4ODg4A/s7A/g7O/gD+4P7m5ub+AP4ODg4ODg4A/s7OfM7O/gD+zs7+Ds7+AAA4OAA4OAAAADg4ADg4GDAOHDhwOBwOAAAAfgB+fgAAcDgcDhw4cAD+zg4+ADg4AP7m7vbu4P4A/s7O/s7OzgD+5ub85ub+AP7m5uDm5v4A/ubm5ubs+AD+4OD84OD+AP7g4Pzg4OAA/ubg7ubm/gDm5ub+5ubmADg4ODg4ODgADg4ODs7O/gDm5uz47ObmAODg4ODg4P4A/q6urq6urgD+zs7Ozs7OAP7Ozs7Ozv4A/ubm/uDg4AD+5ubm5ub8Hv7m5vzm5uYA/sbA/g7O/gD+ODg4ODg4AM7Ozs7Ozv4A5ubm5uz48ACurq6urq7+AM7OznzOzs4Azs7O/g7O/gD+zhw4cOb+AH5wcHBwcHB+AOBwOBwOBwB+Dg4ODg4OfhA4fP44ODg4AAAAAAAAAP8ANn9/PhwIABgYGB8fGBgYAwMDAwMDAwMYGBj4+AAAABgYGPj4GBgYAAAA+PgYGBgDBw4cOHDgwMDgcDgcDgcDAQMHDx8/f/8AAAAADw8PD4DA4PD4/P7/Dw8PDwAAAADw8PDwAAAAAP//AAAAAAAAAAAAAAAA//8AAAAA8PDw8AAcHHd3CBwAAAAAHx8YGBgAAAD//wAAABgYGP//GBgYAAA8fn5+PAAAAAAA/////8DAwMDAwMDAAAAA//8YGBgYGBj//wAAAPDw8PDw8PDwGBgYHx8AAAB4YHhgfhgeAAAYPH4YGBgAABgYGH48GAAAGDB+MBgAAAAYDH4MGAAAABg8fn48GAAAAP4O/s7+AODg/ubm5v4AAAD+5uDm/gAODv7Ozs7+AAAA/ub+4P4AfnZwfHBwcAAAAP7Ozv4O/uDg/ubm5uYAODgAODg4OAAODgAODg7O/uDg5ub85uYAPBwcHBwcHAAAAP6urq6uAAAA/s7Ozs4AAAD+zs7O/gAAAP7m5v7g4AAA/s7O/g4OAAD+5uDg4AAAAP7A/g7+AODg/ODg5v4AAADOzs7O/gAAAObm7PjwAAAArq6urv4AAADOznzOzgAAAM7Ozv4O/gAA/gb+4P4AABg8fn4YPAAYGBgYGBgYGAB+eHxuZgYACBg4eDgYCAAQGBweHBgQAA==';
-let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null, transmissionFont = null;
+let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null;
 let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455';
 let activeAnimationTime = 0;
 const textStyles = { headline: { shadow: true }, body: { shadow: false } };
@@ -171,16 +169,27 @@ const textVerticalAlignments = { header: 'center', detail: 'top', body: 'center'
 let bodyBorderStyle = 'none';
 const templates = {
   'free-play': {
-    theme: 'yuNo', logo: 'pixel', classic: true, transmission: false, boundaries: false, speed: '1', crt: 'off',
+    theme: 'yuNo', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     crtControls: { curve: '100', rgb: '45', scanline: '100', bloom: '100', glow: '100' },
     headline: 'July [[effect:wave]]Free Play[[/effect]] Calendar', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]\n[[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]\n[[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]',
-    cta: 'JOIN THE SIGNAL', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
-    scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '0', footerScale: '1' },
+    cta: '[[effect:superscript]]$[[/effect]]6 NOON-5[[effect:subscript]]PM[[/effect]] (ALL AGES)\n[[effect:superscript]]$[[/effect]]12 5[[effect:subscript]]PM[[/effect]]-MIDNIGHT (21+)', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
+    scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
     alignments: { header: 'center', detail: 'center', body: 'left', cta: 'center', footer: 'center' },
     verticalAlignments: { header: 'center', detail: 'top', body: 'center', cta: 'top', footer: 'bottom' },
-    visibility: { detail: true, cta: false, hours: true }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'none',
-    fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'Reactor', footerFont: 'Cinema Bold' }
+    visibility: { detail: true, cta: true, hours: false }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'none',
+    fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
+  },
+  'arcade-events': {
+    theme: 'neon', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
+    headline: 'Arcade Events This Week', detail: '[[effect:underline]]July 20-26[[/effect]]',
+    body: '[[effect:highlight]]Monday 7/20[[/effect]]\nMario Kart World Tournament + Killer Queen Community Night\n[[effect:highlight]]Tuesday 7/21[[/effect]]\nLX Entertainment Night: UFO 50\n[[effect:highlight]]Wednesday 7/22[[/effect]]\nElectropop/Chiptune Show\nCrunk Witch + Tonight We Launch!\n[[effect:highlight]]Sunday 7/26[[/effect]]\nSamurai Showdown II Tournament',
+    cta: '[[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]]SUMMER PROMO[[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]]\n50% OFF ALL GAMES NOON-5PM', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
+    scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
+    alignments: { header: 'center', detail: 'center', body: 'center', cta: 'center', footer: 'center' },
+    verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'center', footer: 'bottom' },
+    visibility: { detail: false, cta: true, hours: true }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'rounded',
+    fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
   }
 };
 const glyphCache = new Map();
@@ -198,7 +207,7 @@ const LEGACY_UNICODE = {
 };
 const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
 let stars = [], seed = 1, recording = false;
-let activeTextControl = controls.bodyEditor, savedBodyRange = null, savedHeaderRange = null, savedDetailRange = null;
+let activeTextControl = controls.bodyEditor, savedBodyRange = null, savedHeaderRange = null, savedDetailRange = null, savedCtaRange = null;
 
 function resetStars() {
   seed += 1;
@@ -222,11 +231,11 @@ function glyphBounds(character, font = bodyFont, fontKey = 'body') {
   const glyphIndex = glyphIndexFor(character);
   const key = `${fontKey}:${glyphIndex}`;
   if (glyphBoundsCache.has(key)) return glyphBoundsCache.get(key);
-  let left = 8, right = -1;
+  let left = 8, right = -1, top = 8, bottom = -1;
   for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) {
-    if ((font?.[glyphIndex * 8 + row] || 0) & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); }
+    if ((font?.[glyphIndex * 8 + row] || 0) & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); top = Math.min(top, row); bottom = Math.max(bottom, row); }
   }
-  const bounds = right < 0 ? null : { left, width: right - left + 1 };
+  const bounds = right < 0 ? null : { left, width: right - left + 1, top, bottom };
   glyphBoundsCache.set(key, bounds); return bounds;
 }
 function legacyGlyph(glyphData, color) {
@@ -283,11 +292,11 @@ function reflectedGlyph(glyphLayout, color, font = bodyFont, fontKey = 'body', p
 }
 function legacyGlyphBounds(glyphData) {
   if (legacyGlyphBoundsCache.has(glyphData.id)) return legacyGlyphBoundsCache.get(glyphData.id);
-  let left = 8, right = -1;
+  let left = 8, right = -1, top = 8, bottom = -1;
   for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) {
-    if (glyphData.bitmap[row] & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); }
+    if (glyphData.bitmap[row] & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); top = Math.min(top, row); bottom = Math.max(bottom, row); }
   }
-  const bounds = right < 0 ? null : { left, width: right - left + 1 };
+  const bounds = right < 0 ? null : { left, width: right - left + 1, top, bottom };
   legacyGlyphBoundsCache.set(glyphData.id, bounds); return bounds;
 }
 function tokenize(value) {
@@ -314,19 +323,39 @@ const BODY_TEXT_SPACING = { letterGap: 2, spaceWidth: 6 };
 const HEADER_TEXT_SPACING = { letterGap: 1, spaceWidth: 6 };
 function textLayout(value, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
   scale = Math.max(1, Math.round(scale));
+  const tokens = tokenize(value);
+  const boundsForToken = token => token.character === ' ' ? null : token.type === 'legacy' ? legacyGlyphBounds(token.glyphData) : glyphBounds(token.character, font, fontKey);
+  const referenceBoundsForScript = index => {
+    const isScript = token => token?.effects.includes('superscript') || token?.effects.includes('subscript');
+    let runStart = index, runEnd = index;
+    while (isScript(tokens[runStart - 1])) runStart -= 1;
+    while (isScript(tokens[runEnd + 1])) runEnd += 1;
+    for (let candidateIndex = runStart - 1; candidateIndex >= 0; candidateIndex--) {
+      const bounds = boundsForToken(tokens[candidateIndex]);
+      if (bounds) return bounds;
+    }
+    for (let candidateIndex = runEnd + 1; candidateIndex < tokens.length; candidateIndex++) {
+      const bounds = boundsForToken(tokens[candidateIndex]);
+      if (bounds) return bounds;
+    }
+    return null;
+  };
   const glyphs = []; let cursor = 0, previousWasGlyph = false, underlineRun = 0, wasUnderlined = false;
-  for (const token of tokenize(value)) {
+  for (const [tokenIndex, token] of tokens.entries()) {
     const isUnderlined = token.effects.includes('underline');
     const isSuperscript = token.effects.includes('superscript');
-    const glyphScale = isSuperscript ? superscriptScale(scale) : scale;
+    const isSubscript = token.effects.includes('subscript');
+    const glyphScale = isSuperscript || isSubscript ? superscriptScale(scale) : scale;
     if (isUnderlined && !wasUnderlined) underlineRun += 1;
     wasUnderlined = isUnderlined;
     const character = token.character;
     if (character === ' ') { cursor += spacing.spaceWidth * glyphScale; previousWasGlyph = false; continue; }
-    const bounds = token.type === 'legacy' ? legacyGlyphBounds(token.glyphData) : glyphBounds(character, font, fontKey);
+    const bounds = boundsForToken(token);
     if (!bounds) { cursor += spacing.spaceWidth * glyphScale; previousWasGlyph = false; continue; }
     if (previousWasGlyph) cursor += spacing.letterGap * glyphScale;
-    glyphs.push({ ...token, bounds, scale: glyphScale, yOffset: isSuperscript ? -glyphScale : 0, underlineRun: isUnderlined ? underlineRun : 0, x: cursor - bounds.left * glyphScale });
+    const referenceBounds = isSuperscript || isSubscript ? referenceBoundsForScript(tokenIndex) || bounds : bounds;
+    const yOffset = isSuperscript ? referenceBounds.top * scale - bounds.top * glyphScale : isSubscript ? (referenceBounds.bottom + 1) * scale - (bounds.bottom + 1) * glyphScale : 0;
+    glyphs.push({ ...token, bounds, scale: glyphScale, yOffset, underlineRun: isUnderlined ? underlineRun : 0, x: cursor - bounds.left * glyphScale });
     cursor += bounds.width * glyphScale; previousWasGlyph = true;
   }
   return { glyphs, width: cursor };
@@ -407,50 +436,6 @@ function scrollingText(value, x, width, y, color, shadowColor, scale, font, font
     }
   }
   ctx.restore();
-}
-function transmissionState(time) {
-  const stages = [
-    { label: 'Receiving Transmission...', mode: 'receiving', typeDuration: 1.8, blinkDuration: 1 },
-    { label: 'Decoding...', mode: 'decoding', typeDuration: .8, blinkDuration: 1 }
-  ];
-  const totalDuration = stages.reduce((total, stage) => total + stage.typeDuration + stage.blinkDuration, 0); let elapsed = time % totalDuration;
-  for (const stage of stages) {
-    const duration = stage.typeDuration + stage.blinkDuration;
-    if (elapsed < duration) {
-      const isTyping = elapsed < stage.typeDuration;
-      const characterCount = isTyping ? Math.min(stage.label.length, Math.floor(elapsed / stage.typeDuration * stage.label.length) + 1) : stage.label.length;
-      return { ...stage, text: stage.label.slice(0, characterCount), visible: isTyping || Math.floor((elapsed - stage.typeDuration) * 6) % 2 === 0 };
-    }
-    elapsed -= duration;
-  }
-  return { ...stages[0], text: stages[0].label, visible: true };
-}
-function drawTransmissionOscillator(state, palette, time) {
-  if (state.mode === 'receiving') {
-    for (let index = 0; index < TRANSMISSION_RECEIVE_COLUMNS; index++) {
-      const upperHeight = 1 + Number(Math.sin(time * 5 + index * .8) > 0);
-      const lowerHeight = 1 + Number(Math.sin(time * 6.5 + index * .55 + Math.PI / 2) > 0);
-      const x = TRANSMISSION_OSCILLATOR_X + index * TRANSMISSION_PIXEL_SCALE;
-      ctx.fillStyle = index % 4 === 0 ? palette.highlight : palette.accent;
-      ctx.fillRect(x, TRANSMISSION_Y + (2 - upperHeight) * TRANSMISSION_PIXEL_SCALE, TRANSMISSION_PIXEL_SCALE, upperHeight * TRANSMISSION_PIXEL_SCALE);
-      ctx.fillStyle = index % 3 === 0 ? palette.muted : palette.text;
-      ctx.fillRect(x, TRANSMISSION_Y + 2 * TRANSMISSION_PIXEL_SCALE + (2 - lowerHeight) * TRANSMISSION_PIXEL_SCALE, TRANSMISSION_PIXEL_SCALE, lowerHeight * TRANSMISSION_PIXEL_SCALE);
-    }
-    return;
-  }
-  for (let index = 0; index < TRANSMISSION_DECODE_COLUMNS * TRANSMISSION_ANIMATION_ROWS; index++) {
-    const phase = Math.floor(time * 8) + index * 3;
-    if (phase % 5 < 2) continue;
-    ctx.fillStyle = [palette.highlight, palette.accent, palette.muted][phase % 3];
-    const column = index % TRANSMISSION_DECODE_COLUMNS, row = Math.floor(index / TRANSMISSION_DECODE_COLUMNS);
-    ctx.fillRect(TRANSMISSION_OSCILLATOR_X + column * 3 * TRANSMISSION_PIXEL_SCALE, TRANSMISSION_Y + row * TRANSMISSION_PIXEL_SCALE, TRANSMISSION_PIXEL_SCALE, TRANSMISSION_PIXEL_SCALE);
-  }
-}
-function drawTransmission(palette, time) {
-  const state = transmissionState(time);
-  const labelColor = state.mode === 'receiving' ? palette.accent : palette.highlight;
-  if (state.visible) styledText('body', state.text, TRANSMISSION_TEXT_X, TRANSMISSION_Y, labelColor, palette.shadow, 1, 'left', transmissionFont, 'transmission');
-  drawTransmissionOscillator(state, palette, time);
 }
 function wrap(value, maximumWidth, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
   const lines = []; let line = '';
@@ -629,16 +614,14 @@ function renderCrtPiFrame() {
   return crtCanvas;
 }
 function render(now) {
-  const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; const time = now / 1000 * Number(controls.speed.value); activeAnimationTime = time;
+  const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; const time = now / 1000 * MOTION_SPEED; activeAnimationTime = time;
   ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
   stars.forEach((star, index) => { ctx.globalAlpha = .22 + star.z * .68; ctx.fillStyle = index % 11 === 0 ? palette.accent : index % 3 === 0 ? palette.text : palette.muted; ctx.fillRect(star.x, Math.floor((star.y + time * (6 + star.z * 19)) % H), star.z > .72 ? 2 : 1, star.z > .9 ? 2 : 1); }); ctx.globalAlpha = 1;
   if (controls.logo.value === 'pixel') drawAnimatedLogo(HEADER_LOGO_Y, palette, time);
   else drawImageCentered(logoImages[controls.logo.value], HEADER_LOGO_Y);
   if (controls.classic.checked) drawClassicArcade(CLASSIC_ARCADE_Y, palette);
-  if (controls.transmission.checked) drawTransmission(palette, time);
   const titleScale = textScale('headerScale');
-  const copyOffset = controls.transmission.checked ? 0 : -24;
-  const headerFieldY = COPY_TOP_Y + copyOffset;
+  const headerFieldY = COPY_TOP_Y;
   const titleLineHeight = titleScale * 10;
   const maxHeaderLines = Math.max(1, Math.floor(HEADER_FIELD_HEIGHT / titleLineHeight));
   const lines = wrap(controls.headline.value, TEXT_FIELD_WIDTH, titleScale, headerFont, 'header', HEADER_TEXT_SPACING).slice(0, maxHeaderLines);
@@ -652,16 +635,22 @@ function render(now) {
   const maxDetailLines = Math.max(1, Math.floor(DETAIL_FIELD_HEIGHT / detailLineHeight));
   const detailLines = showDetail ? scrollModes.detail === 'off' ? wrap(controls.detail.value, TEXT_FIELD_WIDTH, detailScale, detailFont, 'detail').slice(0, maxDetailLines) : [singleLineValue(controls.detail.value)] : [];
   const detailAlignment = textAlignments.detail;
-  const detailY = verticallyAlignedStart(detailFieldY, DETAIL_FIELD_HEIGHT, detailLines.length * detailLineHeight, textVerticalAlignments.detail);
+  const detailFieldHeight = showDetail ? Math.min(DETAIL_FIELD_HEIGHT, detailLines.length * detailLineHeight + 8) : 0;
+  const detailY = verticallyAlignedStart(detailFieldY, detailFieldHeight, detailLines.length * detailLineHeight, textVerticalAlignments.detail);
   detailLines.forEach((line, index) => {
     const lineY = detailY + index * detailLineHeight;
     if (scrollModes.detail === 'off') styledText('body', line, alignmentPoint(TEXT_FIELD_X, TEXT_FIELD_WIDTH, detailAlignment), lineY, palette.accent, palette.shadow, detailScale, detailAlignment, detailFont, 'detail');
     else scrollingText(line, TEXT_FIELD_X, TEXT_FIELD_WIDTH, lineY, palette.accent, palette.shadow, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, scrollModes.detail);
   });
-  const bodyFieldY = detailFieldY + DETAIL_FIELD_HEIGHT + 12; const bodyScale = textScale('bodyScale'); const bodyLineHeight = bodyScale * 12;
-  const maxBodyLines = Math.max(1, Math.floor(BODY_FIELD_HEIGHT / bodyLineHeight)); const bodyLines = wrapWithLineBreaks(controls.body.value, BODY_FIELD_WIDTH, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING, maxBodyLines, true);
+  const cta = controls.cta.value;
+  const showCta = contentVisibility.cta && cta.trim();
+  const bodyFieldY = detailFieldY + detailFieldHeight + (showDetail ? 8 : EMPTY_DETAIL_BODY_GAP);
+  const bodyScale = textScale('bodyScale'); const bodyLineHeight = bodyScale * 12;
+  const maxBodyLines = showCta ? MAX_BODY_LINES_WITH_CTA : Math.max(1, Math.floor((FOOTER_FIELD_Y - bodyFieldY) / bodyLineHeight));
+  const bodyLines = wrapWithLineBreaks(controls.body.value, BODY_FIELD_WIDTH, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING, maxBodyLines, true);
+  const bodyFieldHeight = showCta ? Math.max(BODY_FIELD_HEIGHT, bodyLines.length * bodyLineHeight) : FOOTER_FIELD_Y - bodyFieldY;
   const bodyAlignment = textAlignments.body;
-  const bodyY = verticallyAlignedStart(bodyFieldY, BODY_FIELD_HEIGHT, bodyLines.length * bodyLineHeight, textVerticalAlignments.body);
+  const bodyY = verticallyAlignedStart(bodyFieldY, bodyFieldHeight, bodyLines.length * bodyLineHeight, textVerticalAlignments.body);
   const bodyLineWidths = bodyLines.map(line => leaderLineParts(line) ? BODY_FIELD_WIDTH : textWidth(line, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING));
   if (bodyBorderStyle !== 'none' && bodyLines.length) {
     const bodyLineStarts = bodyLineWidths.map(width => alignedStart(BODY_FIELD_X, BODY_FIELD_WIDTH, width, bodyAlignment));
@@ -676,15 +665,20 @@ function render(now) {
     if (leaderLineParts(line)) leaderText(line, BODY_FIELD_X, BODY_FIELD_WIDTH, lineY, palette.text, palette.shadow, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING);
     else styledText('body', line, alignmentPoint(BODY_FIELD_X, BODY_FIELD_WIDTH, bodyAlignment), lineY, palette.text, palette.shadow, bodyScale, bodyAlignment);
   });
-  if (showDetail) boundaries.push({ x: TEXT_FIELD_X, y: detailFieldY, width: TEXT_FIELD_WIDTH, height: DETAIL_FIELD_HEIGHT });
-  boundaries.push({ x: BODY_FIELD_X, y: bodyFieldY, width: BODY_FIELD_WIDTH, height: BODY_FIELD_HEIGHT });
-  const cta = controls.cta.value.slice(0, 48);
-  if (contentVisibility.cta && cta.trim()) {
-    const ctaScale = textScale('ctaScale'); const buttonWidth = Math.min(W - 64, textWidth(cta, ctaScale, ctaFont, 'cta') + 24 * ctaScale); const buttonHeight = 8 * ctaScale + 20; const ctaFieldY = bodyFieldY + BODY_FIELD_HEIGHT + 12; const ctaY = verticallyAlignedStart(ctaFieldY, CTA_FIELD_HEIGHT, buttonHeight, textVerticalAlignments.cta);
+  if (showDetail) boundaries.push({ x: TEXT_FIELD_X, y: detailFieldY, width: TEXT_FIELD_WIDTH, height: detailFieldHeight });
+  boundaries.push({ x: BODY_FIELD_X, y: bodyFieldY, width: BODY_FIELD_WIDTH, height: bodyFieldHeight });
+  if (showCta) {
+    const ctaScale = textScale('ctaScale'); const buttonMaxWidth = W - 64; const ctaPadding = 12 * ctaScale;
+    const ctaLines = wrapWithLineBreaks(cta, buttonMaxWidth - ctaPadding * 2, ctaScale, ctaFont, 'cta', BODY_TEXT_SPACING, 3, true).filter(line => line.trim()).slice(0, 2);
+    const buttonWidth = Math.min(buttonMaxWidth, Math.max(...ctaLines.map(line => textWidth(line, ctaScale, ctaFont, 'cta'))) + ctaPadding * 2);
+    const ctaGlyphHeight = ctaScale * 8; const ctaLineHeight = ctaScale * 10;
+    const buttonHeight = ctaGlyphHeight + (ctaLines.length - 1) * ctaLineHeight + 20;
+    const ctaFieldY = bodyFieldY + bodyFieldHeight + 12; const ctaFieldHeight = Math.max(CTA_FIELD_HEIGHT, buttonHeight); const ctaY = verticallyAlignedStart(ctaFieldY, ctaFieldHeight, buttonHeight, textVerticalAlignments.cta) + CTA_VERTICAL_OFFSET;
     const ctaX = alignedStart(32, W - 64, buttonWidth, textAlignments.cta);
     ctx.fillStyle = palette.accent; ctx.fillRect(ctaX, ctaY, buttonWidth, buttonHeight);
-    styledText('body', cta, ctaX + buttonWidth / 2, ctaY + Math.round((buttonHeight - 8 * ctaScale) / 2), palette.background, palette.shadow, ctaScale, 'center', ctaFont, 'cta');
-    boundaries.push({ x: 32, y: ctaFieldY, width: W - 64, height: CTA_FIELD_HEIGHT });
+    const ctaTextY = ctaY + Math.round((buttonHeight - (ctaGlyphHeight + (ctaLines.length - 1) * ctaLineHeight)) / 2);
+    ctaLines.forEach((line, index) => styledText('body', line, ctaX + buttonWidth / 2, ctaTextY + index * ctaLineHeight, palette.background, palette.shadow, ctaScale, 'center', ctaFont, 'cta'));
+    boundaries.push({ x: 32, y: ctaFieldY, width: W - 64, height: ctaFieldHeight });
   }
   const footerScale = textScale('footerScale'); const footerLineHeight = footerScale * 12; const hoursLineHeight = HOURS_SCALE * 12;
   const hoursScrolling = scrollModes.hours !== 'off'; const hoursLines = contentVisibility.hours && controls.hours.value.trim() ? hoursScrolling ? [singleLineValue(controls.hours.value)] : wrapWithLineBreaks(controls.hours.value, FOOTER_TEXT_WIDTH, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, 1) : [];
@@ -720,7 +714,6 @@ async function loadFont(file, name, target, announce = true) {
   else if (target === 'cta') ctaFont = nextFont;
   else if (target === 'footer') footerFont = nextFont;
   else if (target === 'hours') hoursFont = nextFont;
-  else if (target === 'transmission') transmissionFont = nextFont;
   else bodyFont = nextFont;
   glyphCache.clear(); glyphBoundsCache.clear();
   if (announce) controls.status.textContent = `${name} loaded as ${target} font.`;
@@ -833,7 +826,7 @@ function hydrateBodyEditor() {
     if (marker === '/effect' && targets.length > 1) targets.pop();
     else if (marker.startsWith('effect')) {
       const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span');
-      span.dataset.effect = effect; if (effect === 'shadow') span.className = 'editor-effect-shadow'; else if (effect === 'highlight') span.className = 'editor-effect-highlight'; else if (effect === 'underline') span.className = 'editor-effect-underline'; else if (effect === 'superscript') span.className = 'editor-effect-superscript'; else if (effect === 'stroke') span.className = 'editor-effect-stroke'; else if (['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect)) span.className = `editor-effect-${effect}`;
+      span.dataset.effect = effect; if (effect === 'shadow') span.className = 'editor-effect-shadow'; else if (effect === 'highlight') span.className = 'editor-effect-highlight'; else if (effect === 'underline') span.className = 'editor-effect-underline'; else if (effect === 'superscript') span.className = 'editor-effect-superscript'; else if (effect === 'subscript') span.className = 'editor-effect-subscript'; else if (effect === 'stroke') span.className = 'editor-effect-stroke'; else if (['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect)) span.className = `editor-effect-${effect}`;
       targets.at(-1).append(span); targets.push(span);
     } else {
       const glyphData = legacyGlyphs.get(marker);
@@ -854,7 +847,7 @@ function hydrateHeaderEditor() {
     if (marker === '/effect' && targets.length > 1) targets.pop();
     else if (marker.startsWith('effect')) {
       const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
       targets.at(-1).append(span); targets.push(span);
     } else appendText(match[0]);
     position = expression.lastIndex;
@@ -870,12 +863,32 @@ function hydrateDetailEditor() {
     if (marker === '/effect' && targets.length > 1) targets.pop();
     else if (marker.startsWith('effect')) {
       const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
       targets.at(-1).append(span); targets.push(span);
     } else appendText(match[0]);
     position = expression.lastIndex;
   }
   appendText(controls.detail.value.slice(position));
+}
+function hydrateCtaEditor() {
+  const editor = controls.ctaEditor; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
+  const targets = [editor]; let position = 0; let match; editor.replaceChildren();
+  const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
+  while ((match = expression.exec(controls.cta.value))) {
+    appendText(controls.cta.value.slice(position, match.index)); const marker = match[1].toLowerCase();
+    if (marker === '/effect' && targets.length > 1) targets.pop();
+    else if (marker.startsWith('effect')) {
+      const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
+      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+      targets.at(-1).append(span); targets.push(span);
+    } else {
+      const glyphData = legacyGlyphs.get(marker);
+      if (glyphData) targets.at(-1).append(createEditorGlyph(glyphData));
+      else appendText(match[0]);
+    }
+    position = expression.lastIndex;
+  }
+  appendText(controls.cta.value.slice(position));
 }
 function serializeBodyNode(node) {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent;
@@ -1028,6 +1041,17 @@ function toggleDetailEffect(effect) {
   const pointAt = offset => { let remaining = Math.max(0, offset); const find = node => { if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) }; for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; } return { container: node, offset: node.childNodes.length }; }; return find(controls.detailEditor); };
   controls.detailEditor.focus(); const restored = document.createRange(); const startPoint = pointAt(start); const endPoint = pointAt(end); restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedDetailRange = restored.cloneRange();
 }
+function toggleCtaEffect(effect) {
+  const selection = window.getSelection(); let range = null;
+  if (selection.rangeCount) { const current = selection.getRangeAt(0); if (!current.collapsed && controls.ctaEditor.contains(current.startContainer) && controls.ctaEditor.contains(current.endContainer)) { savedCtaRange = current.cloneRange(); range = current; } }
+  range ||= savedCtaRange; if (!range || range.collapsed) return;
+  const before = document.createRange(); before.selectNodeContents(controls.ctaEditor); before.setEnd(range.startContainer, range.startOffset);
+  const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(controls.cta.value); const selected = units.filter(unit => unit.start < end && unit.end > start); if (!selected.length) return;
+  const removing = selected.every(unit => unit.effects.includes(effect)); selected.forEach(unit => { unit.effects = removing ? unit.effects.filter(item => item !== effect) : unit.effects.includes(effect) ? unit.effects : [...unit.effects, effect]; });
+  controls.cta.value = serializeBodyUnits(units); hydrateCtaEditor();
+  const pointAt = offset => { let remaining = Math.max(0, offset); const find = node => { if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) }; for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; } return { container: node, offset: node.childNodes.length }; }; return find(controls.ctaEditor); };
+  controls.ctaEditor.focus(); const restored = document.createRange(); const startPoint = pointAt(start); const endPoint = pointAt(end); restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedCtaRange = restored.cloneRange();
+}
 function toggleInputEffect(control, effect) {
   const start = control.selectionStart, end = control.selectionEnd;
   if (start === null || end === null || start === end) return;
@@ -1090,17 +1114,31 @@ function insertHeaderGlyph(glyphData) {
   range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
   const next = document.createRange(); next.setStartAfter(glyph); next.collapse(true); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(next); savedHeaderRange = next.cloneRange(); controls.headerEditor.focus(); controls.headline.value = [...controls.headerEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, '');
 }
+function insertCtaGlyph(glyphData) {
+  const range = savedCtaRange || document.createRange();
+  if (!savedCtaRange) range.selectNodeContents(controls.ctaEditor), range.collapse(false);
+  range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
+  const next = document.createRange(); next.setStartAfter(glyph); next.collapse(true); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(next); savedCtaRange = next.cloneRange(); controls.ctaEditor.focus(); controls.cta.value = [...controls.ctaEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, '');
+}
+function insertCtaLineBreak() {
+  const selection = window.getSelection(); const range = selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedCtaRange || document.createRange();
+  if (!range.commonAncestorContainer.parentNode) range.selectNodeContents(controls.ctaEditor), range.collapse(false);
+  range.deleteContents(); const lineBreak = document.createElement('br'); range.insertNode(lineBreak);
+  range.setStartAfter(lineBreak); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); savedCtaRange = range.cloneRange(); controls.ctaEditor.focus(); controls.cta.value = [...controls.ctaEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, '');
+}
 function applyCharacterEffect(section, effect) {
   const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale' }[section];
-  if (effect === 'superscript' && textScale(scaleControl) === 1) return;
+  if (['superscript', 'subscript'].includes(effect) && textScale(scaleControl) === 1) return;
   if (section === 'body') {
     toggleBodyEffect(effect);
   } else if (section === 'header') {
     toggleHeaderEffect(effect);
   } else if (section === 'detail') {
     toggleDetailEffect(effect);
+  } else if (section === 'cta') {
+    toggleCtaEffect(effect);
   } else {
-    const control = { header: controls.headline, detail: controls.detail, cta: controls.cta }[section];
+    const control = { header: controls.headline, detail: controls.detail }[section];
     toggleInputEffect(control, effect);
   }
 }
@@ -1108,9 +1146,10 @@ function syncCharacterToolAvailability() {
   ['header', 'detail', 'body', 'cta'].forEach(section => {
     const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale' }[section];
     const available = textScale(scaleControl) > 1;
-    document.querySelectorAll(`[data-character-toolbar="${section}"] [data-character-control="superscript"]`).forEach(button => {
+    document.querySelectorAll(`[data-character-toolbar="${section}"] [data-character-control="superscript"], [data-character-toolbar="${section}"] [data-character-control="subscript"]`).forEach(button => {
       button.disabled = !available;
-      button.title = available ? `${section} superscript selected text` : `${section} superscript is unavailable at 1x`;
+      const effect = button.dataset.characterControl;
+      button.title = available ? `${section} ${effect} selected text` : `${section} ${effect} is unavailable at 1x`;
       button.setAttribute('aria-label', button.title);
     });
   });
@@ -1123,6 +1162,7 @@ function insertLegacyGlyph(glyphId) {
   });
   if (activeTextControl === controls.bodyEditor) { insertBodyGlyph(legacyGlyphs.get(glyphId)); return; }
   if (activeTextControl === controls.headerEditor) { insertHeaderGlyph(legacyGlyphs.get(glyphId)); return; }
+  if (activeTextControl === controls.ctaEditor) { insertCtaGlyph(legacyGlyphs.get(glyphId)); return; }
   const control = activeTextControl || controls.headline;
   control.setRangeText(`[[${glyphId}]]`, control.selectionStart, control.selectionEnd, 'end');
   control.focus();
@@ -1152,7 +1192,6 @@ async function loadLegacyGlyphs() {
   section.append(title, grid);
   controls.glyphGrid.replaceChildren(section);
 }
-controls.refresh.addEventListener('click', () => { resetStars(); controls.status.textContent = 'Star field updated.'; });
 [['font', 'body'], ['headerFont', 'header'], ['detailFont', 'detail'], ['ctaFont', 'cta'], ['footerFont', 'footer']].forEach(([controlName, target]) => {
   controls[controlName].addEventListener('change', () => {
     syncFontPickerSelection(controlName);
@@ -1201,7 +1240,7 @@ function syncBodyBorderControls() {
 }
 async function applyTemplate(template) {
   controls.theme.value = template.theme; controls.logo.value = template.logo; controls.classic.checked = template.classic;
-  controls.transmission.checked = template.transmission; controls.boundaries.checked = template.boundaries; controls.speed.value = template.speed; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
+  controls.boundaries.checked = template.boundaries; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
   controls.cta.value = template.cta; controls.hours.value = template.hours; controls.footer.value = template.footer;
@@ -1212,7 +1251,7 @@ async function applyTemplate(template) {
     toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
-  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor();
+  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor();
   await Promise.all(Object.entries(template.fonts).map(([controlName, fontName]) => {
     const option = [...controls[controlName].options].find(item => item.textContent === fontName);
     if (!option) return Promise.resolve();
@@ -1282,12 +1321,18 @@ function populateToolbars() {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => applyCharacterEffect(section, 'superscript'));
       } else if (index === 3) {
+        button.dataset.characterControl = 'subscript'; button.title = `${section} subscript selected text`;
+        button.setAttribute('aria-label', `${section} subscript selected text`);
+        const iconElement = document.createElement('i'); iconElement.dataset.lucide = 'subscript'; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = 'x2'; button.append(iconElement);
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => applyCharacterEffect(section, 'subscript'));
+      } else if (index === 4) {
         button.dataset.characterControl = 'stroke'; button.title = `${section} stroke selected text`;
         button.setAttribute('aria-label', `${section} stroke selected text`);
         const iconElement = document.createElement('i'); iconElement.dataset.lucide = 'type-outline'; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = 'O'; button.append(iconElement);
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => applyCharacterEffect(section, 'stroke'));
-      } else if (index === 4) {
+      } else if (index === 5) {
         button.dataset.characterControl = 'shadow'; button.title = `${section} drop shadow selected text`;
         button.setAttribute('aria-label', `${section} drop shadow selected text`);
         const iconElement = document.createElement('i'); iconElement.dataset.lucide = 'layers-2'; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = 'S'; button.append(iconElement);
@@ -1334,7 +1379,7 @@ function populateToolbars() {
   window.lucide?.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 } });
 }
 populateToolbars();
-[controls.detail, controls.hours, controls.footer, controls.cta].forEach(control => control.addEventListener('focus', () => { activeTextControl = control; }));
+[controls.detail, controls.hours, controls.footer].forEach(control => control.addEventListener('focus', () => { activeTextControl = control; }));
 controls.headerEditor.addEventListener('focus', () => { activeTextControl = controls.headerEditor; });
 controls.headerEditor.addEventListener('input', () => { activeTextControl = controls.headerEditor; controls.headline.value = [...controls.headerEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, ''); });
 controls.headerEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedHeaderRange = selection.getRangeAt(0).cloneRange(); });
@@ -1344,6 +1389,11 @@ controls.detailEditor.addEventListener('input', () => { activeTextControl = cont
 controls.detailEditor.addEventListener('keydown', event => { if (event.key === 'Enter') event.preventDefault(); });
 controls.detailEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedDetailRange = selection.getRangeAt(0).cloneRange(); });
 controls.detailEditor.addEventListener('mouseup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedDetailRange = selection.getRangeAt(0).cloneRange(); });
+controls.ctaEditor.addEventListener('focus', () => { activeTextControl = controls.ctaEditor; });
+controls.ctaEditor.addEventListener('input', () => { activeTextControl = controls.ctaEditor; controls.cta.value = [...controls.ctaEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, ''); });
+controls.ctaEditor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); insertCtaLineBreak(); } });
+controls.ctaEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedCtaRange = selection.getRangeAt(0).cloneRange(); });
+controls.ctaEditor.addEventListener('mouseup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedCtaRange = selection.getRangeAt(0).cloneRange(); });
 controls.bodyEditor.addEventListener('focus', () => { activeTextControl = controls.bodyEditor; saveBodySelection(); });
 controls.bodyEditor.addEventListener('input', () => { activeTextControl = controls.bodyEditor; syncBodySource(); saveBodySelection(); });
 controls.bodyEditor.addEventListener('keydown', removeAdjacentBodyGlyph);
@@ -1354,6 +1404,7 @@ document.addEventListener('selectionchange', () => {
   if (selection.rangeCount && controls.bodyEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) saveBodySelection();
   if (selection.rangeCount && controls.headerEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedHeaderRange = selection.getRangeAt(0).cloneRange();
   if (selection.rangeCount && controls.detailEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedDetailRange = selection.getRangeAt(0).cloneRange();
+  if (selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedCtaRange = selection.getRangeAt(0).cloneRange();
 });
 controls.png.addEventListener('click', () => exportCanvas.toBlob(blob => { download(blob, 'gk-promo-1080x1350.png'); controls.status.textContent = 'PNG exported at 1080 x 1350.'; }, 'image/png'));
 controls.record.addEventListener('click', () => {
@@ -1370,16 +1421,15 @@ controls.record.addEventListener('click', () => {
 async function initializeFonts() {
   try {
     const fonts = await populateFonts();
-    const tycho = fonts.find(font => font.name === 'Tycho') || fonts.find(font => font.name === 'Reactor') || fonts[0];
     const matinee = fonts.find(font => font.name === 'Matinee') || fonts.find(font => font.name === 'Reactor') || fonts[0];
     await Promise.all([
       ...[['font', 'body'], ['headerFont', 'header'], ['detailFont', 'detail'], ['ctaFont', 'cta'], ['footerFont', 'footer']].map(([controlName, target]) => loadSelectedFont(controlName, target, false)),
-      loadFont(tycho.file, tycho.name, 'transmission', false),
       loadFont(matinee.file, matinee.name, 'hours', false)
     ]);
+    await applyTemplate(templates[controls.template.value]);
     controls.status.textContent = 'Default fonts loaded.';
   } catch (error) {
     controls.status.textContent = `Font library could not load: ${error.message}`;
   }
 }
-hydrateHeaderEditor(); hydrateDetailEditor(); resetStars(); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
+hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); resetStars(); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
