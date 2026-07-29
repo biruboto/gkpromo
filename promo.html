@@ -34,6 +34,9 @@
     .control-section summary:focus-visible { outline: 1px solid var(--accent); outline-offset: -3px; }
     .section-body { padding: 0 0 9px; display: grid; gap: 8px; }
     .text-section { gap: 6px; }
+    .footer-group { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .footer-group:first-child { padding-top: 0; border-top: 0; }
+    .footer-group-heading { margin: 0; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
     .text-toolbar { display: grid; gap: 6px; }
     .font-scale-row { display: grid; grid-template-columns: minmax(116px, 150px) minmax(0, 1fr); gap: 6px; align-items: end; }
     .text-toolbar select { min-width: 0; }
@@ -129,7 +132,7 @@
       <details class="control-section">
         <summary>BASIC SETTINGS</summary>
         <div class="section-body">
-          <fieldset><label for="template">TEMPLATE</label><select id="template"><option value="free-play" selected>FREE PLAY</option><option value="arcade-events">ARCADE EVENTS</option></select></fieldset>
+          <fieldset><label for="template">TEMPLATE</label><select id="template"></select></fieldset>
           <div class="theme-row">
             <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
@@ -204,16 +207,45 @@
       <details class="control-section">
         <summary>FOOTER</summary>
         <div class="section-body text-section">
-          <div class="text-toolbar"><div class="font-scale-row"><select id="footerFont" aria-label="Footer font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="footerScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="footerScale" role="group" aria-label="Footer text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Hours character controls" title="Hours character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="hours"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Footer character controls" title="Footer character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="footer"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Footer animation controls" title="Footer animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="footer"></div></div></div>
-          <fieldset><div class="field-heading"><label class="visually-hidden" for="hoursEditor">Hours copy</label><div id="hoursEditor" class="rich-editor inline-rich-editor" contenteditable="true" role="textbox" aria-label="Hours copy"></div><input id="hours" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1" value="ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT"><button id="hoursToggle" type="button" aria-pressed="true"></button></div></fieldset>
-          <fieldset class="scroll-field"><label>SCROLL</label><div class="scroll-mode" data-scroll-mode="hours" role="group" aria-label="Hours scrolling"><button type="button" data-scroll-value="off" aria-pressed="false">OFF</button><button type="button" data-scroll-value="ticker" aria-pressed="false">TICKER</button><button type="button" data-scroll-value="reveal" aria-pressed="true">REVEAL</button></div></fieldset>
-          <div id="footerEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Footer copy"></div><textarea id="footer" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1">115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR
+          <section class="footer-group" aria-labelledby="hours-controls-heading">
+            <h2 id="hours-controls-heading" class="footer-group-heading">HOURS</h2>
+            <div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Hours character controls" title="Hours character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="hours"></div></div>
+            <fieldset><div class="field-heading"><label class="visually-hidden" for="hoursEditor">Hours copy</label><div id="hoursEditor" class="rich-editor inline-rich-editor" contenteditable="true" role="textbox" aria-label="Hours copy"></div><input id="hours" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1" value="ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT"><button id="hoursToggle" type="button" aria-pressed="true"></button></div></fieldset>
+            <fieldset class="scroll-field"><label>SCROLL</label><div class="scroll-mode" data-scroll-mode="hours" role="group" aria-label="Hours scrolling"><button type="button" data-scroll-value="off" aria-pressed="false">OFF</button><button type="button" data-scroll-value="ticker" aria-pressed="false">TICKER</button><button type="button" data-scroll-value="reveal" aria-pressed="true">REVEAL</button></div></fieldset>
+          </section>
+          <section class="footer-group" aria-labelledby="address-controls-heading">
+            <h2 id="address-controls-heading" class="footer-group-heading">ADDRESS</h2>
+            <div class="text-toolbar"><div class="font-scale-row"><select id="footerFont" aria-label="Address font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="footerScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="footerScale" role="group" aria-label="Address text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Address character controls" title="Address character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="footer"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Address animation controls" title="Address animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="footer"></div></div></div>
+            <div id="footerEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Address copy"></div><textarea id="footer" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1">115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR
 www.groundkontrol.com</textarea>
+          </section>
         </div>
       </details>
     </aside>
   </main>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
-  <script src="./promo.js?v=202" defer></script>
+  <script type="module">
+    const modules = [
+      ['CRT', './promo/crt.js?v=214'],
+      ['fonts', './promo/fonts.js?v=214'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=214'],
+      ['renderer', './promo/renderer.js?v=214'],
+      ['rich text editor', './promo/rich-text-editor.js?v=214'],
+      ['templates', './promo/templates.js?v=214']
+    ];
+    (async () => {
+      for (const [name, source] of modules) {
+        try {
+          await import(source);
+        } catch (error) {
+          throw new Error(`${name} module: ${error.message}`, { cause: error });
+        }
+      }
+      await import('./promo/app.js?v=214');
+    })().catch(error => {
+      document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
+      console.error('Promo Composer startup failed:', error, error.cause || '');
+    });
+  </script>
 </body>
 </html>
