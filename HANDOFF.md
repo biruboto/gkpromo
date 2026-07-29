@@ -2,18 +2,17 @@
 
 ## Repository and Preview
 
-- `index.html` is the interactive GK HUD. `promo-v2.html` is the active GK Promo Composer, rendered by `promo.js`.
-- `promo.html` is legacy. Make promo changes only in `promo-v2.html` and `promo.js`.
+- `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, rendered by `promo.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing `promo.js`, advance its cache-busting query in `promo-v2.html` (`promo.js?v=161` at this handoff).
+- When editing `promo.js`, advance its cache-busting query in `promo.html` (`promo.js?v=168` at this handoff).
 
-## HUD (`index.html`)
+## HUD (`hud.html`)
 
 - The HUD is a native `320x224` composition. Keep canvas rendering pixelated, integer-scaled, and free of DOM content in the captured frame.
 - Three.js draws the star field and voxel wireframe ship into `#scene`; `#hud` draws bitmap type, framing, callouts, and logo treatment above it.
 - `assets/images/ship.png` supplies the extruded wireframe silhouette. `assets/images/gklogo.png` is quantized at runtime for animated reflection bands.
-- HUD fonts are 1024-byte `.fnt` files in `assets/fonts/`. The selectable default is `Reactor`; `Bitty.fnt` is the technical-font layer.
+- HUD fonts are normalized `.h` headers in `assets/font-data-h/`. The HUD expands printable glyphs with its ATASCII tile slots at load time; the selectable default is `Reactor`, and `Bitty` is the technical-font layer.
 - `F1` opens debug controls. `R` or the panel restart control resets the deterministic boot sequence: `void`, `signal`, `acquire`, `systems`, `ready`.
 - `ATASCII_MAPPING.md` documents HUD-specific tile slots.
 
@@ -24,6 +23,7 @@
 - Basic Settings exposes the single `FREE PLAY` template, four six-role palettes, and a text-boundary overlay. Composition controls motion speed and a deterministic new star field.
 - Exports are PNG and a 15-second 30fps MP4 when the browser supports `MediaRecorder` MP4. The exporter intentionally does not fall back to WebM because iOS saving was the requirement.
 - The current composer uses a flat palette background and animated stars. No transparency or background gradient is applied.
+- CRT Treatment is an optional WebGL final pass with `Off`, `CRT-Pi Soft`, and `CRT-Pi Strong` presets. Its curated CRT Look choices are Arcade Cabinet, Broadcast Monitor, Warm Tube, and Chroma Shift; editing a CRT control returns the selection to Custom. It transforms the clean 540x675 composition into the 1080x1350 export frame, then uses that same frame for preview, PNG, and MP4 output. Its Curvature, RGB Separation, Scanline Depth, Bloom, and Phosphor Glow controls are direct shader parameters. It uses an original shader modeled on CRT-Pi behavior, not copied RetroArch source. Text boundaries remain preview-only and are not treated or exported. If WebGL is unavailable, rendering falls back to the clean composition.
 
 ## Promo Defaults: `FREE PLAY`
 
@@ -33,7 +33,7 @@
 - Detail: `Unlimited Credits on All Games!!`, with `Unlimited` carrying the sweep effect. Detail is horizontally centered and top-aligned; scrolling is off by default.
 - Body is vertically centered, left-aligned, and uses `▶` rows, a heart before Pride, leader tabs, and highlighted dates. Its default body border is off.
 - CTA is off by default. Hours is on by default, all caps, and uses reveal scrolling. Footer is centered, uses a superscript `th` in `5th`, and no longer reserves room for a ship.
-- Keep template values in the `templates['free-play']` object in `promo.js`; the literal input values in `promo-v2.html` are only the pre-initialization fallback.
+- Keep template values in the `templates['free-play']` object in `promo.js`; the literal input values in `promo.html` are only the pre-initialization fallback.
 
 ## Text Rendering, Effects, and Editing
 

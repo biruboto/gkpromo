@@ -40,4 +40,4 @@ Raw glyphs are rendered with:
 rawGlyph(glyphCode, x, y, color)
 ```
 
-The active mapping is defined in `index.html` as `HUD_TILES`.
+The active mapping is defined in `hud.html` as `HUD_TILES`.

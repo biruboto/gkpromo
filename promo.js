@@ -17,12 +17,16 @@ const TRANSMISSION_ANIMATION_ROWS = TRANSMISSION_ANIMATION_HEIGHT / TRANSMISSION
 const canvas = document.querySelector('#preview');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
+const crtCanvas = document.createElement('canvas');
+crtCanvas.width = EXPORT_W;
+crtCanvas.height = EXPORT_H;
+let crtRenderer = null;
 const exportCanvas = document.createElement('canvas');
 exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'transmission', 'theme', 'themePreview', 'template', 'boundaries', 'speed', 'refresh', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'transmission', 'theme', 'themePreview', 'template', 'boundaries', 'speed', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtBloom', 'crtGlow', 'refresh', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 const SCALE_STEPS = [1, 2, 4];
 const SHADOW_ALPHA = 1;
@@ -31,8 +35,95 @@ const FONT_FAVORITES_KEY = 'gk-promo-font-favorites';
 const fontFavorites = new Set((() => { try { return JSON.parse(localStorage.getItem(FONT_FAVORITES_KEY)) || []; } catch { return []; } })());
 const fontLoadVersions = new Map();
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
+const CRT_STRENGTHS = { soft: .58, strong: 1 };
+const CRT_CONTROL_IDS = { curve: 'crtCurve', rgb: 'crtRgb', scanline: 'crtScanline', bloom: 'crtBloom', glow: 'crtGlow' };
+const CRT_LOOKS = {
+  arcade: { treatment: 'strong', controls: { curve: '118', rgb: '18', scanline: '72', bloom: '120', glow: '150' } },
+  broadcast: { treatment: 'soft', controls: { curve: '10', rgb: '20', scanline: '30', bloom: '65', glow: '65' } },
+  tube: { treatment: 'strong', controls: { curve: '88', rgb: '30', scanline: '58', bloom: '135', glow: '180' } },
+  chroma: { treatment: 'soft', controls: { curve: '35', rgb: '88', scanline: '44', bloom: '85', glow: '95' } }
+};
+const CRT_VERTEX_SHADER = `
+  attribute vec2 aPosition;
+  varying vec2 vTexCoord;
+  void main() {
+    vTexCoord = aPosition * .5 + .5;
+    gl_Position = vec4(aPosition, 0.0, 1.0);
+  }
+`;
+const CRT_FRAGMENT_SHADER = `
+  precision mediump float;
+  varying vec2 vTexCoord;
+  uniform sampler2D uSource;
+  uniform vec2 uSourceSize;
+  uniform vec2 uOutputSize;
+  uniform float uStrength;
+  uniform float uCurve;
+  uniform float uSeparation;
+  uniform float uScanlines;
+  uniform float uBloom;
+  uniform float uGlow;
+
+  vec3 sampleFrame(vec2 coordinate) {
+    return texture2D(uSource, clamp(coordinate, 0.0, 1.0)).rgb;
+  }
+
+  vec3 brightFrame(vec2 coordinate) {
+    return max(pow(sampleFrame(coordinate), vec3(2.15)) - vec3(.035), vec3(0.0));
+  }
+
+  void main() {
+    float outputAspect = uOutputSize.x / uOutputSize.y;
+    vec2 screen = (vTexCoord - .5) * 2.0;
+    vec2 geometry = vec2(screen.x * outputAspect, screen.y);
+    float radius = dot(geometry, geometry);
+    vec2 warped = geometry * (1.0 + vec2(.024, .036) * uStrength * uCurve * radius);
+    warped *= 1.0 - .018 * uStrength * uCurve;
+    vec2 sourceCoord = vec2(warped.x / outputAspect, warped.y) * .5 + .5;
+    float edge = 1.0 - smoothstep(.97, 1.05, max(abs(warped.x / outputAspect), abs(warped.y)));
+    vec2 texel = 1.0 / uSourceSize;
+    vec3 center = sampleFrame(sourceCoord);
+    vec3 horizontal = (sampleFrame(sourceCoord - vec2(texel.x, 0.0)) + center * 2.0 + sampleFrame(sourceCoord + vec2(texel.x, 0.0))) * .25;
+    vec3 bloom = (brightFrame(sourceCoord - vec2(texel.x, 0.0)) + brightFrame(sourceCoord + vec2(texel.x, 0.0)) + brightFrame(sourceCoord - vec2(0.0, texel.y)) + brightFrame(sourceCoord + vec2(0.0, texel.y))) * .25;
+    vec3 glow = (brightFrame(sourceCoord - vec2(texel.x * 3.0, 0.0)) + brightFrame(sourceCoord + vec2(texel.x * 3.0, 0.0))) * .09;
+    glow += (brightFrame(sourceCoord - vec2(0.0, texel.y * 2.0)) + brightFrame(sourceCoord + vec2(0.0, texel.y * 2.0))) * .12;
+    glow += (brightFrame(sourceCoord + vec2(texel.x * 2.0, texel.y * 2.0)) + brightFrame(sourceCoord + vec2(-texel.x * 2.0, texel.y * 2.0)) + brightFrame(sourceCoord + vec2(texel.x * 2.0, -texel.y * 2.0)) + brightFrame(sourceCoord - vec2(texel.x * 2.0, texel.y * 2.0))) * .05;
+    vec2 separation = vec2(texel.x * uSeparation * 2.5, 0.0);
+    vec3 separated = vec3(sampleFrame(sourceCoord - separation).r, horizontal.g, sampleFrame(sourceCoord + separation).b);
+    vec3 color = mix(horizontal, separated, uSeparation);
+    color = pow(max(color, vec3(0.0)), vec3(2.15));
+    color += bloom * .28 * uStrength * uBloom;
+    color += glow * .7 * uStrength * uGlow;
+    float scanlineBand = mod(floor(sourceCoord.y * uSourceSize.y), 2.0);
+    float beam = mix(1.0 - .78 * uStrength * uScanlines, 1.0, scanlineBand);
+    beam = mix(beam, min(1.08, beam + .14), smoothstep(.08, .65, dot(color, vec3(.299, .587, .114))) * uStrength * uGlow);
+    float triad = mod(floor(gl_FragCoord.x), 3.0);
+    vec3 mask = vec3(.72);
+    if (triad < 1.0) mask.r = 1.0;
+    else if (triad < 2.0) mask.g = 1.0;
+    else mask.b = 1.0;
+    mask = mix(vec3(1.0), mask, .45 * uStrength);
+    float vignette = 1.0 - .16 * uStrength * uCurve * smoothstep(.2, 1.55, radius);
+    color *= beam * mask * vignette * edge;
+    color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
 function textScale(controlName) { return SCALE_STEPS[Number(controls[controlName].value)] || 1; }
 function superscriptScale(scale) { return Math.max(1, Math.round(scale / 2)); }
+function crtSetting(name) { return Number(controls[CRT_CONTROL_IDS[name]].value) / 100; }
+function syncCrtControls() {
+  Object.entries(CRT_CONTROL_IDS).forEach(([name, controlName]) => {
+    document.querySelector(`[data-crt-output="${name}"]`).textContent = `${controls[controlName].value}%`;
+  });
+}
+function applyCrtLook(name) {
+  const look = CRT_LOOKS[name];
+  if (!look) return;
+  controls.crt.value = look.treatment;
+  Object.entries(look.controls).forEach(([controlName, value]) => { controls[CRT_CONTROL_IDS[controlName]].value = value; });
+  syncCrtControls();
+}
 function syncScaleOutput(controlName) {
   document.querySelectorAll(`[data-scale-toggle="${controlName}"] [data-scale-value]`).forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.scaleValue === controls[controlName].value));
@@ -80,7 +171,8 @@ const textVerticalAlignments = { header: 'center', detail: 'top', body: 'center'
 let bodyBorderStyle = 'none';
 const templates = {
   'free-play': {
-    theme: 'yuNo', logo: 'pixel', classic: true, transmission: false, boundaries: false, speed: '1',
+    theme: 'yuNo', logo: 'pixel', classic: true, transmission: false, boundaries: false, speed: '1', crt: 'off',
+    crtControls: { curve: '100', rgb: '45', scanline: '100', bloom: '100', glow: '100' },
     headline: 'July [[effect:wave]]Free Play[[/effect]] Calendar', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]\n[[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]\n[[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]',
     cta: 'JOIN THE SIGNAL', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
@@ -467,6 +559,75 @@ function drawTextBoundaries(rectangles, palette) {
 function alignmentPoint(x, width, alignment) { return alignment === 'right' ? x + width : alignment === 'center' ? x + width / 2 : x; }
 function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
 function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
+function compileCrtShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+  const message = gl.getShaderInfoLog(shader);
+  gl.deleteShader(shader);
+  throw new Error(message || 'Unknown shader compilation failure');
+}
+function createCrtRenderer() {
+  if (crtRenderer) return crtRenderer;
+  if (crtRenderer === false) return null;
+  const gl = crtCanvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: true });
+  if (!gl) { crtRenderer = false; return null; }
+  try {
+    const program = gl.createProgram();
+    const vertexShader = compileCrtShader(gl, gl.VERTEX_SHADER, CRT_VERTEX_SHADER);
+    const fragmentShader = compileCrtShader(gl, gl.FRAGMENT_SHADER, CRT_FRAGMENT_SHADER);
+    gl.attachShader(program, vertexShader); gl.attachShader(program, fragmentShader); gl.linkProgram(program);
+    gl.deleteShader(vertexShader); gl.deleteShader(fragmentShader);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || 'Unknown shader link failure');
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const position = gl.getAttribLocation(program, 'aPosition');
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    crtRenderer = {
+      gl, program, texture, buffer, position,
+      source: gl.getUniformLocation(program, 'uSource'),
+      sourceSize: gl.getUniformLocation(program, 'uSourceSize'),
+      outputSize: gl.getUniformLocation(program, 'uOutputSize'),
+      strength: gl.getUniformLocation(program, 'uStrength'),
+      curve: gl.getUniformLocation(program, 'uCurve'),
+      separation: gl.getUniformLocation(program, 'uSeparation'),
+      scanlines: gl.getUniformLocation(program, 'uScanlines'),
+      bloom: gl.getUniformLocation(program, 'uBloom'),
+      glow: gl.getUniformLocation(program, 'uGlow')
+    };
+  } catch (error) {
+    console.warn('CRT renderer unavailable:', error);
+    crtRenderer = false;
+  }
+  return crtRenderer || null;
+}
+function renderCrtPiFrame() {
+  const strength = CRT_STRENGTHS[controls.crt.value];
+  if (!strength) return canvas;
+  const renderer = createCrtRenderer();
+  if (!renderer) return canvas;
+  const { gl, program, texture, buffer, position, source, sourceSize, outputSize } = renderer;
+  gl.viewport(0, 0, EXPORT_W, EXPORT_H);
+  gl.useProgram(program);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+  gl.uniform1i(source, 0); gl.uniform2f(sourceSize, W, H); gl.uniform2f(outputSize, EXPORT_W, EXPORT_H); gl.uniform1f(renderer.strength, strength);
+  gl.uniform1f(renderer.curve, crtSetting('curve')); gl.uniform1f(renderer.separation, crtSetting('rgb'));
+  gl.uniform1f(renderer.scanlines, crtSetting('scanline')); gl.uniform1f(renderer.bloom, crtSetting('bloom'));
+  gl.uniform1f(renderer.glow, crtSetting('glow'));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  return crtCanvas;
+}
 function render(now) {
   const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; const time = now / 1000 * Number(controls.speed.value); activeAnimationTime = time;
   ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
@@ -536,7 +697,9 @@ function render(now) {
   });
   footerLines.forEach((line, index) => styledText('body', line, footerTextCenter, footerY + hoursLines.length * hoursLineHeight + hoursGap + index * footerLineHeight, palette.accent, palette.shadow, footerScale, 'center', footerFont, 'footer'));
   boundaries.push({ x: TEXT_FIELD_X, y: FOOTER_FIELD_Y, width: TEXT_FIELD_WIDTH, height: FOOTER_FIELD_HEIGHT });
-  exportCtx.drawImage(canvas, 0, 0, W * EXPORT_SCALE, H * EXPORT_SCALE);
+  const finalFrame = renderCrtPiFrame();
+  if (finalFrame !== canvas) ctx.drawImage(finalFrame, 0, 0, W, H);
+  exportCtx.drawImage(finalFrame, 0, 0, W * EXPORT_SCALE, H * EXPORT_SCALE);
   if (controls.boundaries.checked) drawTextBoundaries(boundaries, palette);
 }
 function frame(now) { render(now); requestAnimationFrame(frame); }
@@ -997,6 +1160,13 @@ controls.refresh.addEventListener('click', () => { resetStars(); controls.status
   });
 });
 controls.theme.addEventListener('change', syncThemePreview); syncThemePreview();
+controls.crtLook.addEventListener('change', () => {
+  applyCrtLook(controls.crtLook.value);
+  if (controls.crtLook.value !== 'custom') controls.status.textContent = `${controls.crtLook.selectedOptions[0].textContent} CRT look applied.`;
+});
+controls.crt.addEventListener('change', () => { controls.crtLook.value = 'custom'; });
+Object.values(CRT_CONTROL_IDS).forEach(controlName => controls[controlName].addEventListener('input', () => { controls.crtLook.value = 'custom'; syncCrtControls(); }));
+syncCrtControls();
 ['headerScale', 'detailScale', 'bodyScale', 'ctaScale', 'footerScale'].forEach(controlName => {
   document.querySelector(`[data-scale-toggle="${controlName}"]`).addEventListener('click', event => {
     const button = event.target.closest('[data-scale-value]');
@@ -1031,7 +1201,8 @@ function syncBodyBorderControls() {
 }
 async function applyTemplate(template) {
   controls.theme.value = template.theme; controls.logo.value = template.logo; controls.classic.checked = template.classic;
-  controls.transmission.checked = template.transmission; controls.boundaries.checked = template.boundaries; controls.speed.value = template.speed;
+  controls.transmission.checked = template.transmission; controls.boundaries.checked = template.boundaries; controls.speed.value = template.speed; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
+  Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
   controls.cta.value = template.cta; controls.hours.value = template.hours; controls.footer.value = template.footer;
   Object.entries(template.scales).forEach(([controlName, value]) => { controls[controlName].value = value; syncScaleOutput(controlName); });
