@@ -24,7 +24,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerScale', 'hours', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 const SCALE_STEPS = [1, 2, 4];
 const SHADOW_ALPHA = 1;
@@ -159,6 +159,11 @@ const logoImages = Object.fromEntries(Object.entries({
   gradient: './assets/images/gklogogradient.png',
   classic: './assets/images/classicarcade.png'
 }).map(([name, source]) => { const image = new Image(); image.src = source; return [name, image]; }));
+const moonLanderImages = Object.fromEntries(Object.entries({
+  mountain: './assets/images/mlmtn.png',
+  city: './assets/images/mlcity.png'
+}).map(([name, source]) => { const image = new Image(); image.src = source; return [name, image]; }));
+const moonLanderTintCache = new Map();
 const logoPixels = document.createElement('canvas');
 const classicPixels = document.createElement('canvas');
 const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
@@ -175,7 +180,7 @@ const textVerticalAlignments = { header: 'center', detail: 'top', body: 'center'
 let bodyBorderStyle = 'none';
 const templates = {
   'free-play': {
-    theme: 'yuNo', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
+    theme: 'yuNo', gameStyle: 'asteroids', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     headline: 'July [[effect:wave]]Free Play[[/effect]] Calendar', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]\n[[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]\n[[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]',
     cta: '[[effect:superscript]]$[[/effect]]6 NOON-5[[effect:subscript]]PM[[/effect]] (ALL AGES)\n[[effect:superscript]]$[[/effect]]12 5[[effect:subscript]]PM[[/effect]]-MIDNIGHT (21+)', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
@@ -186,7 +191,7 @@ const templates = {
     fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
   },
   'arcade-events': {
-    theme: 'neon', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
+    theme: 'neon', gameStyle: 'asteroids', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     headline: 'Arcade Events This Week', detail: '[[effect:underline]]July 20-26[[/effect]]',
     body: '[[effect:highlight]]Monday 7/20[[/effect]]\nMario Kart World Tournament + Killer Queen Community Night\n[[effect:highlight]]Tuesday 7/21[[/effect]]\nLX Entertainment Night: UFO 50\n[[effect:highlight]]Wednesday 7/22[[/effect]]\nElectropop/Chiptune Show\nCrunk Witch + Tonight We Launch!\n[[effect:highlight]]Sunday 7/26[[/effect]]\nSamurai Showdown II Tournament',
     cta: '[[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]][[atascii-7E]]   SUMMER PROMO   [[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]][[atascii-7F]]\n50% OFF ALL GAMES NOON-5PM', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
@@ -213,10 +218,244 @@ const LEGACY_UNICODE = {
 const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
 let stars = [], seed = 1, recording = false;
 let activeTextControl = controls.bodyEditor, savedBodyRange = null, savedHeaderRange = null, savedDetailRange = null, savedCtaRange = null;
+const savedInlineRanges = { footer: null, hours: null };
 
 function resetStars() {
   seed += 1;
   stars = Array.from({ length: 120 }, (_, index) => ({ x: Math.floor(random(seed * 101 + index * 3) * W), y: Math.floor(random(seed * 103 + index * 3 + 1) * H), z: .2 + random(seed * 107 + index * 3 + 2) }));
+}
+const VECTOR_DIRECTION_STEPS = 64;
+// Proportions follow the original DVG ShipDir0 and ThrustDir0 vector paths.
+const VECTOR_SHIP = [[-5, -3], [-5, 3], [-8, 6], [11, 0], [-8, -6], [-5, -3]];
+const VECTOR_THRUST = [[-5, -3], [-11, 0], [-5, 3]];
+// Proportions follow the original DVG saucer path, including its separate visor line.
+const VECTOR_SAUCER_VISOR = [[-4, -2], [4, -2]];
+const VECTOR_SAUCER_HULL = [[10, 2], [-10, 2], [-4, 6], [4, 6], [10, 2], [4, -2], [2, -6], [-2, -6], [-4, -2], [-10, 2]];
+const VECTOR_ASTEROIDS = [
+  [[-10, -8], [-4, -11], [3, -9], [10, -5], [8, 1], [11, 7], [4, 10], [-3, 8], [-9, 10], [-11, 3], [-8, -2]],
+  [[-7, -11], [1, -9], [7, -11], [11, -4], [7, 2], [10, 8], [2, 10], [-4, 7], [-11, 5], [-9, -2], [-11, -7]],
+  [[-10, -4], [-5, -10], [2, -8], [9, -10], [11, -2], [7, 4], [9, 9], [1, 10], [-6, 8], [-11, 2], [-7, -1]],
+  [[-8, -10], [-1, -8], [6, -11], [10, -5], [8, 1], [11, 6], [5, 10], [-2, 8], [-8, 10], [-11, 4], [-9, -3]]
+];
+function wrapped(value, limit) { return ((value % limit) + limit) % limit; }
+function vectorAngle(angle) { return Math.round(angle / (Math.PI * 2) * VECTOR_DIRECTION_STEPS) / VECTOR_DIRECTION_STEPS * Math.PI * 2; }
+function vectorOffsets(x, y, radius) {
+  const xOffsets = x < radius ? [0, W] : x > W - radius ? [0, -W] : [0];
+  const yOffsets = y < radius ? [0, H] : y > H - radius ? [0, -H] : [0];
+  return xOffsets.flatMap(offsetX => yOffsets.map(offsetY => ({ x: offsetX, y: offsetY })));
+}
+function vectorPath(points, x, y, angle = 0, close = true) {
+  const cosine = Math.cos(angle), sine = Math.sin(angle);
+  ctx.beginPath();
+  points.forEach(([pointX, pointY], index) => {
+    const drawX = Math.round(x + pointX * cosine - pointY * sine);
+    const drawY = Math.round(y + pointX * sine + pointY * cosine);
+    if (index === 0) ctx.moveTo(drawX, drawY); else ctx.lineTo(drawX, drawY);
+  });
+  if (close) ctx.closePath();
+  ctx.stroke();
+}
+function drawVectorShip(x, y, angle, thrust) {
+  const direction = vectorAngle(angle);
+  vectorOffsets(x, y, 14).forEach(offset => vectorPath(VECTOR_SHIP, x + offset.x, y + offset.y, direction, false));
+  if (!thrust) return;
+  vectorOffsets(x, y, 14).forEach(offset => vectorPath(VECTOR_THRUST, x + offset.x, y + offset.y, direction, false));
+}
+function drawVectorAsteroid(id, x, y, radius) {
+  const scale = radius / 11;
+  const points = VECTOR_ASTEROIDS[id % VECTOR_ASTEROIDS.length].map(([pointX, pointY]) => [pointX * scale, pointY * scale]);
+  vectorOffsets(x, y, radius + 2).forEach(offset => vectorPath(points, x + offset.x, y + offset.y));
+}
+function drawVectorSaucer(x, y) {
+  vectorOffsets(x, y, 13).forEach(offset => {
+    vectorPath(VECTOR_SAUCER_VISOR, x + offset.x, y + offset.y, 0, false);
+    vectorPath(VECTOR_SAUCER_HULL, x + offset.x, y + offset.y, 0, false);
+  });
+}
+function drawVectorShot(x, y) {
+  vectorOffsets(x, y, 1).forEach(offset => ctx.fillRect(Math.round(x + offset.x), Math.round(y + offset.y), 1, 1));
+}
+function drawVectorShrapnel(x, y, age) {
+  const distance = 3 + age * 26;
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([directionX, directionY], index) => {
+    const startX = x + directionX * distance, startY = y + directionY * distance;
+    const endX = startX + directionX * (2 + index % 2), endY = startY + directionY * (2 + (index + 1) % 2);
+    vectorPath([[startX, startY], [endX, endY]], 0, 0, 0, false);
+  });
+}
+function wrappedDelta(from, to, limit) {
+  const delta = to - from;
+  return delta > limit / 2 ? delta - limit : delta < -limit / 2 ? delta + limit : delta;
+}
+function wrappedDistance(first, second) {
+  return Math.hypot(wrappedDelta(first.x, second.x, W), wrappedDelta(first.y, second.y, H));
+}
+function clamp(value, minimum, maximum) { return Math.max(minimum, Math.min(maximum, value)); }
+function asteroidWave(wave) {
+  return Array.from({ length: 4 }, (_, index) => {
+    const angle = random(wave * 29 + index * 7) * Math.PI * 2;
+    const speed = 11 + random(wave * 31 + index * 11) * 10;
+    return {
+      shape: wave + index,
+      x: 90 + random(wave * 37 + index * 13) * (W - 180), y: 78 + random(wave * 41 + index * 17) * (H - 156),
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: 25 + random(wave * 43 + index * 19) * 10
+    };
+  });
+}
+function createAsteroidsGame() {
+  return {
+    lastTime: null, wave: 1, waveDelay: 0, rocks: asteroidWave(1), shots: [], effects: [],
+    ship: { x: 88, y: 493, vx: 22, vy: -12, angle: .35, cooldown: .35, respawn: 0, thrust: false },
+    saucer: { x: W - 56, y: 180, vx: -31, cooldown: 2.2, respawn: 0 }
+  };
+}
+let asteroidsGame = null;
+function addImpact(game, x, y) { game.effects.push({ x, y, age: 0, life: .34 }); }
+function splitAsteroid(game, rock) {
+  addImpact(game, rock.x, rock.y);
+  if (rock.radius < 14) return;
+  [-1, 1].forEach((direction, index) => {
+    const angle = Math.atan2(rock.vy, rock.vx) + direction * (.72 + index * .14);
+    const speed = Math.hypot(rock.vx, rock.vy) * 1.23 + 7;
+    game.rocks.push({ shape: rock.shape + index + 1, x: rock.x, y: rock.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: rock.radius * .58 });
+  });
+}
+function fireShot(game, owner, x, y, angle) {
+  const speed = owner === 'ship' ? 170 : 126;
+  game.shots.push({ owner, x: wrapped(x + Math.cos(angle) * 12, W), y: wrapped(y + Math.sin(angle) * 12, H), vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: owner === 'ship' ? 1.15 : 1.45 });
+}
+function destroyShip(game) {
+  const ship = game.ship;
+  if (ship.respawn) return;
+  addImpact(game, ship.x, ship.y); ship.respawn = .72; ship.vx = 0; ship.vy = 0; ship.thrust = false;
+}
+function safeShipSpawn(game) {
+  const candidates = [{ x: 92, y: 500 }, { x: W - 78, y: H - 94 }, { x: 84, y: 116 }, { x: W - 96, y: 154 }, { x: W / 2, y: H - 86 }];
+  return candidates.reduce((safest, candidate) => {
+    const candidateDistance = game.rocks.reduce((nearest, rock) => Math.min(nearest, wrappedDistance(candidate, rock) - rock.radius), Infinity);
+    const safestDistance = game.rocks.reduce((nearest, rock) => Math.min(nearest, wrappedDistance(safest, rock) - rock.radius), Infinity);
+    return candidateDistance > safestDistance ? candidate : safest;
+  }, candidates[0]);
+}
+function updateAsteroidsGame(time) {
+  if (!asteroidsGame) asteroidsGame = createAsteroidsGame();
+  const game = asteroidsGame;
+  if (game.lastTime === null) { game.lastTime = time; return game; }
+  const dt = clamp(time - game.lastTime, 0, .05); game.lastTime = time;
+  game.effects = game.effects.filter(effect => (effect.age += dt) < effect.life);
+  game.rocks.forEach(rock => { rock.x = wrapped(rock.x + rock.vx * dt, W); rock.y = wrapped(rock.y + rock.vy * dt, H); });
+
+  const ship = game.ship;
+  if (ship.respawn > 0) {
+    ship.respawn -= dt;
+    if (ship.respawn <= 0) {
+      const spawn = safeShipSpawn(game);
+      ship.respawn = 0; ship.x = spawn.x; ship.y = spawn.y; ship.angle = .2; ship.vx = 19; ship.vy = -9; ship.cooldown = .32;
+    }
+  } else if (game.rocks.length) {
+    const nearest = game.rocks.reduce((best, rock) => wrappedDistance(ship, rock) < wrappedDistance(ship, best) ? rock : best, game.rocks[0]);
+    const distance = wrappedDistance(ship, nearest);
+    const lead = distance / 170;
+    const targetX = wrappedDelta(ship.x, nearest.x, W) + nearest.vx * lead;
+    const targetY = wrappedDelta(ship.y, nearest.y, H) + nearest.vy * lead;
+    const threat = game.rocks.find(rock => wrappedDistance(ship, rock) < rock.radius + 58);
+    const desiredAngle = threat ? Math.atan2(-wrappedDelta(ship.y, threat.y, H), -wrappedDelta(ship.x, threat.x, W)) : Math.atan2(targetY, targetX);
+    const turn = Math.atan2(Math.sin(desiredAngle - ship.angle), Math.cos(desiredAngle - ship.angle));
+    ship.angle += clamp(turn, -2.25 * dt, 2.25 * dt);
+    const speedBeforeThrust = Math.hypot(ship.vx, ship.vy);
+    ship.thrust = Boolean(threat) || (distance > 72 && Math.abs(turn) < .78) || speedBeforeThrust < 24;
+    if (ship.thrust) { ship.vx += Math.cos(ship.angle) * 25 * dt; ship.vy += Math.sin(ship.angle) * 25 * dt; }
+    const speed = Math.hypot(ship.vx, ship.vy);
+    if (speed > 62) { ship.vx *= 62 / speed; ship.vy *= 62 / speed; }
+    ship.x = wrapped(ship.x + ship.vx * dt, W); ship.y = wrapped(ship.y + ship.vy * dt, H);
+    ship.cooldown -= dt;
+    const aimError = Math.abs(Math.atan2(Math.sin(desiredAngle - ship.angle), Math.cos(desiredAngle - ship.angle)));
+    if (ship.cooldown <= 0 && !threat && aimError < .2 && distance < 280) { fireShot(game, 'ship', ship.x, ship.y, ship.angle); ship.cooldown = .34; }
+  }
+
+  const saucer = game.saucer;
+  if (saucer.respawn > 0) { saucer.respawn = Math.max(0, saucer.respawn - dt); }
+  else {
+    saucer.x = wrapped(saucer.x + saucer.vx * dt, W); saucer.y = clamp(saucer.y + Math.sin(time * 1.45) * 11 * dt, 74, H - 72); saucer.cooldown -= dt;
+    if (saucer.cooldown <= 0 && !ship.respawn) {
+      const aim = Math.atan2(wrappedDelta(saucer.y, ship.y, H), wrappedDelta(saucer.x, ship.x, W));
+      fireShot(game, 'saucer', saucer.x, saucer.y, aim + (random(Math.floor(time * 10)) - .5) * .72); saucer.cooldown = 2.1;
+    }
+  }
+
+  game.shots = game.shots.filter(shot => {
+    shot.life -= dt; shot.x = wrapped(shot.x + shot.vx * dt, W); shot.y = wrapped(shot.y + shot.vy * dt, H);
+    if (shot.owner === 'ship') {
+      const hit = game.rocks.find(rock => wrappedDistance(shot, rock) < rock.radius);
+      if (hit) { game.rocks.splice(game.rocks.indexOf(hit), 1); splitAsteroid(game, hit); return false; }
+      if (!saucer.respawn && wrappedDistance(shot, saucer) < 14) { addImpact(game, saucer.x, saucer.y); saucer.respawn = 3.2; return false; }
+    } else if (!ship.respawn && wrappedDistance(shot, ship) < 8) { destroyShip(game); return false; }
+    return shot.life > 0;
+  });
+  if (!ship.respawn && game.rocks.some(rock => wrappedDistance(ship, rock) < rock.radius + 7)) destroyShip(game);
+  if (!game.rocks.length) {
+    game.waveDelay += dt;
+    if (game.waveDelay > 1.1) { game.wave += 1; game.waveDelay = 0; game.rocks = asteroidWave(game.wave); }
+  }
+  return game;
+}
+function drawAsteroidsBackground(palette, time) {
+  const game = updateAsteroidsGame(time);
+  ctx.save();
+  ctx.strokeStyle = palette.text; ctx.fillStyle = palette.text; ctx.lineWidth = 1;
+  ctx.globalAlpha = .31;
+  game.rocks.forEach(rock => drawVectorAsteroid(rock.shape, rock.x, rock.y, rock.radius));
+  game.effects.forEach(effect => { ctx.globalAlpha = .46 * (1 - effect.age / effect.life); drawVectorShrapnel(effect.x, effect.y, effect.age / effect.life); });
+  ctx.globalAlpha = .58;
+  if (game.saucer.respawn <= 0) drawVectorSaucer(game.saucer.x, game.saucer.y);
+  game.shots.forEach(shot => { ctx.globalAlpha = shot.owner === 'ship' ? .68 : .54; drawVectorShot(shot.x, shot.y); });
+  if (game.ship.respawn <= 0 || Math.floor(time * 12) % 2 === 0) {
+    ctx.globalAlpha = .62 * (game.ship.respawn > 0 ? .52 : 1);
+    drawVectorShip(game.ship.x, game.ship.y, game.ship.angle, game.ship.thrust && !game.ship.respawn);
+  }
+  ctx.restore();
+}
+function drawStarfieldBackground(palette, time) {
+  stars.forEach((star, index) => {
+    ctx.globalAlpha = .22 + star.z * .68; ctx.fillStyle = index % 11 === 0 ? palette.accent : index % 3 === 0 ? palette.text : palette.muted;
+    ctx.fillRect(star.x, Math.floor((star.y + time * (6 + star.z * 19)) % H), star.z > .72 ? 2 : 1, star.z > .9 ? 2 : 1);
+  });
+  ctx.globalAlpha = 1;
+}
+const MOON_LANDER_SCALE = 4;
+function tintedMoonLanderLayer(name, color) {
+  const image = moonLanderImages[name];
+  if (!image.complete || !image.naturalWidth) return null;
+  const cacheKey = `${name}:${color}`;
+  if (moonLanderTintCache.has(cacheKey)) return moonLanderTintCache.get(cacheKey);
+  const layer = document.createElement('canvas'); layer.width = image.naturalWidth; layer.height = image.naturalHeight;
+  const layerCtx = layer.getContext('2d'); layerCtx.drawImage(image, 0, 0);
+  const pixels = layerCtx.getImageData(0, 0, layer.width, layer.height);
+  const target = color.match(/\w\w/g).map(value => Number.parseInt(value, 16));
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    if (!pixels.data[index + 3]) continue;
+    const luminance = (pixels.data[index] * .299 + pixels.data[index + 1] * .587 + pixels.data[index + 2] * .114) / 255;
+    const shade = .3 + luminance * .7;
+    pixels.data[index] = Math.round(target[0] * shade); pixels.data[index + 1] = Math.round(target[1] * shade); pixels.data[index + 2] = Math.round(target[2] * shade);
+  }
+  layerCtx.putImageData(pixels, 0, 0); moonLanderTintCache.set(cacheKey, layer); return layer;
+}
+function drawTiledMoonLanderLayer(image, y, time, speed) {
+  if (!image || (image.complete === false) || !(image.naturalWidth || image.width)) return;
+  const tileWidth = (image.naturalWidth || image.width) * MOON_LANDER_SCALE;
+  const tileHeight = (image.naturalHeight || image.height) * MOON_LANDER_SCALE;
+  const offset = (time * speed) % tileWidth;
+  for (let x = -tileWidth - offset; x < W + tileWidth; x += tileWidth) ctx.drawImage(image, Math.round(x), y, tileWidth, tileHeight);
+}
+function drawMoonLanderBackground(palette, time) {
+  const mountainY = H - (moonLanderImages.mountain.naturalHeight || 128) * MOON_LANDER_SCALE;
+  drawTiledMoonLanderLayer(tintedMoonLanderLayer('mountain', palette.muted), mountainY, time, 12);
+  drawTiledMoonLanderLayer(tintedMoonLanderLayer('city', palette.accent), mountainY + 46 * MOON_LANDER_SCALE, time, 29);
+}
+function drawGameBackground(palette, time) {
+  if (controls.gameStyle.value === 'asteroids') drawAsteroidsBackground(palette, time);
+  else if (controls.gameStyle.value === 'moon-patrol') drawMoonLanderBackground(palette, time);
+  else drawStarfieldBackground(palette, time);
 }
 function glyphIndexFor(character) {
   const codepoint = character.codePointAt(0);
@@ -626,7 +865,7 @@ function renderCrtPiFrame() {
 function render(now) {
   const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; const time = now / 1000 * MOTION_SPEED; activeAnimationTime = time;
   ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
-  stars.forEach((star, index) => { ctx.globalAlpha = .22 + star.z * .68; ctx.fillStyle = index % 11 === 0 ? palette.accent : index % 3 === 0 ? palette.text : palette.muted; ctx.fillRect(star.x, Math.floor((star.y + time * (6 + star.z * 19)) % H), star.z > .72 ? 2 : 1, star.z > .9 ? 2 : 1); }); ctx.globalAlpha = 1;
+  drawGameBackground(palette, time);
   if (controls.logo.value === 'pixel') drawAnimatedLogo(HEADER_LOGO_Y, palette, time);
   else drawImageCentered(logoImages[controls.logo.value], HEADER_LOGO_Y);
   if (controls.classic.checked) drawClassicArcade(CLASSIC_ARCADE_Y, palette);
@@ -900,6 +1139,70 @@ function hydrateCtaEditor() {
   }
   appendText(controls.cta.value.slice(position));
 }
+function inlineRichField(section) {
+  return section === 'footer' ? { editor: controls.footerEditor, source: controls.footer } : { editor: controls.hoursEditor, source: controls.hours };
+}
+function hydrateInlineRichEditor(section) {
+  const { editor, source } = inlineRichField(section); const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
+  const targets = [editor]; let position = 0; let match; editor.replaceChildren();
+  const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
+  while ((match = expression.exec(source.value))) {
+    appendText(source.value.slice(position, match.index)); const marker = match[1].toLowerCase();
+    if (marker === '/effect' && targets.length > 1) targets.pop();
+    else if (marker.startsWith('effect')) {
+      const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
+      span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep'].includes(effect) ? `editor-effect-${effect}` : '';
+      targets.at(-1).append(span); targets.push(span);
+    } else {
+      const glyphData = legacyGlyphs.get(marker);
+      if (glyphData) targets.at(-1).append(createEditorGlyph(glyphData));
+      else appendText(match[0]);
+    }
+    position = expression.lastIndex;
+  }
+  appendText(source.value.slice(position));
+}
+function syncInlineRichSource(section) {
+  const { editor, source } = inlineRichField(section);
+  source.value = [...editor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, '');
+}
+function saveInlineRichSelection(section) {
+  const { editor } = inlineRichField(section); const selection = window.getSelection();
+  if (selection.rangeCount && editor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedInlineRanges[section] = selection.getRangeAt(0).cloneRange();
+}
+function inlineRichPointAt(editor, offset) {
+  let remaining = Math.max(0, offset);
+  const find = node => {
+    if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) };
+    for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; }
+    return { container: node, offset: node.childNodes.length };
+  };
+  return find(editor);
+}
+function toggleInlineRichEffect(section, effect) {
+  const { editor, source } = inlineRichField(section); const selection = window.getSelection(); let range = null;
+  if (selection.rangeCount) {
+    const current = selection.getRangeAt(0);
+    if (!current.collapsed && editor.contains(current.startContainer) && editor.contains(current.endContainer)) { savedInlineRanges[section] = current.cloneRange(); range = current; }
+  }
+  range ||= savedInlineRanges[section]; if (!range || range.collapsed) return;
+  const before = document.createRange(); before.selectNodeContents(editor); before.setEnd(range.startContainer, range.startOffset);
+  const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(source.value);
+  const selected = units.filter(unit => unit.start < end && unit.end > start); if (!selected.length) return;
+  const removing = selected.every(unit => unit.effects.includes(effect));
+  selected.forEach(unit => { unit.effects = removing ? unit.effects.filter(item => item !== effect) : unit.effects.includes(effect) ? unit.effects : [...unit.effects, effect]; });
+  source.value = serializeBodyUnits(units); hydrateInlineRichEditor(section);
+  editor.focus(); const restored = document.createRange(); const startPoint = inlineRichPointAt(editor, start); const endPoint = inlineRichPointAt(editor, end);
+  restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedInlineRanges[section] = restored.cloneRange();
+}
+function insertInlineRichGlyph(section, glyphData) {
+  const { editor } = inlineRichField(section); const selection = window.getSelection();
+  const range = savedInlineRanges[section]?.cloneRange() || document.createRange();
+  if (!savedInlineRanges[section]) { range.selectNodeContents(editor); range.collapse(false); }
+  range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
+  range.setStartAfter(glyph); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); savedInlineRanges[section] = range.cloneRange();
+  editor.focus(); syncInlineRichSource(section);
+}
 function serializeBodyNode(node) {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent;
   if (node.nodeType !== Node.ELEMENT_NODE) return '';
@@ -1137,7 +1440,7 @@ function insertCtaLineBreak() {
   range.setStartAfter(lineBreak); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); savedCtaRange = range.cloneRange(); controls.ctaEditor.focus(); controls.cta.value = [...controls.ctaEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, '');
 }
 function applyCharacterEffect(section, effect) {
-  const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale' }[section];
+  const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale', footer: 'footerScale', hours: 'footerScale' }[section];
   if (['superscript', 'subscript'].includes(effect) && textScale(scaleControl) === 1) return;
   if (section === 'body') {
     toggleBodyEffect(effect);
@@ -1147,14 +1450,16 @@ function applyCharacterEffect(section, effect) {
     toggleDetailEffect(effect);
   } else if (section === 'cta') {
     toggleCtaEffect(effect);
+  } else if (section === 'footer' || section === 'hours') {
+    toggleInlineRichEffect(section, effect);
   } else {
     const control = { header: controls.headline, detail: controls.detail }[section];
     toggleInputEffect(control, effect);
   }
 }
 function syncCharacterToolAvailability() {
-  ['header', 'detail', 'body', 'cta'].forEach(section => {
-    const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale' }[section];
+  ['header', 'detail', 'body', 'cta', 'footer', 'hours'].forEach(section => {
+    const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale', footer: 'footerScale', hours: 'footerScale' }[section];
     const available = textScale(scaleControl) > 1;
     document.querySelectorAll(`[data-character-toolbar="${section}"] [data-character-control="superscript"], [data-character-toolbar="${section}"] [data-character-control="subscript"]`).forEach(button => {
       button.disabled = !available;
@@ -1173,6 +1478,8 @@ function insertLegacyGlyph(glyphId) {
   if (activeTextControl === controls.bodyEditor) { insertBodyGlyph(legacyGlyphs.get(glyphId)); return; }
   if (activeTextControl === controls.headerEditor) { insertHeaderGlyph(legacyGlyphs.get(glyphId)); return; }
   if (activeTextControl === controls.ctaEditor) { insertCtaGlyph(legacyGlyphs.get(glyphId)); return; }
+  if (activeTextControl === controls.footerEditor) { insertInlineRichGlyph('footer', legacyGlyphs.get(glyphId)); return; }
+  if (activeTextControl === controls.hoursEditor) { insertInlineRichGlyph('hours', legacyGlyphs.get(glyphId)); return; }
   const control = activeTextControl || controls.headline;
   control.setRangeText(`[[${glyphId}]]`, control.selectionStart, control.selectionEnd, 'end');
   control.focus();
@@ -1185,7 +1492,7 @@ async function loadLegacyGlyphs() {
     legacyGlyphs.set(glyphData.id, glyphData);
     if (glyphData.system === 'ATASCII' && glyphData.internalSlot) legacyGlyphs.set(`atascii-${glyphData.internalSlot.slice(2).toLowerCase()}`, glyphData);
   });
-  hydrateBodyEditor();
+  hydrateBodyEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
   const pickerGlyphs = library.glyphs.filter(glyphData => {
     return glyphData.system === 'ATASCII' ? ATASCII_PICKER_SLOTS.has(glyphData.slot) : glyphData.system === 'PETSCII' && PETSCII_PICKER_SLOTS.has(glyphData.slot);
   });
@@ -1249,7 +1556,7 @@ function syncBodyBorderControls() {
   document.querySelectorAll('[data-border-toolbar="body"] [data-border-style]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.borderStyle === bodyBorderStyle)));
 }
 async function applyTemplate(template) {
-  controls.theme.value = template.theme; controls.logo.value = template.logo; controls.classic.checked = template.classic;
+  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = template.logo; controls.classic.checked = template.classic;
   controls.boundaries.checked = template.boundaries; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
@@ -1261,7 +1568,7 @@ async function applyTemplate(template) {
     toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
-  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor();
+  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
   await Promise.all(Object.entries(template.fonts).map(([controlName, fontName]) => {
     const option = [...controls[controlName].options].find(item => item.textContent === fontName);
     if (!option) return Promise.resolve();
@@ -1389,7 +1696,16 @@ function populateToolbars() {
   window.lucide?.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 } });
 }
 populateToolbars();
-[controls.detail, controls.hours, controls.footer].forEach(control => control.addEventListener('focus', () => { activeTextControl = control; }));
+function wireInlineRichEditor(section, allowLineBreaks) {
+  const { editor } = inlineRichField(section);
+  editor.addEventListener('focus', () => { activeTextControl = editor; saveInlineRichSelection(section); });
+  editor.addEventListener('input', () => { activeTextControl = editor; syncInlineRichSource(section); saveInlineRichSelection(section); });
+  editor.addEventListener('keydown', event => { if (!allowLineBreaks && event.key === 'Enter') event.preventDefault(); });
+  editor.addEventListener('keyup', () => saveInlineRichSelection(section));
+  editor.addEventListener('mouseup', () => saveInlineRichSelection(section));
+}
+wireInlineRichEditor('hours', false);
+wireInlineRichEditor('footer', true);
 controls.headerEditor.addEventListener('focus', () => { activeTextControl = controls.headerEditor; });
 controls.headerEditor.addEventListener('input', () => { activeTextControl = controls.headerEditor; controls.headline.value = [...controls.headerEditor.childNodes].map(serializeBodyNode).join('').replace(/\n+$/, ''); });
 controls.headerEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedHeaderRange = selection.getRangeAt(0).cloneRange(); });
@@ -1415,6 +1731,7 @@ document.addEventListener('selectionchange', () => {
   if (selection.rangeCount && controls.headerEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedHeaderRange = selection.getRangeAt(0).cloneRange();
   if (selection.rangeCount && controls.detailEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedDetailRange = selection.getRangeAt(0).cloneRange();
   if (selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedCtaRange = selection.getRangeAt(0).cloneRange();
+  ['hours', 'footer'].forEach(section => saveInlineRichSelection(section));
 });
 controls.png.addEventListener('click', () => exportCanvas.toBlob(blob => { download(blob, 'gk-promo-1080x1350.png'); controls.status.textContent = 'PNG exported at 1080 x 1350.'; }, 'image/png'));
 controls.record.addEventListener('click', () => {
@@ -1442,4 +1759,4 @@ async function initializeFonts() {
     controls.status.textContent = `Font library could not load: ${error.message}`;
   }
 }
-hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); resetStars(); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
+hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); resetStars(); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
