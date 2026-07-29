@@ -5,7 +5,7 @@
 - `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, rendered by `promo.js`.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
-- When editing `promo.js`, advance its cache-busting query in `promo.html` (`promo.js?v=201` at this handoff).
+- When editing `promo.js`, advance its cache-busting query in `promo.html` (`promo.js?v=202` at this handoff).
 
 ## HUD (`hud.html`)
 
@@ -20,8 +20,9 @@
 
 - The working canvas is `540x675` (4:5); exports are an exact 2x `1080x1350`. Rendering stays on integer pixel coordinates with `imageSmoothingEnabled = false`.
 - The UI uses a left dock for Basic Settings, Composition, and export; the center live canvas; and a right dock for Logo, Header, Detail Line, Body, CTA, and Footer.
-- Basic Settings exposes the `FREE PLAY` and `ARCADE EVENTS` templates, four six-role palettes, and a text-boundary overlay. Composition exposes CRT finishing controls; animated stars always use standard motion and the initialized deterministic field.
+- Basic Settings exposes the `FREE PLAY` and `ARCADE EVENTS` templates, four six-role palettes, and a text-boundary overlay. CRT Emulation exposes the CRT finishing controls; animated stars always use standard motion and the initialized deterministic field.
 - The selected template is applied after the font library initializes, so its defaults override the literal fallback input values in `promo.html` on first load.
+- Both templates set CRT Treatment to off but do not change the finishing sliders; CRT settings are selected independently when preparing an export.
 - Exports are PNG and a 15-second 30fps MP4 when the browser supports `MediaRecorder` MP4. The exporter intentionally does not fall back to WebM because iOS saving was the requirement.
 - The current composer uses a flat palette background and animated stars. No transparency or background gradient is applied.
 - The detail field collapses to its rendered copy height plus an 8-pixel buffer. The body begins 8 pixels below it when shown, or 24 pixels below its position when hidden, and expands to the footer whenever CTA is hidden. With CTA enabled, the body grows to fit up to 10 rendered lines before the CTA is placed beneath it.
@@ -42,7 +43,7 @@
 ## Promo Defaults: `ARCADE EVENTS`
 
 - Palette: `Neon Space` (`neon`); logo: animated GK Pixel; Classic Arcade subtitle on; text boundaries off; fixed standard motion.
-- CRT: off by default. CRT finishing is independent of the template and can be enabled when preparing an export.
+- CRT: off by default. Its finishing sliders remain independent of the template and can be enabled when preparing an export.
 - Header: `Arcade Events This Week`. Detail line is off by default.
 - Body is top-aligned with a rounded border and lists the July 20, 21, 22, and 26 dates with highlighted date lines, followed by their Mario Kart/Killer Queen, UFO 50, Electropop/Chiptune, Crunk Witch/Tonight We Launch!, and Samurai Showdown II events. CTA is on by default in `ZX Eurostile` at 2x, with ATASCII arrowheads around `SUMMER PROMO` and `50% OFF ALL GAMES NOON-5PM` beneath; Hours and footer use the standard venue copy.
 

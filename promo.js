@@ -176,7 +176,6 @@ let bodyBorderStyle = 'none';
 const templates = {
   'free-play': {
     theme: 'yuNo', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
-    crtControls: { curve: '100', rgb: '45', scanline: '100', bloom: '100', glow: '100' },
     headline: 'July [[effect:wave]]Free Play[[/effect]] Calendar', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]\n[[atascii-7F]] Portland [[atascii-00]] Pride[[leader-tab]][[effect:highlight]]Sun 7/19[[/effect]]\n[[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]',
     cta: '[[effect:superscript]]$[[/effect]]6 NOON-5[[effect:subscript]]PM[[/effect]] (ALL AGES)\n[[effect:superscript]]$[[/effect]]12 5[[effect:subscript]]PM[[/effect]]-MIDNIGHT (21+)', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
