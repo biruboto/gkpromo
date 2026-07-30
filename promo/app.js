@@ -1,9 +1,10 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=228';
 import { createFontManager } from './fonts.js?v=228';
-import { createGameBackgrounds } from './game-backgrounds.js?v=228';
-import { createPromoRenderer } from './renderer.js?v=228';
+import { createGameBackgrounds } from './game-backgrounds.js?v=234';
+import { createMonochromeImageBlock } from './image-block.js?v=236';
+import { createPromoRenderer } from './renderer.js?v=232';
 import { createRichTextEditor } from './rich-text-editor.js?v=228';
-import { populateTemplateSelect, templates } from './templates.js?v=228';
+import { populateTemplateSelect, templates } from './templates.js?v=235';
 
 const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
@@ -18,7 +19,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
@@ -37,7 +38,10 @@ const PROJECT_VERSION = 1;
 const PROJECT_FONT_CONTROLS = ['font', 'headerFont', 'detailFont', 'ctaFont', 'footerFont'];
 const PROJECT_SCALE_CONTROLS = ['headerScale', 'detailScale', 'bodyScale', 'ctaScale', 'footerScale'];
 const PROJECT_COPY_CONTROLS = { header: 'headline', detail: 'detail', body: 'body', cta: 'cta', hours: 'hours', footer: 'footer' };
+const DEFAULT_SECTION_ORDER = ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'];
+const DEFAULT_IMAGE_SETTINGS = { resolution: 64, threshold: 128, contrast: 115, dither: 'bayer4', ditherAmount: 60, color: 'accent', align: 'center', scale: 72, opacity: 100, invert: false };
 const CUSTOM_TEMPLATE_ID = '__custom_project__';
+let sectionOrder = [...DEFAULT_SECTION_ORDER];
 function textScale(controlName) { return SCALE_STEPS[Number(controls[controlName].value)] || 1; }
 function syncCrtControls() {
   Object.entries(CRT_CONTROL_IDS).forEach(([name, controlName]) => {
@@ -95,6 +99,37 @@ const scrollModes = { detail: 'off', hours: 'reveal' };
 const textAlignments = { header: 'center', detail: 'center', body: 'left', cta: 'center', footer: 'center' };
 const textVerticalAlignments = { header: 'center', detail: 'top', body: 'center', cta: 'top', footer: 'bottom' };
 let bodyBorderStyle = 'none';
+function getImageSettings() {
+  return {
+    resolution: Number(controls.imageResolution.value),
+    threshold: Number(controls.imageThreshold.value),
+    contrast: Number(controls.imageContrast.value),
+    dither: controls.imageDither.value,
+    ditherAmount: Number(controls.imageDitherAmount.value),
+    color: controls.imageColor.value,
+    align: controls.imageAlign.value,
+    scale: Number(controls.imageScale.value),
+    opacity: Number(controls.imageOpacity.value),
+    invert: controls.imageInvert.checked
+  };
+}
+function setImageSettings(settings = DEFAULT_IMAGE_SETTINGS) {
+  controls.imageResolution.value = settings.resolution; controls.imageThreshold.value = settings.threshold;
+  controls.imageContrast.value = settings.contrast; controls.imageDither.value = settings.dither;
+  controls.imageDitherAmount.value = settings.ditherAmount; controls.imageColor.value = settings.color;
+  controls.imageAlign.value = settings.align; controls.imageScale.value = settings.scale;
+  controls.imageOpacity.value = settings.opacity; controls.imageInvert.checked = settings.invert;
+  syncImageControls();
+}
+function syncImageControls() {
+  controls.imageResolutionOutput.textContent = `${controls.imageResolution.value} PX`;
+  controls.imageThresholdOutput.textContent = controls.imageThreshold.value;
+  controls.imageContrastOutput.textContent = `${controls.imageContrast.value}%`;
+  controls.imageDitherAmountOutput.textContent = `${controls.imageDitherAmount.value}%`;
+  controls.imageScaleOutput.textContent = `${controls.imageScale.value}%`;
+  controls.imageOpacityOutput.textContent = `${controls.imageOpacity.value}%`;
+  controls.imageDitherAmount.disabled = controls.imageDither.value === 'none';
+}
 populateTemplateSelect(controls.template);
 const legacyGlyphs = new Map();
 const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createFontManager({
@@ -112,13 +147,138 @@ const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createF
 });
 let recording = false;
 const gameBackgrounds = createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle: () => controls.gameStyle.value });
+const imageBlock = createMonochromeImageBlock({
+  getSettings: getImageSettings,
+  onChange: () => {
+    controls.imageClear.disabled = !imageBlock.hasImage();
+    controls.imageAutoThreshold.disabled = !imageBlock.hasImage();
+  }
+});
 const promoRenderer = createPromoRenderer({
   context: ctx, canvas, exportContext: exportCtx, width: W, height: H, exportScale: EXPORT_SCALE,
-  controls, colors, logoImages, legacyGlyphs, gameBackgrounds, crtPipeline, contentVisibility, scrollModes,
+  controls, colors, logoImages, legacyGlyphs, gameBackgrounds, imageBlock, crtPipeline, contentVisibility, scrollModes,
   textAlignments, textVerticalAlignments, getBodyBorderStyle: () => bodyBorderStyle,
   getFonts: () => ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont }),
-  getTextScale: textScale, animationState, leaderTabToken: LEADER_TAB_TOKEN
+  getTextScale: textScale, getSectionOrder: () => sectionOrder, animationState, leaderTabToken: LEADER_TAB_TOKEN
 });
+const rightDock = document.querySelector('.right-dock');
+function normalizeSectionOrder(value) {
+  if (!Array.isArray(value) || new Set(value).size !== value.length) return null;
+  if (value.length === DEFAULT_SECTION_ORDER.length && value.every(section => DEFAULT_SECTION_ORDER.includes(section))) return [...value];
+  const legacySections = DEFAULT_SECTION_ORDER.filter(section => section !== 'image');
+  if (value.length !== legacySections.length || !value.every(section => legacySections.includes(section))) return null;
+  const normalized = [...value];
+  normalized.splice(normalized.indexOf('logo') + 1, 0, 'image');
+  return normalized;
+}
+function syncSectionOrder(order = DEFAULT_SECTION_ORDER) {
+  sectionOrder = normalizeSectionOrder(order) || [...DEFAULT_SECTION_ORDER];
+  const sections = new Map([...rightDock.querySelectorAll('[data-composite-section]')].map(section => [section.dataset.compositeSection, section]));
+  sectionOrder.forEach(sectionName => rightDock.append(sections.get(sectionName)));
+  sectionOrder.forEach((sectionName, index) => {
+    const summary = sections.get(sectionName).querySelector('summary');
+    summary.setAttribute('aria-label', `${summary.querySelector('span:last-child').textContent}, composition item ${index + 1} of ${sectionOrder.length}. Drag or use Alt plus arrow keys to reorder.`);
+    summary.setAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
+  });
+}
+function clearSectionDropTargets() {
+  rightDock.querySelectorAll('.drop-before, .drop-after').forEach(section => section.classList.remove('drop-before', 'drop-after'));
+}
+function moveSection(sectionName, targetName, placeAfter) {
+  const nextOrder = sectionOrder.filter(name => name !== sectionName);
+  const targetIndex = nextOrder.indexOf(targetName);
+  nextOrder.splice(targetIndex + (placeAfter ? 1 : 0), 0, sectionName);
+  syncSectionOrder(nextOrder);
+  controls.status.textContent = `${sectionName.toUpperCase()} moved to composition position ${sectionOrder.indexOf(sectionName) + 1}.`;
+}
+rightDock.addEventListener('dragstart', event => {
+  const summary = event.target.closest('[data-composite-section] > summary');
+  if (!summary) return;
+  const section = summary.parentElement;
+  section.classList.add('is-dragging');
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', section.dataset.compositeSection);
+});
+rightDock.addEventListener('dragover', event => {
+  const target = event.target.closest('[data-composite-section]');
+  const dragging = rightDock.querySelector('.is-dragging');
+  if (!target || !dragging || target === dragging) return;
+  event.preventDefault();
+  clearSectionDropTargets();
+  target.classList.add(event.clientY >= target.getBoundingClientRect().top + target.offsetHeight / 2 ? 'drop-after' : 'drop-before');
+});
+rightDock.addEventListener('drop', event => {
+  const target = event.target.closest('[data-composite-section]');
+  const dragging = rightDock.querySelector('.is-dragging');
+  if (!target || !dragging || target === dragging) return;
+  event.preventDefault();
+  moveSection(dragging.dataset.compositeSection, target.dataset.compositeSection, target.classList.contains('drop-after'));
+  dragging.classList.remove('is-dragging');
+  clearSectionDropTargets();
+});
+rightDock.addEventListener('dragend', () => {
+  rightDock.querySelector('.is-dragging')?.classList.remove('is-dragging');
+  clearSectionDropTargets();
+});
+rightDock.addEventListener('keydown', event => {
+  if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+  const summary = event.target.closest('[data-composite-section] > summary');
+  if (!summary) return;
+  const sectionName = summary.parentElement.dataset.compositeSection;
+  const currentIndex = sectionOrder.indexOf(sectionName);
+  const nextIndex = currentIndex + (event.key === 'ArrowUp' ? -1 : 1);
+  if (nextIndex < 0 || nextIndex >= sectionOrder.length) return;
+  event.preventDefault();
+  const nextOrder = [...sectionOrder];
+  [nextOrder[currentIndex], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[currentIndex]];
+  syncSectionOrder(nextOrder);
+  summary.focus();
+  controls.status.textContent = `${sectionName.toUpperCase()} moved to composition position ${nextIndex + 1}.`;
+});
+syncSectionOrder();
+['imageResolution', 'imageThreshold', 'imageContrast', 'imageDitherAmount'].forEach(controlName => {
+  controls[controlName].addEventListener('input', () => { syncImageControls(); imageBlock.process(); });
+});
+controls.imageDither.addEventListener('change', () => { syncImageControls(); imageBlock.process(); });
+controls.imageInvert.addEventListener('change', () => imageBlock.process());
+controls.imageAutoThreshold.addEventListener('click', () => {
+  controls.imageThreshold.value = imageBlock.getSuggestedThreshold();
+  syncImageControls(); imageBlock.process();
+  controls.status.textContent = `Threshold set to ${controls.imageThreshold.value}.`;
+});
+['imageScale', 'imageOpacity'].forEach(controlName => controls[controlName].addEventListener('input', syncImageControls));
+async function loadImageSource(loader, successMessage) {
+  controls.imageFile.disabled = true; controls.imageUrlLoad.disabled = true; controls.imageClear.disabled = true; controls.imageAutoThreshold.disabled = true;
+  try {
+    await loader();
+    controls.status.textContent = successMessage;
+  } catch (error) {
+    controls.status.textContent = `Could not load image: ${error.message}`;
+  } finally {
+    controls.imageFile.disabled = false; controls.imageUrlLoad.disabled = false;
+    controls.imageClear.disabled = !imageBlock.hasImage(); controls.imageAutoThreshold.disabled = !imageBlock.hasImage();
+  }
+}
+controls.imageFile.addEventListener('change', () => {
+  const [file] = controls.imageFile.files;
+  if (!file) return;
+  loadImageSource(() => imageBlock.loadFile(file), `Image loaded: ${file.name}`);
+});
+function loadImageUrl() {
+  const url = controls.imageUrl.value.trim();
+  if (!url) { controls.status.textContent = 'Enter an image URL first.'; return; }
+  loadImageSource(() => imageBlock.loadUrl(url), 'Remote image loaded.');
+}
+controls.imageUrlLoad.addEventListener('click', loadImageUrl);
+controls.imageUrl.addEventListener('keydown', event => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault(); loadImageUrl();
+});
+controls.imageClear.addEventListener('click', () => {
+  imageBlock.clear(); controls.imageFile.value = ''; controls.imageUrl.value = '';
+  controls.status.textContent = 'Image block cleared.';
+});
+syncImageControls();
 function drawBorderGlyphPreviews() {
   document.querySelectorAll('[data-border-style]').forEach(button => {
     const glyphData = legacyGlyphs.get(BODY_BORDER_GLYPHS[button.dataset.borderStyle]);
@@ -238,6 +398,38 @@ function projectChoice(value, choices, label) {
   if (!choices.includes(selected)) throw new Error(`${label} is not supported by this composer.`);
   return selected;
 }
+function projectInteger(value, minimum, maximum, label) {
+  if (!Number.isInteger(value) || value < minimum || value > maximum) throw new Error(`${label} must be a whole number between ${minimum} and ${maximum}.`);
+  return value;
+}
+function projectSectionOrder(value) {
+  if (value === undefined) return [...DEFAULT_SECTION_ORDER];
+  const normalized = normalizeSectionOrder(value);
+  if (!normalized) throw new Error('Composition order must contain each section exactly once.');
+  return normalized;
+}
+function projectImageSettings(value) {
+  if (value === undefined) return { ...DEFAULT_IMAGE_SETTINGS, source: { dataUrl: '', name: '' } };
+  const image = projectRecord(value, 'Image settings');
+  const source = projectRecord(image.source, 'Image source');
+  const dataUrl = projectString(source.dataUrl, 'Image source data');
+  const name = projectString(source.name, 'Image source name');
+  if (dataUrl && (!/^data:image\/(?:avif|bmp|gif|jpeg|png|webp|x-icon);base64,/i.test(dataUrl) || dataUrl.length > 12_000_000)) throw new Error('Image source data is not a supported embedded image.');
+  if (name.length > 260) throw new Error('Image source name is too long.');
+  return {
+    resolution: projectInteger(image.resolution, 8, 160, 'Image resolution'),
+    threshold: projectInteger(image.threshold, 0, 255, 'Image threshold'),
+    contrast: projectInteger(image.contrast, 50, 200, 'Image contrast'),
+    dither: projectChoice(image.dither, ['none', 'bayer2', 'bayer4', 'floyd', 'atkinson'], 'Image dither'),
+    ditherAmount: projectInteger(image.ditherAmount, 0, 100, 'Image dither amount'),
+    color: projectChoice(image.color, ['accent', 'text', 'highlight', 'muted'], 'Image ink'),
+    align: projectChoice(image.align, ['left', 'center', 'right'], 'Image alignment'),
+    scale: projectInteger(image.scale, 20, 100, 'Image display width'),
+    opacity: projectInteger(image.opacity, 10, 100, 'Image opacity'),
+    invert: projectBoolean(image.invert, 'Image inversion'),
+    source: { dataUrl, name }
+  };
+}
 function selectedFontName(controlName) {
   return controls[controlName].selectedOptions[0]?.textContent || '';
 }
@@ -272,6 +464,8 @@ function createProject() {
       verticalAlignments: { ...textVerticalAlignments },
       visibility: { ...contentVisibility },
       scrollModes: { ...scrollModes },
+      sectionOrder: [...sectionOrder],
+      image: { ...getImageSettings(), source: imageBlock.getSourceState() },
       bodyBorder: bodyBorderStyle
     }
   };
@@ -335,6 +529,8 @@ function validateProject(value) {
       scrollModes: {
         detail: projectChoice(projectScrollModes.detail, ['off', 'ticker', 'reveal'], 'Detail scroll mode'), hours: projectChoice(projectScrollModes.hours, ['off', 'ticker', 'reveal'], 'Hours scroll mode')
       },
+      sectionOrder: projectSectionOrder(settings.sectionOrder),
+      image: projectImageSettings(settings.image),
       bodyBorder: projectChoice(settings.bodyBorder, ['none', 'square', 'rounded'], 'Body border')
     }
   };
@@ -348,36 +544,40 @@ async function applyProject(project) {
   Object.entries(PROJECT_COPY_CONTROLS).forEach(([name, controlName]) => { controls[controlName].value = copy[name]; });
   Object.entries(settings.scales).forEach(([controlName, value]) => { controls[controlName].value = value; });
   Object.assign(textAlignments, settings.alignments); Object.assign(textVerticalAlignments, settings.verticalAlignments);
-  Object.assign(contentVisibility, settings.visibility); Object.assign(scrollModes, settings.scrollModes); bodyBorderStyle = settings.bodyBorder;
+  Object.assign(contentVisibility, settings.visibility); Object.assign(scrollModes, settings.scrollModes); syncSectionOrder(settings.sectionOrder); bodyBorderStyle = settings.bodyBorder;
+  setImageSettings(settings.image); controls.imageFile.value = ''; controls.imageUrl.value = '';
+  const imageLoad = settings.image.source.dataUrl ? imageBlock.loadProjectSource(settings.image.source.dataUrl, settings.image.source.name) : Promise.resolve(imageBlock.clear());
   PROJECT_FONT_CONTROLS.forEach(controlName => {
     const option = [...controls[controlName].options].find(item => item.textContent === settings.fonts[controlName]);
     controls[controlName].value = option.value;
   });
   syncCrtControls(); PROJECT_SCALE_CONTROLS.forEach(syncScaleOutput); syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls();
   renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState(); setCustomProjectTemplate();
-  await Promise.all(PROJECT_FONT_CONTROLS.map(controlName => loadSelectedFont(controlName, { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName], false)));
+  await Promise.all([imageLoad, ...PROJECT_FONT_CONTROLS.map(controlName => loadSelectedFont(controlName, { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName], false))]);
 }
 async function applyTemplate(template) {
-  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = 'pixel'; controls.classic.checked = template.classic;
+  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = template.logo || 'pixel'; controls.classic.checked = template.classic;
   controls.boundaries.checked = template.boundaries; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
   controls.cta.value = template.cta; controls.hours.value = template.hours; controls.footer.value = template.footer;
   Object.entries(template.scales).forEach(([controlName, value]) => { controls[controlName].value = value; syncScaleOutput(controlName); });
-  Object.assign(textAlignments, template.alignments); Object.assign(textVerticalAlignments, template.verticalAlignments); Object.assign(contentVisibility, template.visibility); Object.assign(scrollModes, template.scrollModes || {}); bodyBorderStyle = template.bodyBorder || 'none';
+  Object.assign(textAlignments, template.alignments); Object.assign(textVerticalAlignments, template.verticalAlignments); Object.assign(contentVisibility, template.visibility); Object.assign(scrollModes, template.scrollModes || {}); syncSectionOrder(template.sectionOrder || DEFAULT_SECTION_ORDER); bodyBorderStyle = template.bodyBorder || 'none';
+  setImageSettings({ ...DEFAULT_IMAGE_SETTINGS, ...(template.image || {}) }); imageBlock.clear(); controls.imageFile.value = ''; controls.imageUrl.value = '';
+  const imageLoad = template.image?.source ? imageBlock.loadBundledSource(template.image.source, template.image.sourceName) : Promise.resolve();
   document.querySelectorAll('[data-toolbar]').forEach(toolbar => {
     const section = toolbar.dataset.toolbar;
     toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
   syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState();
-  await Promise.all(Object.entries(template.fonts).map(([controlName, fontName]) => {
+  await Promise.all([imageLoad, ...Object.entries(template.fonts).map(([controlName, fontName]) => {
     const option = [...controls[controlName].options].find(item => item.textContent === fontName);
     if (!option) return Promise.resolve();
     controls[controlName].value = option.value;
     const target = { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName];
     return loadSelectedFont(controlName, target, false);
-  }));
+  })]);
 }
 controls.template.addEventListener('change', () => {
   applyTemplate(templates[controls.template.value]).then(() => { controls.status.textContent = `${controls.template.selectedOptions[0].textContent} template loaded.`; }).catch(error => { controls.status.textContent = `Could not load template: ${error.message}`; });

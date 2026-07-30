@@ -28,13 +28,22 @@
     .two-up, .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; } .actions { gap: 6px; }
     .range-label { display: flex; justify-content: space-between; } .range-label output { color: var(--ink); }
     .field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .field-heading > input { min-width: 0; } .field-heading button { min-height: 22px; padding: 2px 7px; font-size: 10px; }
-    .control-section { border-top: 1px solid var(--line); }
-    .control-section summary { min-height: 31px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--ink); cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .04em; list-style: none; }
+    .control-section { position: relative; border-top: 1px solid var(--line); }
+    .control-section summary { min-height: 31px; display: flex; align-items: center; gap: 8px; color: var(--ink); cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .04em; list-style: none; }
     .control-section summary::-webkit-details-marker { display: none; }
-    .control-section summary::after { content: '+'; color: var(--muted); font-size: 17px; font-weight: 400; }
+    .control-section summary::after { content: '+'; margin-left: auto; color: var(--muted); font-size: 17px; font-weight: 400; }
     .control-section[open] summary { color: var(--accent); }
     .control-section[open] summary::after { content: '-'; color: var(--accent); }
     .control-section summary:focus-visible { outline: 1px solid var(--accent); outline-offset: -3px; }
+    .sortable-section summary { cursor: grab; }
+    .sortable-section summary:active { cursor: grabbing; }
+    .section-grip { width: 16px; height: 20px; flex: 0 0 16px; display: grid; place-items: center; color: var(--muted); }
+    .section-grip svg { width: 14px; height: 14px; }
+    .sortable-section[open] .section-grip { color: var(--accent); }
+    .sortable-section.is-dragging { opacity: .4; }
+    .sortable-section.drop-before::before, .sortable-section.drop-after::after { content: ''; position: absolute; z-index: 2; left: 0; right: 0; height: 2px; pointer-events: none; background: var(--accent); box-shadow: 0 0 8px #00ddffaa; }
+    .sortable-section.drop-before::before { top: -1px; }
+    .sortable-section.drop-after::after { bottom: -1px; }
     .section-body { padding: 0 0 9px; display: grid; gap: 8px; }
     .text-section { gap: 6px; }
     .footer-group { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
@@ -94,6 +103,8 @@
     .toggle-field label { color: var(--muted); }
     .toggle-field input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
     .theme-row { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 7px; align-items: end; }
+    .image-url-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; }
+    .image-url-row button { min-height: 31px; padding: 0 10px; }
     .palette-preview { min-height: 31px; padding: 4px; display: grid; grid-template-columns: repeat(6, 9px); gap: 2px; align-items: center; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
     .palette-swatch { width: 9px; height: 17px; border: 1px solid #ffffff33; }
     .source-field { display: none; }
@@ -181,30 +192,51 @@
       <output id="status" class="status" aria-live="polite">Loading renderer...</output>
     </section>
     <aside class="dock right-dock" aria-label="Text and artwork controls">
-      <details class="control-section">
-        <summary>LOGO</summary>
+      <details class="control-section sortable-section" data-composite-section="logo">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>LOGO</span></summary>
         <div class="section-body">
           <input id="logo" type="hidden" value="pixel">
           <fieldset class="toggle-field"><label for="classic">CLASSIC ARCADE</label><input id="classic" type="checkbox" checked></fieldset>
         </div>
       </details>
-      <details class="control-section">
-        <summary>HEADER</summary>
+      <details class="control-section sortable-section" data-composite-section="image">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>IMAGE</span></summary>
+        <div class="section-body">
+          <fieldset><label for="imageFile">SOURCE IMAGE</label><input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/x-icon,image/avif"></fieldset>
+          <div class="image-url-row"><fieldset><label for="imageUrl">IMAGE URL</label><input id="imageUrl" type="url" inputmode="url" placeholder="https://"></fieldset><button id="imageUrlLoad" type="button">LOAD</button></div>
+          <button id="imageClear" type="button" disabled>CLEAR IMAGE</button>
+          <fieldset><label class="range-label" for="imageResolution">LONG EDGE <output id="imageResolutionOutput">64 PX</output></label><input id="imageResolution" type="range" min="8" max="160" step="1" value="64"></fieldset>
+          <fieldset><label class="range-label" for="imageThreshold">THRESHOLD <output id="imageThresholdOutput">128</output></label><input id="imageThreshold" type="range" min="0" max="255" step="1" value="128"></fieldset>
+          <button id="imageAutoThreshold" type="button" disabled>AUTO THRESHOLD</button>
+          <fieldset><label class="range-label" for="imageContrast">CONTRAST <output id="imageContrastOutput">115%</output></label><input id="imageContrast" type="range" min="50" max="200" step="1" value="115"></fieldset>
+          <fieldset><label for="imageDither">DITHER</label><select id="imageDither"><option value="none">None</option><option value="bayer2">Bayer 2x2</option><option value="bayer4" selected>Bayer 4x4</option><option value="floyd">Floyd-Steinberg</option><option value="atkinson">Atkinson</option></select></fieldset>
+          <fieldset><label class="range-label" for="imageDitherAmount">DITHER AMOUNT <output id="imageDitherAmountOutput">60%</output></label><input id="imageDitherAmount" type="range" min="0" max="100" step="1" value="60"></fieldset>
+          <div class="two-up">
+            <fieldset><label for="imageColor">INK</label><select id="imageColor"><option value="accent" selected>Accent</option><option value="text">Text</option><option value="highlight">Highlight</option><option value="muted">Muted</option></select></fieldset>
+            <fieldset><label for="imageAlign">ALIGN</label><select id="imageAlign"><option value="left">Left</option><option value="center" selected>Center</option><option value="right">Right</option></select></fieldset>
+          </div>
+          <fieldset><label class="range-label" for="imageScale">DISPLAY WIDTH <output id="imageScaleOutput">72%</output></label><input id="imageScale" type="range" min="20" max="100" step="1" value="72"></fieldset>
+          <fieldset><label class="range-label" for="imageOpacity">OPACITY <output id="imageOpacityOutput">100%</output></label><input id="imageOpacity" type="range" min="10" max="100" step="1" value="100"></fieldset>
+          <fieldset class="toggle-field"><label for="imageInvert">INVERT PIXELS</label><input id="imageInvert" type="checkbox"></fieldset>
+        </div>
+      </details>
+      <details class="control-section sortable-section" data-composite-section="header">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>HEADER</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="headerFont" aria-label="Header font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="headerScale" type="hidden" value="2"><div class="scale-toggle" data-scale-toggle="headerScale" role="group" aria-label="Header text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="false">2x</button><button type="button" data-scale-value="2" aria-pressed="true">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="header"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="header"></div></div></div>
           <div id="headerEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Header copy"></div><textarea id="headline" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1">July [[effect:wave]]Free Play[[/effect]] Calendar</textarea>
         </div>
       </details>
-      <details class="control-section">
-        <summary>DETAIL LINE</summary>
+      <details class="control-section sortable-section" data-composite-section="detail">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>DETAIL LINE</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="detailFont" aria-label="Detail line font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="detailScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="detailScale" role="group" aria-label="Detail text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="detail"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="detail"></div></div></div>
           <div class="field-heading"><label class="visually-hidden" for="detailEditor">Detail line copy</label><div id="detailEditor" class="rich-editor inline-rich-editor" contenteditable="true" role="textbox" aria-label="Detail line copy"></div><input id="detail" class="source-field" maxlength="58" value="[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!"><button id="detailToggle" type="button" aria-pressed="true"></button></div>
           <fieldset class="scroll-field"><label>SCROLL</label><div class="scroll-mode" data-scroll-mode="detail" role="group" aria-label="Detail line scrolling"><button type="button" data-scroll-value="off" aria-pressed="true">OFF</button><button type="button" data-scroll-value="ticker" aria-pressed="false">TICKER</button><button type="button" data-scroll-value="reveal" aria-pressed="false">REVEAL</button></div></fieldset>
         </div>
       </details>
-      <details class="control-section">
-        <summary>BODY</summary>
+      <details class="control-section sortable-section" data-composite-section="body">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>BODY</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row body-font-scale-row"><select id="font" aria-label="Body font"><option value="Beachball">Beachball</option></select><div class="scale-picker"><input id="bodyScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="bodyScale" role="group" aria-label="Body text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div><div class="body-border-picker" role="group" aria-label="Body border style"><span class="body-border-label">BORDER</span><div class="border-buttons" data-border-toolbar="body"></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="body"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="body"></div></div></div>
           <div class="body-field"><div id="bodyEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Primary content"></div><textarea id="body" class="source-field" maxlength="220" aria-hidden="true" tabindex="-1">[[atascii-7F]] 2nd Thursday[[leader-tab]][[effect:highlight]]Thu 7/9[[/effect]]
@@ -212,15 +244,15 @@
 [[atascii-7F]] Last Wednesday[[leader-tab]][[effect:highlight]]Wed 7/29[[/effect]]</textarea><div id="glyph-grid" class="glyph-groups" aria-live="polite">Loading glyphs...</div></div>
         </div>
       </details>
-      <details class="control-section">
-        <summary>CALL TO ACTION</summary>
+      <details class="control-section sortable-section" data-composite-section="cta">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>CALL TO ACTION</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="ctaFont" aria-label="Call to action font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="ctaScale" type="hidden" value="0"><div class="scale-toggle" data-scale-toggle="ctaScale" role="group" aria-label="Call to action text scale"><button type="button" data-scale-value="0" aria-pressed="true">1x</button><button type="button" data-scale-value="1" aria-pressed="false">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="cta"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="cta"></div></div></div>
           <div class="field-heading"><label class="visually-hidden" for="ctaEditor">Call to action copy</label><div id="ctaEditor" class="rich-editor cta-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Call to action copy"></div><textarea id="cta" class="source-field" aria-hidden="true" tabindex="-1">JOIN THE SIGNAL</textarea><button id="ctaToggle" type="button" aria-pressed="false"></button></div>
         </div>
       </details>
-      <details class="control-section">
-        <summary>FOOTER</summary>
+      <details class="control-section sortable-section" data-composite-section="footer">
+        <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>FOOTER</span></summary>
         <div class="section-body text-section">
           <section class="footer-group" aria-labelledby="hours-controls-heading">
             <h2 id="hours-controls-heading" class="footer-group-heading">HOURS</h2>
@@ -243,10 +275,11 @@ www.groundkontrol.com</textarea>
     const modules = [
       ['CRT', './promo/crt.js?v=228'],
       ['fonts', './promo/fonts.js?v=228'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=230'],
-      ['renderer', './promo/renderer.js?v=229'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=234'],
+      ['image block', './promo/image-block.js?v=236'],
+      ['renderer', './promo/renderer.js?v=232'],
       ['rich text editor', './promo/rich-text-editor.js?v=228'],
-      ['templates', './promo/templates.js?v=229'],
+      ['templates', './promo/templates.js?v=235'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -256,7 +289,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=230');
+      await import('./promo/app.js?v=236');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

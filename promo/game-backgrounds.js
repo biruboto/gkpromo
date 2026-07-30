@@ -1,6 +1,7 @@
 import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js';
 
 export function createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle }) {
+  const WIREFRAME_BACKGROUND_OPACITY = .48;
   const moonLanderTintCache = new Map();
   const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
   let stars = [], seed = 1;
@@ -249,7 +250,7 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
     const yaw = ((time * 30 + 180) % 360) - 180;
     const frameCanvas = wireframeCabinet.render({
       color: palette.accent,
-      opacity: 0.35,
+      opacity: 1,
       elapsed: time,
       yaw: yaw * Math.PI / 180,
       pitch: 0,
@@ -260,7 +261,7 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
       wobble: false
     });
     ctx.save();
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = WIREFRAME_BACKGROUND_OPACITY;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(frameCanvas, 0, 0, W, H);
     ctx.restore();
