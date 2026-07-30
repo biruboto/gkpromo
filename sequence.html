@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GK Sequence Lab</title>
+  <style>
+    :root { color-scheme: dark; --ink: #eaf9ff; --muted: #88a0b6; --panel: #0a101a; --line: #26384c; --accent: #00ddff; --active: #003948; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: #05080d; color: var(--ink); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .app { width: min(1640px, 100%); min-height: 100vh; margin: 0 auto; display: grid; grid-template-columns: 310px minmax(540px, 1fr) 330px; align-items: start; }
+    .dock { min-width: 0; height: 100vh; padding: 24px 18px; overflow-y: auto; display: grid; align-content: start; gap: 6px; background: #05080d; }
+    .left-dock { border-right: 1px solid var(--line); } .right-dock { border-left: 1px solid var(--line); }
+    .preview { min-width: 0; min-height: 100vh; padding: 24px; display: grid; align-content: start; justify-items: center; gap: 12px; overflow-x: auto; }
+    .preview-header { width: 540px; display: flex; align-items: baseline; justify-content: space-between; color: var(--muted); } .preview-header strong { color: var(--ink); font-size: 15px; }
+    #preview { width: 540px; height: 675px; display: block; background: #020208; border: 1px solid #344a61; box-shadow: 0 18px 50px #000a; image-rendering: pixelated; }
+    .status { width: 540px; min-height: 18px; color: var(--muted); font-size: 12px; }
+    h1 { margin: 0; font-size: 18px; } .subtitle, .hint { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    details { border-top: 1px solid var(--line); } summary { min-height: 31px; display: flex; align-items: center; color: var(--ink); cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .04em; list-style: none; } summary::-webkit-details-marker { display: none; }
+    .section-body { padding: 4px 0 12px; display: grid; gap: 8px; }
+    label { color: var(--muted); font-size: 10px; } fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 4px; }
+    input, select, textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 3px; padding: 7px 8px; background: var(--panel); color: var(--ink); font: inherit; }
+    textarea { min-height: 68px; resize: vertical; } input[type="range"] { padding: 0; accent-color: var(--accent); }
+    input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
+    button { min-height: 32px; border: 1px solid #3d5974; border-radius: 3px; background: #102031; color: var(--ink); cursor: pointer; font: inherit; } button:hover { border-color: var(--accent); background: #17304a; } button.primary, button[aria-pressed="true"] { border-color: var(--accent); background: var(--active); } button:disabled { cursor: not-allowed; opacity: .4; }
+    .actions, .stage-actions, .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }.stage-actions { grid-template-columns: 30px 30px minmax(0, 1fr) 30px; }
+    .stage-list { display: grid; gap: 5px; }.stage-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 46px; align-items: center; gap: 6px; width: 100%; min-height: 42px; padding: 5px 7px; text-align: left; }.stage-row strong, .stage-row span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.stage-row span { color: var(--muted); font-size: 10px; }.stage-row.is-selected { border-color: var(--accent); background: var(--active); }.stage-number { color: var(--accent); font-size: 11px; }
+    .timeline { width: 540px; display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); background: #070d15; }.timeline input { padding: 0; }.timeline-label { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }.transport { display: grid; grid-template-columns: 42px 42px minmax(0, 1fr); gap: 6px; }.transport button { font-size: 15px; }.transport output { display: grid; place-items: center; color: var(--muted); border: 1px solid var(--line); background: var(--panel); }
+    .range-label { display: flex; justify-content: space-between; }.range-label output { color: var(--ink); }.color-row { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 6px; }.color-row input { height: 32px; padding: 2px; }
+    .stage-empty { margin: 0; color: var(--muted); font-size: 11px; }.icon-button { min-height: 30px; padding: 0; font-size: 16px; }.preset-note { padding: 7px 8px; color: var(--muted); border: 1px solid var(--line); background: var(--panel); font-size: 10px; }
+    @media (max-width: 1360px) { .app { padding: 16px; grid-template-columns: 1fr; gap: 22px; }.preview { min-height: 0; padding: 0; order: 1; }.dock { height: auto; padding: 20px 0 0; overflow: visible; border-left: 0; border-right: 0; border-top: 1px solid var(--line); }.left-dock { order: 2; }.right-dock { order: 3; } }
+    @media (max-width: 600px) { .app { padding: 12px; }.preview-header, #preview, .status, .timeline { width: min(540px, calc(100vw - 24px)); }.preview-header { font-size: 10px; } #preview { height: auto; aspect-ratio: 4 / 5; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="dock left-dock" aria-label="Sequence timeline controls">
+      <div><h1>GK Sequence Lab</h1><p class="subtitle">4:5 STAGED MOTION COMPOSER</p></div>
+      <details open>
+        <summary>TIMELINE</summary>
+        <div class="section-body">
+          <div id="stageList" class="stage-list" aria-live="polite"></div>
+          <button id="addStage" type="button">ADD STAGE</button>
+        </div>
+      </details>
+      <details open>
+        <summary>STAGE</summary>
+        <div class="section-body">
+          <fieldset><label for="stageName">LABEL</label><input id="stageName" maxlength="28"></fieldset>
+          <fieldset><label for="stageDuration">DURATION (SECONDS)</label><input id="stageDuration" type="number" min="0.4" max="20" step="0.1"></fieldset>
+          <fieldset><label for="stageMotion">ENTRANCE</label><select id="stageMotion"><option value="signal">Signal Lock</option><option value="assemble">Assemble</option><option value="type">Typewriter</option><option value="alert">Alert Glitch</option></select></fieldset>
+          <fieldset><label for="stageBackdrop">BACKDROP</label><select id="stageBackdrop"><option value="deep-space">Deep Space</option><option value="grid">Vector Grid</option><option value="scan">Diagnostic Scan</option><option value="cabinet">Wireframe Cabinet</option></select></fieldset>
+          <div class="stage-actions"><button id="moveUp" class="icon-button" type="button" title="Move stage earlier" aria-label="Move stage earlier">&#8593;</button><button id="moveDown" class="icon-button" type="button" title="Move stage later" aria-label="Move stage later">&#8595;</button><button id="duplicateStage" type="button">DUPLICATE</button><button id="deleteStage" class="icon-button" type="button" title="Delete stage" aria-label="Delete stage">&#215;</button></div>
+        </div>
+      </details>
+      <details>
+        <summary>EXPORT</summary>
+        <div class="section-body"><div class="actions"><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div><p class="hint">Exports use the 1080 x 1350 Instagram frame.</p></div>
+      </details>
+    </aside>
+    <section class="preview" aria-label="Sequence preview">
+      <div class="preview-header"><strong>LIVE SEQUENCE</strong><span>1080 x 1350 / 4:5</span></div>
+      <canvas id="preview" width="540" height="675" aria-label="Animated sequence preview"></canvas>
+      <div class="timeline"><div class="timeline-label"><span id="stageReadout">STAGE 01</span><span id="timeReadout">00.0 / 00.0</span></div><input id="scrubber" type="range" min="0" max="1" step="0.01" value="0"><div class="transport"><button id="restart" type="button" title="Restart sequence" aria-label="Restart sequence">&#8634;</button><button id="playPause" type="button" title="Pause sequence" aria-label="Pause sequence">&#10074;&#10074;</button><output id="sequenceDuration">00.0 SEC</output></div></div>
+      <output id="status" class="status" aria-live="polite">Loading sequence font...</output>
+    </section>
+    <aside class="dock right-dock" aria-label="Stage artwork and CRT controls">
+      <details open>
+        <summary>COPY</summary>
+        <div class="section-body">
+          <fieldset><label for="stageHeadline">HEADLINE</label><textarea id="stageHeadline" maxlength="90"></textarea></fieldset>
+          <fieldset><label for="stageBody">SUPPORTING COPY</label><textarea id="stageBody" maxlength="180"></textarea></fieldset>
+          <fieldset><label for="stageFooter">READOUT</label><input id="stageFooter" maxlength="60"></fieldset>
+          <fieldset><label for="stageAccent">ACCENT</label><div class="color-row"><input id="stageAccent" type="color"><input id="stageAccentText" maxlength="7" aria-label="Accent color hex value"></div></fieldset>
+        </div>
+      </details>
+      <details open>
+        <summary>CRT EMULATION</summary>
+        <div class="section-body">
+          <fieldset><label for="crtLook">PRESET</label><select id="crtLook"><option value="custom" selected>Custom</option><option value="arcade">Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
+          <fieldset><label for="crt">MODE</label><select id="crt"><option value="off" selected>Off</option><option value="soft">CRT-Pi Soft</option><option value="strong">CRT-Pi Strong</option></select></fieldset>
+          <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve"></output></label><input id="crtCurve" type="range" min="0" max="150" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtRgb">RGB SEPARATION <output data-crt-output="rgb"></output></label><input id="crtRgb" type="range" min="0" max="100" value="45"></fieldset>
+          <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline"></output></label><input id="crtScanline" type="range" min="0" max="100" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtMask">APERTURE MASK <output data-crt-output="mask"></output></label><input id="crtMask" type="range" min="0" max="100" value="45"></fieldset>
+          <fieldset><label class="range-label" for="crtVignette">VIGNETTE <output data-crt-output="vignette"></output></label><input id="crtVignette" type="range" min="0" max="200" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtDrift">SIGNAL DRIFT <output data-crt-output="drift"></output></label><input id="crtDrift" type="range" min="0" max="100" value="0"></fieldset>
+          <fieldset><label class="range-label" for="crtBloom">BLOOM <output data-crt-output="bloom"></output></label><input id="crtBloom" type="range" min="0" max="150" value="100"></fieldset>
+          <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow"></output></label><input id="crtGlow" type="range" min="0" max="200" value="100"></fieldset>
+        </div>
+      </details>
+      <div class="preset-note">Stages loop as a single sequence. Each stage owns its copy, timing, entrance, backdrop, and accent color.</div>
+    </aside>
+  </main>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js" } }
+  </script>
+  <script type="module" src="./sequence/app.js?v=13"></script>
+</body>
+</html>

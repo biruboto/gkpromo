@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GK Promo Composer</title>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js" } }
+  </script>
   <style>
     :root { color-scheme: dark; --ink: #eaf9ff; --muted: #88a0b6; --panel: #0a101a; --line: #26384c; --accent: #00ddff; }
     * { box-sizing: border-box; }
@@ -152,7 +155,7 @@
             <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option><option value="emerald">Emerald Terminal</option><option value="cobalt">Cobalt Gold</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
           </div>
-          <fieldset><label for="gameStyle">GAME STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option></select></fieldset>
+          <fieldset><label for="gameStyle">GAME STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option><option value="wireframe">Pinball Wireframe</option></select></fieldset>
           <fieldset class="toggle-field"><label for="boundaries">SHOW TEXT BOUNDARIES</label><input id="boundaries" type="checkbox"></fieldset>
         </div>
       </details>
@@ -240,10 +243,10 @@ www.groundkontrol.com</textarea>
     const modules = [
       ['CRT', './promo/crt.js?v=228'],
       ['fonts', './promo/fonts.js?v=228'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=228'],
-      ['renderer', './promo/renderer.js?v=228'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=230'],
+      ['renderer', './promo/renderer.js?v=229'],
       ['rich text editor', './promo/rich-text-editor.js?v=228'],
-      ['templates', './promo/templates.js?v=228']
+      ['templates', './promo/templates.js?v=229'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -253,7 +256,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=228');
+      await import('./promo/app.js?v=230');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

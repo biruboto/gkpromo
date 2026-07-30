@@ -386,7 +386,7 @@ export function createPromoRenderer({
     const headerFieldY = COPY_TOP_Y;
     const titleLineHeight = titleScale * 10;
     const maxHeaderLines = Math.max(1, Math.floor(HEADER_FIELD_HEIGHT / titleLineHeight));
-    const lines = wrap(controls.headline.value, TEXT_FIELD_WIDTH, titleScale, headerFont, 'header', HEADER_TEXT_SPACING).slice(0, maxHeaderLines);
+    const lines = wrapWithLineBreaks(controls.headline.value, TEXT_FIELD_WIDTH, titleScale, headerFont, 'header', HEADER_TEXT_SPACING, maxHeaderLines);
     const headerAlignment = textAlignments.header;
     const titleY = verticallyAlignedStart(headerFieldY, HEADER_FIELD_HEIGHT, lines.length * titleLineHeight, textVerticalAlignments.header);
     lines.forEach((line, index) => styledText('headline', line, alignmentPoint(TEXT_FIELD_X, TEXT_FIELD_WIDTH, headerAlignment), titleY + index * titleLineHeight, palette.text, palette.shadow, titleScale, headerAlignment, headerFont, 'header', HEADER_TEXT_SPACING));
@@ -395,7 +395,7 @@ export function createPromoRenderer({
     const showDetail = contentVisibility.detail && controls.detail.value.trim();
     const detailScale = textScale('detailScale'); const detailLineHeight = detailScale * 12;
     const maxDetailLines = Math.max(1, Math.floor(DETAIL_FIELD_HEIGHT / detailLineHeight));
-    const detailLines = showDetail ? scrollModes.detail === 'off' ? wrap(controls.detail.value, TEXT_FIELD_WIDTH, detailScale, detailFont, 'detail').slice(0, maxDetailLines) : [singleLineValue(controls.detail.value)] : [];
+    const detailLines = showDetail ? scrollModes.detail === 'off' ? wrapWithLineBreaks(controls.detail.value, TEXT_FIELD_WIDTH, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, maxDetailLines) : [singleLineValue(controls.detail.value)] : [];
     const detailAlignment = textAlignments.detail;
     const detailFieldHeight = showDetail ? Math.min(DETAIL_FIELD_HEIGHT, detailLines.length * detailLineHeight + 8) : 0;
     const detailY = verticallyAlignedStart(detailFieldY, detailFieldHeight, detailLines.length * detailLineHeight, textVerticalAlignments.detail);

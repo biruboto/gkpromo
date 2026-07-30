@@ -31,6 +31,18 @@ export const templates = {
     verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'center', footer: 'bottom' },
     visibility: { detail: true, cta: false, hours: false }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'rounded',
     fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
+  },
+  pinball: {
+    theme: 'cobalt', gameStyle: 'wireframe', logo: 'pixel', classic: true, boundaries: false, crt: 'strong',
+    headline: 'June 2026\n[[effect:spin]]Pinball Tournaments[[/effect]]', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
+    body: '[[petscii-upper-51]] Mon 6/8[[leader-tab]][[effect:highlight]]Stall Ball Bonanza[[/effect]]\n[[petscii-upper-51]] Wed 6/10[[leader-tab]][[effect:highlight]]Stern Army Match Play[[/effect]]\n[[petscii-upper-51]] Wed 6/17[[leader-tab]][[effect:highlight]]Group Match Play[[/effect]]\n[[petscii-upper-51]] Thu 6/18[[leader-tab]][[effect:highlight]]Gender Expansive Div.[[/effect]]\n[[petscii-upper-51]] Tue 6/30[[leader-tab]][[effect:highlight]]Double Head-2-Head[[/effect]]',
+    cta: '[[effect:superscript]]$[[/effect]]6 NOON-5[[effect:subscript]]PM[[/effect]] (ALL AGES)\n[[effect:superscript]]$[[/effect]]12 5[[effect:subscript]]PM[[/effect]]-MIDNIGHT (21+)', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',
+    scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
+    alignments: { header: 'center', detail: 'center', body: 'left', cta: 'center', footer: 'center' },
+    verticalAlignments: { header: 'center', detail: 'top', body: 'center', cta: 'top', footer: 'bottom' },
+    visibility: { detail: false, cta: true, hours: false }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'none',
+    fonts: { font: 'Cabaret Bold', headerFont: 'You Squared', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' },
+    crtControls: { curve: 130, rgb: 50, scanline: 40, mask: 50, vignette: 120, drift: 7, bloom: 120, glow: 170 }
   }
 };
 

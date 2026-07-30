@@ -193,7 +193,11 @@ syncCrtControls();
   syncScaleOutput(controlName);
 });
 
-function frame(now) { promoRenderer.render(now); requestAnimationFrame(frame); }
+let animationId = null;
+function frame(now) { promoRenderer.render(now); animationId = requestAnimationFrame(frame); }
+function pauseFrame() { if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; } }
+function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') animationId = requestAnimationFrame(frame); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pauseFrame(); else resumeFrame(); });
 function download(blob, name) { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 function syncDetailToggle() { const enabled = contentVisibility.detail; controls.detailToggle.setAttribute('aria-pressed', String(enabled)); controls.detailToggle.textContent = enabled ? 'ON' : 'OFF'; }
 controls.detailToggle.addEventListener('click', () => { contentVisibility.detail = !contentVisibility.detail; syncDetailToggle(); }); syncDetailToggle();
@@ -545,4 +549,13 @@ async function initializeFonts() {
     controls.status.textContent = `Font library could not load: ${error.message}`;
   }
 }
-hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); controls.status.textContent = 'Loading header font library...'; initializeFonts(); loadLegacyGlyphs().then(drawBorderGlyphPreviews).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; }); requestAnimationFrame(frame);
+hydrateHeaderEditor();
+hydrateDetailEditor();
+hydrateCtaEditor();
+hydrateInlineRichEditor('hours');
+hydrateInlineRichEditor('footer');
+controls.status.textContent = 'Loading header font library...';
+initializeFonts();
+loadLegacyGlyphs().then(drawBorderGlyphPreviews).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; });
+resumeFrame();
+

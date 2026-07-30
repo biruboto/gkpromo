@@ -1,3 +1,5 @@
+import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js';
+
 export function createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle }) {
   const moonLanderTintCache = new Map();
   const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
@@ -234,9 +236,39 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
     drawTiledMoonLanderLayer(tintedMoonLanderLayer('mountain', palette.muted), mountainY, time, 12);
     drawTiledMoonLanderLayer(tintedMoonLanderLayer('city', palette.accent), mountainY + 46 * MOON_LANDER_SCALE, time, 29);
   }
+  let wireframeCabinet = null;
+  function drawWireframeBackground(palette, time) {
+    if (!wireframeCabinet) {
+      wireframeCabinet = createWireframeCabinet({ width: 180, height: 225 });
+      if (wireframeCabinet) wireframeCabinet.loadSource('./models/ironman.3ds').catch(() => {});
+    }
+    if (!wireframeCabinet) return;
+    const cameraOrbit = Math.sin(time * 0.22) * 75;
+    const cameraPitch = Math.cos(time * 0.15) * 28;
+    const zoom = Math.max(45, Math.min(450, 140 * (1 + Math.sin(time * 0.35) * 0.25)));
+    const yaw = ((time * 30 + 180) % 360) - 180;
+    const frameCanvas = wireframeCabinet.render({
+      color: palette.accent,
+      opacity: 0.35,
+      elapsed: time,
+      yaw: yaw * Math.PI / 180,
+      pitch: 0,
+      zoom: zoom / 100,
+      cameraPitch: cameraPitch * Math.PI / 180,
+      cameraOrbit: cameraOrbit * Math.PI / 180,
+      projection: 'perspective',
+      wobble: false
+    });
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(frameCanvas, 0, 0, W, H);
+    ctx.restore();
+  }
   function drawGameBackground(palette, time) {
     if (getStyle() === 'asteroids') drawAsteroidsBackground(palette, time);
     else if (getStyle() === 'moon-patrol') drawMoonLanderBackground(palette, time);
+    else if (getStyle() === 'wireframe') drawWireframeBackground(palette, time);
     else drawStarfieldBackground(palette, time);
   }
   resetStars();
