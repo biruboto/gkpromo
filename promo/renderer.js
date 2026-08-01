@@ -42,7 +42,7 @@ export function createPromoRenderer({
   const classicPixels = document.createElement('canvas');
   const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
   const LOGO_REFLECTION_LEVELS = [.8, 1, 1.32, 1.6];
-  let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455';
+  let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455', activeBackgroundColor = '#000000';
   function superscriptScale(scale) { return Math.max(1, Math.round(scale / 2)); }
   function glyphIndexFor(character) {
     const codepoint = character.codePointAt(0);
@@ -70,12 +70,33 @@ export function createPromoRenderer({
     glyphBoundsCache.set(key, bounds); return bounds;
   }
   function legacyGlyph(glyphData, color) {
-    const key = `${glyphData.id}:${color}`;
+    const key = `${glyphData.id}:${color}:${glyphData.image ? activeBackgroundColor : ''}`;
     if (legacyGlyphCache.has(key)) return legacyGlyphCache.get(key);
+    if (glyphData.imageElement) {
+      const image = imageGlyph(glyphData, color);
+      legacyGlyphCache.set(key, image); return image;
+    }
     const image = document.createElement('canvas'); image.width = image.height = 8;
     const imageCtx = image.getContext('2d'); imageCtx.fillStyle = color;
     for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) if (glyphData.bitmap[row] & (128 >> column)) imageCtx.fillRect(column, row, 1, 1);
     legacyGlyphCache.set(key, image); return image;
+  }
+  function imageGlyph(glyphData, color, phase = null) {
+    const image = document.createElement('canvas'); image.width = image.height = 8;
+    const imageCtx = image.getContext('2d'); imageCtx.drawImage(glyphData.imageElement, 0, 0, 8, 8);
+    const pixels = imageCtx.getImageData(0, 0, 8, 8);
+    const textRgb = color.slice(1).match(/\w\w/g).map(value => Number.parseInt(value, 16));
+    const detailRgb = activeBackgroundColor.slice(1).match(/\w\w/g).map(value => Number.parseInt(value, 16));
+    const transparentRgb = glyphData.transparentColor?.slice(1).match(/\w\w/g)?.map(value => Number.parseInt(value, 16));
+    const reflection = phase === null ? null : logoReflectionColors(color);
+    for (let index = 0; index < pixels.data.length; index += 4) {
+      const isTransparent = pixels.data[index + 3] < 32 || transparentRgb?.every((value, channel) => pixels.data[index + channel] === value);
+      if (isTransparent) { pixels.data[index + 3] = 0; continue; }
+      const isDetail = pixels.data[index] < 128 && pixels.data[index + 1] < 128 && pixels.data[index + 2] < 128;
+      const rgb = isDetail ? detailRgb : reflection ? reflection[(index / 4 / 8 + phase) % reflection.length] : textRgb;
+      pixels.data[index] = rgb[0]; pixels.data[index + 1] = rgb[1]; pixels.data[index + 2] = rgb[2];
+    }
+    imageCtx.putImageData(pixels, 0, 0); return image;
   }
   const BODY_BORDER_GLYPHS = {
     topLeft: 'petscii-upper-70', topRight: 'petscii-upper-6e', bottomLeft: 'petscii-upper-6d', bottomRight: 'petscii-upper-7d',
@@ -109,8 +130,12 @@ export function createPromoRenderer({
   }
   function reflectedGlyph(glyphLayout, color, font = bodyFont, fontKey = 'body', phase = 0) {
     const glyphId = glyphLayout.type === 'legacy' ? glyphLayout.glyphData.id : glyphIndexFor(glyphLayout.character);
-    const key = `${glyphLayout.type}:${fontKey}:${glyphId}:${color}:${phase}`;
+    const key = `${glyphLayout.type}:${fontKey}:${glyphId}:${color}:${phase}:${glyphLayout.glyphData?.image ? activeBackgroundColor : ''}`;
     if (reflectedGlyphCache.has(key)) return reflectedGlyphCache.get(key);
+    if (glyphLayout.type === 'legacy' && glyphLayout.glyphData.imageElement) {
+      const image = imageGlyph(glyphLayout.glyphData, color, phase);
+      reflectedGlyphCache.set(key, image); return image;
+    }
     const image = document.createElement('canvas'); image.width = image.height = 8;
     const imageCtx = image.getContext('2d'); const reflection = logoReflectionColors(color);
     for (let row = 0; row < 8; row++) {
@@ -390,7 +415,7 @@ export function createPromoRenderer({
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
   function render(now) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
-    const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
+    const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = palette.background; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
     ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
     gameBackgrounds.draw(palette, time);
 

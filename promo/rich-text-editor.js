@@ -13,7 +13,10 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
   }
   function createEditorGlyph(glyphData) {
     const glyph = document.createElement('span');
-    glyph.className = 'editor-glyph'; glyph.dataset.glyphId = glyphData.id; glyph.contentEditable = 'false'; glyph.textContent = LEGACY_UNICODE[glyphData.id] || '◇';
+    glyph.className = 'editor-glyph'; glyph.dataset.glyphId = glyphData.id; glyph.contentEditable = 'false';
+    if (glyphData.image) {
+      const image = document.createElement('img'); image.src = `./assets/images/emoji/${glyphData.image}`; image.alt = ''; image.draggable = false; glyph.append(image);
+    } else glyph.textContent = LEGACY_UNICODE[glyphData.id] || '◇';
     glyph.setAttribute('aria-label', `${glyphData.system} glyph ${glyphData.slot}`); glyph.title = `${glyphData.system} ${glyphData.slot}`;
     return glyph;
   }
@@ -496,9 +499,12 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       legacyGlyphs.set(glyphData.id, glyphData);
       if (glyphData.system === 'ATASCII' && glyphData.internalSlot) legacyGlyphs.set(`atascii-${glyphData.internalSlot.slice(2).toLowerCase()}`, glyphData);
     });
+    await Promise.all(library.glyphs.filter(glyphData => glyphData.image).map(glyphData => new Promise((resolve, reject) => {
+      const image = new Image(); image.onload = () => { glyphData.imageElement = image; resolve(); }; image.onerror = () => reject(new Error(`emoji image could not be loaded: ${glyphData.image}`)); image.src = `./assets/images/emoji/${glyphData.image}`;
+    })));
     hydrateBodyEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
     const pickerGlyphs = library.glyphs.filter(glyphData => {
-      return glyphData.system === 'ATASCII' ? ATASCII_PICKER_SLOTS.has(glyphData.slot) : glyphData.system === 'PETSCII' && PETSCII_PICKER_SLOTS.has(glyphData.slot);
+      return glyphData.system === 'EMOJI' || glyphData.system === 'ATASCII' && ATASCII_PICKER_SLOTS.has(glyphData.slot) || glyphData.system === 'PETSCII' && PETSCII_PICKER_SLOTS.has(glyphData.slot);
     });
     const section = document.createElement('section'); section.className = 'glyph-system';
     const title = document.createElement('span'); title.className = 'glyph-system-title'; title.textContent = 'SPECIAL GLYPHS';

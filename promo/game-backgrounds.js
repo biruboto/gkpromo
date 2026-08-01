@@ -1,7 +1,15 @@
-import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js';
+import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=26';
 
-export function createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle }) {
-  const WIREFRAME_BACKGROUND_OPACITY = .48;
+export const MODEL_SOURCES = {
+  asteroids: { label: 'Asteroids upright', url: './models/asteroids.3ds', excludeMeshes: ['Mesh09'], removeDanglers: true },
+  elvira: { label: 'Elvira', url: './models/elvira.3ds' },
+  ironman: { label: 'Iron Man pinball', url: './models/ironman.3ds' },
+  neogeo: { label: 'Neo Geo arcade cabinet', url: './models/neo-geo_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
+  pacman: { label: 'Pac-Man arcade cabinet', url: './models/pac-man_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
+};
+
+export function createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle, getModel, getModelSettings }) {
+  const MODEL_BACKGROUND_OPACITY = .48;
   const moonLanderTintCache = new Map();
   const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
   let stars = [], seed = 1;
@@ -238,12 +246,32 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
     drawTiledMoonLanderLayer(tintedMoonLanderLayer('city', palette.accent), mountainY + 46 * MOON_LANDER_SCALE, time, 29);
   }
   let wireframeCabinet = null;
-  function drawWireframeBackground(palette, time) {
+  let loadedModelId = null;
+  let loadingModelId = null;
+  let failedModelId = null;
+  function loadSelectedModel(modelId, settings) {
+    const source = MODEL_SOURCES[modelId] || MODEL_SOURCES.asteroids;
+    const modelKey = `${modelId}:${settings.edgeThreshold}:${settings.targetVertices}`;
+    if (!wireframeCabinet || loadingModelId === modelKey || loadedModelId === modelKey || failedModelId === modelKey) return;
+    loadingModelId = modelKey;
+    const loadOptions = { ...source, edgeThreshold: settings.edgeThreshold, targetVertices: settings.targetVertices };
+    const load = source.format === 'fbx' ? wireframeCabinet.loadFbxSource(source.url, loadOptions) : source.format === 'obj' ? wireframeCabinet.loadObjSource(source.url, loadOptions) : source.format === 'glb' ? wireframeCabinet.loadGlbSource(source.url, loadOptions) : wireframeCabinet.loadSource(source.url, loadOptions);
+    load.then(applied => {
+      if (applied) { loadedModelId = modelKey; failedModelId = null; }
+    }).catch(() => {
+      failedModelId = modelKey;
+    }).finally(() => {
+      if (loadingModelId === modelKey) loadingModelId = null;
+    });
+  }
+  function drawModelBackground(palette, time) {
     if (!wireframeCabinet) {
       wireframeCabinet = createWireframeCabinet({ width: 180, height: 225 });
-      if (wireframeCabinet) wireframeCabinet.loadSource('./models/ironman.3ds').catch(() => {});
     }
     if (!wireframeCabinet) return;
+    const modelId = getModel?.() || 'asteroids';
+    const modelSettings = getModelSettings?.() || { edgeThreshold: 1, targetVertices: 500, opacity: 48 };
+    loadSelectedModel(modelId, modelSettings);
     const cameraOrbit = Math.sin(time * 0.22) * 75;
     const cameraPitch = Math.cos(time * 0.15) * 28;
     const zoom = Math.max(45, Math.min(450, 140 * (1 + Math.sin(time * 0.35) * 0.25)));
@@ -261,7 +289,7 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
       wobble: false
     });
     ctx.save();
-    ctx.globalAlpha = WIREFRAME_BACKGROUND_OPACITY;
+    ctx.globalAlpha = MODEL_BACKGROUND_OPACITY * modelSettings.opacity / 100;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(frameCanvas, 0, 0, W, H);
     ctx.restore();
@@ -269,7 +297,7 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
   function drawGameBackground(palette, time) {
     if (getStyle() === 'asteroids') drawAsteroidsBackground(palette, time);
     else if (getStyle() === 'moon-patrol') drawMoonLanderBackground(palette, time);
-    else if (getStyle() === 'wireframe') drawWireframeBackground(palette, time);
+    else if (getStyle() === 'model') drawModelBackground(palette, time);
     else drawStarfieldBackground(palette, time);
   }
   resetStars();

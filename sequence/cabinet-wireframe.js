@@ -1,5 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js';
 import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/GLTFLoader.js';
+import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/OBJLoader.js';
 import { SimplifyModifier } from 'https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/modifiers/SimplifyModifier.js';
 import { mergeVertices } from 'https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -70,28 +72,51 @@ export function createWireframeCabinet({ width, height }) {
       importedCabinet.clear(); importedCabinet.add(source); importedCabinet.visible = true; proceduralCabinet.visible = false;
       return true;
     }
-    async function loadSource(url, { excludeMeshes = [], removeDanglers = false } = {}) {
+    async function loadSource(url, { excludeMeshes = [], removeDanglers = false, edgeThreshold = 12 } = {}) {
       const loadId = ++sourceLoadId;
       const response = await fetch(url); if (!response.ok) throw new Error(`model request returned ${response.status}`);
       const meshes = parseThreeDsMeshes(await response.arrayBuffer()); const wireMeshes = meshes.filter(object => !excludeMeshes.includes(object.name));
       if (!wireMeshes.length) throw new Error('The imported model did not contain usable mesh data.');
       const source = new THREE.Group(); wireMeshes.forEach(object => {
         const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(object.vertices, 3)); geometry.setIndex(object.faces);
-        const edges = new THREE.EdgesGeometry(geometry, 12);
+        const edges = new THREE.EdgesGeometry(geometry, edgeThreshold);
         source.add(new THREE.LineSegments(removeDanglers ? removeMonitorDanglers(edges) : edges, material));
       });
       if (!source.children.length) throw new Error('The model did not contain triangle geometry.');
       source.rotation.x = -Math.PI / 2; return installImportedSource(source, loadId);
     }
-    async function loadFbxSource(url, { targetVertices = 180 } = {}) {
+    async function loadFbxSource(url, { targetVertices = 180, edgeThreshold = 1 } = {}) {
       const loadId = ++sourceLoadId; const response = await fetch(url); if (!response.ok) throw new Error(`model request returned ${response.status}`);
       const parsed = new FBXLoader().parse(await response.arrayBuffer(), './models/'); parsed.updateMatrixWorld(true); const source = new THREE.Group();
       parsed.traverse(object => {
         if (!object.isMesh || !object.geometry) return;
         const mergedGeometry = mergeVertices(object.geometry.clone().applyMatrix4(object.matrixWorld)); const removalCount = Math.max(0, mergedGeometry.getAttribute('position').count - targetVertices);
-        const geometry = removalCount ? new SimplifyModifier().modify(mergedGeometry, removalCount) : mergedGeometry; source.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), material));
+        const geometry = removalCount ? new SimplifyModifier().modify(mergedGeometry, removalCount) : mergedGeometry; source.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, edgeThreshold), material));
       });
       if (!source.children.length) throw new Error('The FBX did not contain usable mesh geometry.');
+      return installImportedSource(source, loadId);
+    }
+    async function loadObjSource(url, { targetVertices = 260, edgeThreshold = 1 } = {}) {
+      const loadId = ++sourceLoadId; const response = await fetch(url); if (!response.ok) throw new Error(`model request returned ${response.status}`);
+      const parsed = new OBJLoader().parse(await response.text()); parsed.updateMatrixWorld(true); const source = new THREE.Group();
+      parsed.traverse(object => {
+        if (!object.isMesh || !object.geometry) return;
+        const mergedGeometry = mergeVertices(object.geometry.clone().applyMatrix4(object.matrixWorld)); const removalCount = Math.max(0, mergedGeometry.getAttribute('position').count - targetVertices);
+        const geometry = removalCount ? new SimplifyModifier().modify(mergedGeometry, removalCount) : mergedGeometry; source.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, edgeThreshold), material));
+      });
+      if (!source.children.length) throw new Error('The OBJ did not contain usable mesh geometry.');
+      return installImportedSource(source, loadId);
+    }
+    async function loadGlbSource(url, { targetVertices = 500, edgeThreshold = 1 } = {}) {
+      const loadId = ++sourceLoadId; const response = await fetch(url); if (!response.ok) throw new Error(`model request returned ${response.status}`);
+      const buffer = await response.arrayBuffer(); const parsed = await new Promise((resolve, reject) => new GLTFLoader().parse(buffer, './models/', resolve, reject));
+      parsed.scene.updateMatrixWorld(true); const source = new THREE.Group();
+      parsed.scene.traverse(object => {
+        if (!object.isMesh || !object.geometry) return;
+        const mergedGeometry = mergeVertices(object.geometry.clone().applyMatrix4(object.matrixWorld)); const removalCount = Math.max(0, mergedGeometry.getAttribute('position').count - targetVertices);
+        const geometry = removalCount ? new SimplifyModifier().modify(mergedGeometry, removalCount) : mergedGeometry; source.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, edgeThreshold), material));
+      });
+      if (!source.children.length) throw new Error('The GLB did not contain usable mesh geometry.');
       return installImportedSource(source, loadId);
     }
     let lastColor = null; let lastOpacity = null;
@@ -110,7 +135,7 @@ export function createWireframeCabinet({ width, height }) {
       cabinet.rotation.y = yaw + (wobble ? Math.sin(elapsed * .62) * .14 : 0); cabinet.rotation.x = pitch + (wobble ? Math.sin(elapsed * .44) * .035 : 0);
       renderer.clear(); renderer.render(scene, projection === 'orthographic' ? orthographicCamera : camera); return renderer.domElement;
     }
-    return { canvas: renderer.domElement, loadSource, loadFbxSource, render };
+    return { canvas: renderer.domElement, loadSource, loadFbxSource, loadObjSource, loadGlbSource, render };
   } catch (error) {
     console.warn('Wireframe cabinet unavailable:', error);
     return null;

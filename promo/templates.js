@@ -33,7 +33,7 @@ export const templates = {
     fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
   },
   pinball: {
-    theme: 'cobalt', gameStyle: 'wireframe', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
+    theme: 'cobalt', gameStyle: 'model', model: 'ironman', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     headline: 'June 2026\n[[effect:spin]]Pinball Tournaments[[/effect]]', detail: '[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!',
     body: '[[petscii-upper-51]] Mon 6/8[[leader-tab]][[effect:highlight]]Stall Ball Bonanza[[/effect]]\n[[petscii-upper-51]] Wed 6/10[[leader-tab]][[effect:highlight]]Stern Army Match Play[[/effect]]\n[[petscii-upper-51]] Wed 6/17[[leader-tab]][[effect:highlight]]Group Match Play[[/effect]]\n[[petscii-upper-51]] Thu 6/18[[leader-tab]][[effect:highlight]]Gender Expansive Div.[[/effect]]\n[[petscii-upper-51]] Tue 6/30[[leader-tab]][[effect:highlight]]Double Head-2-Head[[/effect]]',
     cta: 'HIGH SCORE CONTEST\nGAME OF THE MONTH', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR\nwww.groundkontrol.com',

@@ -1,6 +1,6 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=228';
 import { createFontManager } from './fonts.js?v=228';
-import { createGameBackgrounds } from './game-backgrounds.js?v=234';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=244';
 import { createMonochromeImageBlock } from './image-block.js?v=236';
 import { createPromoRenderer } from './renderer.js?v=232';
 import { createRichTextEditor } from './rich-text-editor.js?v=228';
@@ -19,7 +19,7 @@ exportCanvas.width = EXPORT_W;
 exportCanvas.height = EXPORT_H;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'modelField', 'model', 'modelEdgeAngle', 'modelEdgeAngleOutput', 'modelDetail', 'modelDetailOutput', 'modelOpacity', 'modelOpacityOutput', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
@@ -40,8 +40,33 @@ const PROJECT_SCALE_CONTROLS = ['headerScale', 'detailScale', 'bodyScale', 'ctaS
 const PROJECT_COPY_CONTROLS = { header: 'headline', detail: 'detail', body: 'body', cta: 'cta', hours: 'hours', footer: 'footer' };
 const DEFAULT_SECTION_ORDER = ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'];
 const DEFAULT_IMAGE_SETTINGS = { resolution: 64, threshold: 128, contrast: 115, dither: 'bayer4', ditherAmount: 60, color: 'accent', align: 'center', scale: 72, opacity: 100, invert: false };
+const DEFAULT_MODEL_SETTINGS = { edgeThreshold: 1, targetVertices: 500, opacity: 48 };
+const DEFAULT_MODEL_ID = 'asteroids';
 const CUSTOM_TEMPLATE_ID = '__custom_project__';
 let sectionOrder = [...DEFAULT_SECTION_ORDER];
+controls.model.replaceChildren(...Object.entries(MODEL_SOURCES).map(([id, source]) => new Option(source.label, id)));
+controls.model.value = DEFAULT_MODEL_ID;
+let activeModelSettings = { ...DEFAULT_MODEL_SETTINGS };
+let modelSettingsTimer = null;
+function readModelSettings() { return { edgeThreshold: Number(controls.modelEdgeAngle.value), targetVertices: Number(controls.modelDetail.value), opacity: Number(controls.modelOpacity.value) }; }
+function syncModelSettings() {
+  controls.modelEdgeAngleOutput.textContent = `${controls.modelEdgeAngle.value} deg`;
+  controls.modelDetailOutput.textContent = `${controls.modelDetail.value} vertices`;
+  controls.modelOpacityOutput.textContent = `${controls.modelOpacity.value}%`;
+}
+function scheduleModelSettings() {
+  syncModelSettings();
+  if (modelSettingsTimer !== null) clearTimeout(modelSettingsTimer);
+  modelSettingsTimer = setTimeout(() => { activeModelSettings = readModelSettings(); modelSettingsTimer = null; }, 180);
+}
+syncModelSettings();
+function syncModelField() {
+  const visible = controls.gameStyle.value === 'model';
+  controls.modelField.hidden = !visible;
+  controls.model.disabled = !visible;
+}
+syncModelField();
+controls.gameStyle.addEventListener('change', syncModelField);
 function textScale(controlName) { return SCALE_STEPS[Number(controls[controlName].value)] || 1; }
 function syncCrtControls() {
   Object.entries(CRT_CONTROL_IDS).forEach(([name, controlName]) => {
@@ -146,7 +171,8 @@ const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createF
   }
 });
 let recording = false;
-const gameBackgrounds = createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle: () => controls.gameStyle.value });
+const gameBackgrounds = createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle: () => controls.gameStyle.value, getModel: () => controls.model.value, getModelSettings: () => activeModelSettings });
+controls.modelEdgeAngle.addEventListener('input', scheduleModelSettings); controls.modelDetail.addEventListener('input', scheduleModelSettings); controls.modelOpacity.addEventListener('input', scheduleModelSettings);
 const imageBlock = createMonochromeImageBlock({
   getSettings: getImageSettings,
   onChange: () => {
@@ -248,6 +274,7 @@ controls.imageAutoThreshold.addEventListener('click', () => {
 });
 ['imageScale', 'imageOpacity'].forEach(controlName => controls[controlName].addEventListener('input', syncImageControls));
 async function loadImageSource(loader, successMessage) {
+  resetImageClearConfirmation();
   controls.imageFile.disabled = true; controls.imageUrlLoad.disabled = true; controls.imageClear.disabled = true; controls.imageAutoThreshold.disabled = true;
   try {
     await loader();
@@ -274,9 +301,28 @@ controls.imageUrl.addEventListener('keydown', event => {
   if (event.key !== 'Enter') return;
   event.preventDefault(); loadImageUrl();
 });
+const imageClearLabel = controls.imageClear.textContent;
+let imageClearConfirmTimer = null;
+function resetImageClearConfirmation() {
+  if (imageClearConfirmTimer !== null) { clearTimeout(imageClearConfirmTimer); imageClearConfirmTimer = null; }
+  controls.imageClear.classList.remove('is-confirming');
+  controls.imageClear.removeAttribute('aria-label');
+  controls.imageClear.textContent = imageClearLabel;
+  delete controls.imageClear.dataset.confirming;
+}
 controls.imageClear.addEventListener('click', () => {
-  imageBlock.clear(); controls.imageFile.value = ''; controls.imageUrl.value = '';
-  controls.status.textContent = 'Image block cleared.';
+  if (controls.imageClear.dataset.confirming === 'true') {
+    resetImageClearConfirmation();
+    imageBlock.clear(); controls.imageFile.value = ''; controls.imageUrl.value = '';
+    controls.status.textContent = 'Image block cleared.';
+    return;
+  }
+  controls.imageClear.dataset.confirming = 'true';
+  controls.imageClear.classList.add('is-confirming');
+  controls.imageClear.setAttribute('aria-label', 'Confirm clearing image');
+  controls.imageClear.textContent = 'ARE YOU SURE?';
+  controls.status.textContent = 'Click ARE YOU SURE? again to clear the image.';
+  imageClearConfirmTimer = setTimeout(resetImageClearConfirmation, 2800);
 });
 syncImageControls();
 function drawBorderGlyphPreviews() {
@@ -450,6 +496,10 @@ function createProject() {
     settings: {
       theme: controls.theme.value,
       gameStyle: controls.gameStyle.value,
+      model: controls.model.value,
+      modelEdgeAngle: Number(controls.modelEdgeAngle.value),
+      modelDetail: Number(controls.modelDetail.value),
+      modelOpacity: Number(controls.modelOpacity.value),
       logo: controls.logo.value,
       classic: controls.classic.checked,
       boundaries: controls.boundaries.checked,
@@ -500,11 +550,16 @@ function validateProject(value) {
   PROJECT_SCALE_CONTROLS.forEach(controlName => { validatedScales[controlName] = projectChoice(projectScales[controlName], ['0', '1', '2'], `${controlName} scale`); });
   const validatedCopy = {};
   Object.keys(PROJECT_COPY_CONTROLS).forEach(name => { validatedCopy[name] = projectString(copy[name], `${name} copy`); });
+  const legacyWireframe = settings.gameStyle === 'wireframe';
   return {
     copy: validatedCopy,
     settings: {
       theme: projectChoice(settings.theme, Object.keys(colors), 'Color theme'),
-      gameStyle: projectChoice(settings.gameStyle, validSelectValues('gameStyle'), 'Game style'),
+      gameStyle: projectChoice(legacyWireframe ? 'model' : settings.gameStyle, validSelectValues('gameStyle'), 'Background style'),
+      model: projectChoice(settings.model || (legacyWireframe ? 'ironman' : DEFAULT_MODEL_ID), validSelectValues('model'), '3D model'),
+      modelEdgeAngle: projectInteger(settings.modelEdgeAngle ?? DEFAULT_MODEL_SETTINGS.edgeThreshold, 1, 45, 'Model edge angle'),
+      modelDetail: projectInteger(settings.modelDetail ?? DEFAULT_MODEL_SETTINGS.targetVertices, 100, 1200, 'Model mesh detail'),
+      modelOpacity: projectInteger(settings.modelOpacity ?? DEFAULT_MODEL_SETTINGS.opacity, 0, 100, 'Model opacity'),
       logo: projectChoice(settings.logo, ['pixel', 'plain', 'gradient', 'classic'], 'Logo'),
       classic: projectBoolean(settings.classic, 'Classic Arcade'),
       boundaries: projectBoolean(settings.boundaries, 'Text boundaries'),
@@ -537,7 +592,8 @@ function validateProject(value) {
 }
 async function applyProject(project) {
   const { copy, settings } = validateProject(project);
-  controls.theme.value = settings.theme; controls.gameStyle.value = settings.gameStyle; controls.logo.value = settings.logo;
+  controls.theme.value = settings.theme; controls.gameStyle.value = settings.gameStyle; controls.model.value = settings.model; controls.modelEdgeAngle.value = settings.modelEdgeAngle; controls.modelDetail.value = settings.modelDetail; controls.modelOpacity.value = settings.modelOpacity; activeModelSettings = readModelSettings(); syncModelSettings(); controls.logo.value = settings.logo;
+  syncModelField();
   controls.classic.checked = settings.classic; controls.boundaries.checked = settings.boundaries;
   controls.crtLook.value = settings.crt.look; controls.crt.value = settings.crt.mode;
   Object.entries(settings.crt.controls).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; });
@@ -556,7 +612,8 @@ async function applyProject(project) {
   await Promise.all([imageLoad, ...PROJECT_FONT_CONTROLS.map(controlName => loadSelectedFont(controlName, { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName], false))]);
 }
 async function applyTemplate(template) {
-  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.logo.value = template.logo || 'pixel'; controls.classic.checked = template.classic;
+  controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.model.value = template.model || DEFAULT_MODEL_ID; controls.logo.value = template.logo || 'pixel'; controls.classic.checked = template.classic;
+  syncModelField();
   controls.boundaries.checked = template.boundaries; controls.crtLook.value = 'custom'; controls.crt.value = template.crt || 'off';
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;

@@ -113,7 +113,8 @@
     .cta-rich-editor { min-height: 46px; overflow-wrap: anywhere; white-space: pre-wrap; }
     .field-heading > .rich-editor { flex: 1 1 auto; min-width: 0; }
     .rich-editor:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
-    .editor-glyph { display: inline; margin: 0; color: inherit; font: inherit; }
+    .editor-glyph { display: inline-flex; width: 1em; height: 1em; margin: 0; align-items: center; justify-content: center; color: inherit; font: inherit; vertical-align: -.15em; }
+    .editor-glyph img { width: 1em; height: 1em; image-rendering: pixelated; user-select: none; }
     .editor-leader-tab { display: inline-block; margin: 0 2px; padding: 0 2px; color: var(--accent); background: #00ddff1a; font: inherit; }
     .editor-effect-shadow { padding: 0 1px; background: #00ddff1a; box-shadow: 1px 1px 0 #000; }
     .editor-effect-highlight { color: #ffdf4d; }
@@ -135,6 +136,8 @@
     .editor-effect-spin { display: inline-block; transform-origin: center; animation: editor-spin 6.4s steps(4, end) infinite; }
     button { min-height: 32px; border: 1px solid #3d5974; border-radius: 3px; background: #102031; color: var(--ink); cursor: pointer; font: inherit; }
     button:hover { background: #17304a; border-color: var(--accent); } button.primary, button[aria-pressed="true"] { border-color: var(--accent); background: #003948; }
+    @keyframes image-clear-confirm { 50% { background: #5b430d; border-color: #ffdf4d; color: #ffdf4d; } }
+    #imageClear.is-confirming { border-color: #ffdf4d; color: #ffdf4d; animation: image-clear-confirm .28s steps(2, end) 2; }
     button:disabled { cursor: not-allowed; opacity: .35; } button:disabled:hover { border-color: #3d5974; background: #102031; }
     .glyph-groups { display: grid; gap: 8px; }
     .glyph-system { display: grid; gap: 4px; }
@@ -166,7 +169,8 @@
             <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option><option value="emerald">Emerald Terminal</option><option value="cobalt">Cobalt Gold</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
           </div>
-          <fieldset><label for="gameStyle">GAME STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option><option value="wireframe">Pinball Wireframe</option></select></fieldset>
+          <fieldset><label for="gameStyle">BACKGROUND STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option><option value="model">3D Model</option></select></fieldset>
+          <fieldset id="modelField" hidden><label for="model">MODEL</label><select id="model"></select><label class="range-label" for="modelEdgeAngle">EDGE ANGLE <output id="modelEdgeAngleOutput">1 deg</output></label><input id="modelEdgeAngle" type="range" min="1" max="45" step="1" value="1"><label class="range-label" for="modelDetail">MESH DETAIL <output id="modelDetailOutput">500 vertices</output></label><input id="modelDetail" type="range" min="100" max="1200" step="10" value="500"><label class="range-label" for="modelOpacity">MODEL OPACITY <output id="modelOpacityOutput">48%</output></label><input id="modelOpacity" type="range" min="0" max="100" step="1" value="48"></fieldset>
           <fieldset class="toggle-field"><label for="boundaries">SHOW TEXT BOUNDARIES</label><input id="boundaries" type="checkbox"></fieldset>
         </div>
       </details>

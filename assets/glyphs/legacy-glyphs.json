@@ -1568,6 +1568,103 @@
         15,
         15
       ]
+    },
+    {
+      "id": "emoji-cool",
+      "system": "EMOJI",
+      "slot": "cool",
+      "image": "cool.png",
+      "bitmap": [
+        60,
+        126,
+        255,
+        255,
+        255,
+        255,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-smiley",
+      "system": "EMOJI",
+      "slot": "smiley",
+      "image": "smiley.png",
+      "bitmap": [
+        60,
+        126,
+        255,
+        255,
+        255,
+        255,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-bigsmile",
+      "system": "EMOJI",
+      "slot": "bigsmile",
+      "image": "bigsmile.png",
+      "bitmap": [
+        60,
+        126,
+        255,
+        255,
+        255,
+        255,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-ghost",
+      "system": "EMOJI",
+      "slot": "ghost",
+      "image": "ghost.png",
+      "bitmap": [
+        60,
+        126,
+        126,
+        126,
+        126,
+        126,
+        126,
+        90
+      ]
+    },
+    {
+      "id": "emoji-sad",
+      "system": "EMOJI",
+      "slot": "sad",
+      "image": "sad.png",
+      "transparentColor": "#afd249",
+      "bitmap": [
+        60,
+        126,
+        255,
+        255,
+        255,
+        255,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-skull",
+      "system": "EMOJI",
+      "slot": "skull",
+      "image": "skull.png",
+      "bitmap": [
+        126,
+        255,
+        255,
+        255,
+        255,
+        127,
+        62,
+        30
+      ]
     }
   ]
 }

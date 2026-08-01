@@ -86,8 +86,8 @@
 
 ## Special Glyphs
 
-- `assets/glyphs/legacy-glyphs.json` is the complete normalized legacy glyph source. Glyphs are stored as stable IDs, system, code slot, and 8 bitmap rows; ATASCII also records `internalSlot`.
-- The promo picker intentionally exposes one merged `SPECIAL GLYPHS` group only: ATASCII `0x00`, `0x1C`, `0x1D`, `0x1E`, `0x1F`, `0x60`, `0x7B`, `0x7D`, `0x7E`, `0x7F`; PETSCII `0x51`, `0x56`, `0x57`, `0x58`, `0x5A`.
+- `assets/glyphs/legacy-glyphs.json` is the complete normalized special-glyph source. Glyphs are stored as stable IDs, system, code slot, and 8 bitmap rows; ATASCII also records `internalSlot`. Image-backed `EMOJI` entries may include an `image` filename under `assets/images/emoji/` and a `transparentColor` key for RGB source art.
+- The promo picker intentionally exposes one merged `SPECIAL GLYPHS` group: the selected ATASCII and PETSCII slots plus image-backed `EMOJI` entries.
 - Inserted source tokens use stable IDs such as `[[atascii-7F]]` and `[[petscii-upper-5a]]`. In rich editors, these display as their Unicode counterparts so selection and copy work, but serialize back to the token. Do not replace the stored token scheme.
 - Current Unicode mappings include heart `atascii-00`, spade `atascii-7B`, left triangle `atascii-7E`, right triangle `atascii-7F`, club `petscii-upper-58`, and up triangle `petscii-upper-5A`.
 - PETSCII supplies all dynamic border glyphs. Keep border drawing on the 8px cell grid.
@@ -95,6 +95,6 @@
 ## Extension Rules
 
 - Add a promo font by placing its normalized `.h` file in `assets/font-data-h/` and adding it to `assets/font-data-h/index.json`.
-- Add a legacy glyph by appending a normalized entry to `assets/glyphs/legacy-glyphs.json`; keep IDs stable because document source stores them. Add the slot to the picker allowlist only when it belongs in Special Glyphs.
+- Add a special glyph by appending a normalized entry to `assets/glyphs/legacy-glyphs.json`; keep IDs stable because document source stores them. Image-backed emoji also need their `8x8` PNG under `assets/images/emoji/`.
 - Preserve `ctx.imageSmoothingEnabled = false`, integer canvas scales, and direct bitmap rendering. Avoid CSS resampling or mixed-resolution render paths.
 - Run `Get-ChildItem promo -Filter *.js | ForEach-Object { node --check $_.FullName }` after JavaScript changes. Do not start a local server or browser automatically; Zed Live Server is the local preview workflow.

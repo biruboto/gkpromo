@@ -19,7 +19,7 @@
   <main class="app">
     <aside class="controls" aria-label="Cabinet wireframe controls">
       <div><h1>GK Wireframe Models</h1><p>LOW-RES 3D ASSET STUDY</p></div>
-      <section class="group" aria-labelledby="modelHeading"><h2 id="modelHeading">MODEL</h2><fieldset><label for="model">ASSET</label><select id="model"><option value="asteroids">ASTEROIDS UPRIGHT</option><option value="ironman">IRON MAN PINBALL</option><option value="human">LOW-POLY HUMAN FBX</option></select></fieldset></section>
+      <section class="group" aria-labelledby="modelHeading"><h2 id="modelHeading">MODEL</h2><fieldset><label for="model">ASSET</label><select id="model"><option value="asteroids">ASTEROIDS UPRIGHT</option><option value="ironman">IRON MAN PINBALL</option><option value="neogeo">NEO GEO ARCADE CABINET</option><option value="pacman">PAC-MAN ARCADE CABINET</option></select></fieldset></section>
       <section class="group" aria-labelledby="motionHeading"><h2 id="motionHeading">MOTION</h2><fieldset><label for="rotationSpeed">ROTATION SPEED <output id="rotationSpeedOutput"></output></label><input id="rotationSpeed" type="range" min="0" max="120" value="30"></fieldset><fieldset><label for="yaw">MODEL YAW <output id="yawOutput"></output></label><input id="yaw" type="range" min="-180" max="180" value="-35"></fieldset><fieldset><label for="pitch">MODEL PITCH <output id="pitchOutput"></output></label><input id="pitch" type="range" min="-20" max="20" value="0"></fieldset><label class="toggle" for="autoRotate">AUTO ROTATE <input id="autoRotate" type="checkbox" checked></label><label class="toggle" for="flyby">FLYBY CAM <input id="flyby" type="checkbox"></label></section>
       <section class="group" aria-labelledby="viewHeading"><h2 id="viewHeading">VIEW</h2><fieldset><label for="zoom">CAMERA ZOOM <output id="zoomOutput"></output></label><input id="zoom" type="range" min="45" max="450" value="100"></fieldset><fieldset><label for="cameraPitch">CAMERA PITCH <output id="cameraPitchOutput"></output></label><input id="cameraPitch" type="range" min="-55" max="55" value="0"></fieldset><fieldset><label for="cameraOrbit">CAMERA ORBIT <output id="cameraOrbitOutput"></output></label><input id="cameraOrbit" type="range" min="-180" max="180" value="0"></fieldset></section>
       <section class="group" aria-labelledby="lookHeading"><h2 id="lookHeading">LOOK</h2><fieldset><label for="opacity">LINE OPACITY <output id="opacityOutput"></output></label><input id="opacity" type="range" min="10" max="100" value="72"></fieldset><fieldset><label for="lineColor">LINE COLOR</label><input id="lineColor" type="color" value="#00ddff"></fieldset></section>
@@ -30,6 +30,6 @@
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js" } }
   </script>
-  <script type="module" src="./sequence/cabinet.js?v=26"></script>
+  <script type="module" src="./sequence/cabinet.js?v=27"></script>
 </body>
 </html>

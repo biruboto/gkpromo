@@ -1,10 +1,11 @@
-import { createWireframeCabinet } from './cabinet-wireframe.js?v=24';
+import { createWireframeCabinet } from './cabinet-wireframe.js?v=26';
 
 const INTERNAL_W = 180, INTERNAL_H = 225, PREVIEW_W = 540, PREVIEW_H = 675;
 const sources = {
   asteroids: { label: 'Asteroids upright', url: './models/asteroids.3ds', excludeMeshes: ['Mesh09'], removeDanglers: true },
   ironman: { label: 'Iron Man pinball', url: './models/ironman.3ds' },
-  human: { label: 'Low-poly human FBX', url: './models/avatar_low.fbx', format: 'fbx', targetVertices: 180, neutralView: true },
+  neogeo: { label: 'Neo Geo arcade cabinet', url: './models/neo-geo_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
+  pacman: { label: 'Pac-Man arcade cabinet', url: './models/pac-man_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
 };
 const controls = Object.fromEntries(['cabinet', 'model', 'rotationSpeed', 'rotationSpeedOutput', 'yaw', 'yawOutput', 'pitch', 'pitchOutput', 'autoRotate', 'flyby', 'zoom', 'zoomOutput', 'cameraPitch', 'cameraPitchOutput', 'cameraOrbit', 'cameraOrbitOutput', 'opacity', 'opacityOutput', 'lineColor', 'reset', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 const model = createWireframeCabinet({ width: INTERNAL_W, height: INTERNAL_H });
@@ -18,7 +19,7 @@ async function loadSelectedModel() {
   controls.status.textContent = `Loading ${source.label} mesh...`;
   try {
     if (source.neutralView) { yaw = 0; controls.autoRotate.checked = false; controls.cameraPitch.value = '-19'; controls.cameraOrbit.value = '30'; controls.zoom.value = '100'; syncOutputs(); }
-    const applied = source.format === 'fbx' ? await model.loadFbxSource(source.url, source) : await model.loadSource(source.url, source);
+    const applied = source.format === 'fbx' ? await model.loadFbxSource(source.url, source) : source.format === 'glb' ? await model.loadGlbSource(source.url, source) : await model.loadSource(source.url, source);
     if (loadId !== modelLoadId || !applied) return;
     controls.status.textContent = `${source.label} mesh ready. Use the controls to tune its presentation.`;
   } catch (error) {
@@ -36,7 +37,7 @@ function frame(now) {
     zoom = Math.max(45, Math.min(450, zoom * (1 + Math.sin(flybyTime * 0.35) * 0.30)));
   } else { flybyTime = 0; }
   syncOutputs({ cameraOrbit, cameraPitch, zoom });
-  if (model) { const canvas = model.render({ color: controls.lineColor.value, opacity: Number(controls.opacity.value) / 100, yaw: yaw * Math.PI / 180, pitch: Number(controls.pitch.value) * Math.PI / 180, zoom: zoom / 100, cameraPitch: cameraPitch * Math.PI / 180, cameraOrbit: cameraOrbit * Math.PI / 180, projection: controls.model.value === 'human' ? 'orthographic' : 'perspective', wobble: false }); previewContext.clearRect(0, 0, PREVIEW_W, PREVIEW_H); previewContext.drawImage(canvas, 0, 0, PREVIEW_W, PREVIEW_H); }
+  if (model) { const canvas = model.render({ color: controls.lineColor.value, opacity: Number(controls.opacity.value) / 100, yaw: yaw * Math.PI / 180, pitch: Number(controls.pitch.value) * Math.PI / 180, zoom: zoom / 100, cameraPitch: cameraPitch * Math.PI / 180, cameraOrbit: cameraOrbit * Math.PI / 180, projection: 'perspective', wobble: false }); previewContext.clearRect(0, 0, PREVIEW_W, PREVIEW_H); previewContext.drawImage(canvas, 0, 0, PREVIEW_W, PREVIEW_H); }
   requestAnimationFrame(frame);
 }
 controls.yaw.addEventListener('input', () => { yaw = Number(controls.yaw.value); syncOutputs(); }); controls.reset.addEventListener('click', reset); controls.model.addEventListener('change', loadSelectedModel);
