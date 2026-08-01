@@ -160,8 +160,8 @@
     @media (max-width: 600px) {
       .app { padding: min(836px, calc(125vw + 121px)) 16px 16px; }
       .preview { position: fixed; z-index: 10; top: 0; left: 0; right: 0; padding: 12px 16px; background: #05080d; }
-      .preview-header, #preview { width: min(540px, 100%, calc(80dvh - 112px)); }
-      .preview[data-output-format="landscape"] .preview-header, .preview[data-output-format="landscape"] #preview { width: min(720px, 100%, calc(177.778dvh - 248px)); }
+      .preview-header, #preview { width: min(540px, 100%, calc(80svh - 112px), calc(80dvh - 112px)); }
+      .preview[data-output-format="landscape"] .preview-header, .preview[data-output-format="landscape"] #preview { width: min(720px, 100%, calc(177.778svh - 248px), calc(177.778dvh - 248px)); }
       .app:has(.preview[data-output-format="landscape"]) { padding-top: min(465px, calc(56.25vw + 143px)); }
     }
   </style>
@@ -212,7 +212,7 @@
       <canvas id="preview" width="540" height="675" aria-label="Animated promotion preview"></canvas>
       <output id="status" class="status" aria-live="polite">Loading renderer...</output>
       <output id="overflowStatus" class="status status-warning" aria-live="polite"></output>
-      <small class="build-version">BUILD V256</small>
+      <small class="build-version">BUILD V257</small>
     </section>
     <aside class="dock right-dock" aria-label="Text and artwork controls">
       <details class="control-section sortable-section" data-composite-section="logo">
@@ -296,14 +296,14 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=256'],
-      ['fonts', './promo/fonts.js?v=256'],
-      ['output formats', './promo/formats.js?v=256'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=256'],
-      ['image block', './promo/image-block.js?v=256'],
-      ['renderer', './promo/renderer.js?v=256'],
-      ['rich text editor', './promo/rich-text-editor.js?v=256'],
-      ['templates', './promo/templates.js?v=256'],
+      ['CRT', './promo/crt.js?v=257'],
+      ['fonts', './promo/fonts.js?v=257'],
+      ['output formats', './promo/formats.js?v=257'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=257'],
+      ['image block', './promo/image-block.js?v=257'],
+      ['renderer', './promo/renderer.js?v=257'],
+      ['rich text editor', './promo/rich-text-editor.js?v=257'],
+      ['templates', './promo/templates.js?v=257'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -313,7 +313,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=256');
+      await import('./promo/app.js?v=257');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');
