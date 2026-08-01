@@ -1,31 +1,33 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=228';
-import { createFontManager } from './fonts.js?v=228';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=244';
-import { createMonochromeImageBlock } from './image-block.js?v=236';
-import { createPromoRenderer } from './renderer.js?v=232';
-import { createRichTextEditor } from './rich-text-editor.js?v=228';
-import { populateTemplateSelect, templates } from './templates.js?v=235';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=255';
+import { createFontManager } from './fonts.js?v=255';
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=255';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=255';
+import { createMonochromeImageBlock } from './image-block.js?v=255';
+import { createPromoRenderer } from './renderer.js?v=255';
+import { createRichTextEditor } from './rich-text-editor.js?v=255';
+import { populateTemplateSelect, templates } from './templates.js?v=255';
 
-const W = 540, H = 675, EXPORT_SCALE = 2, EXPORT_W = 1080, EXPORT_H = 1350;
+let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
+const initialFormat = outputFormat(activeOutputFormatId);
 const LEADER_TAB_TOKEN = '[[leader-tab]]';
 const canvas = document.querySelector('#preview');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 const crtCanvas = document.createElement('canvas');
-crtCanvas.width = EXPORT_W;
-crtCanvas.height = EXPORT_H;
+crtCanvas.width = initialFormat.exportWidth;
+crtCanvas.height = initialFormat.exportHeight;
 const exportCanvas = document.createElement('canvas');
-exportCanvas.width = EXPORT_W;
-exportCanvas.height = EXPORT_H;
+exportCanvas.width = initialFormat.exportWidth;
+exportCanvas.height = initialFormat.exportHeight;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'modelField', 'model', 'modelEdgeAngle', 'modelEdgeAngleOutput', 'modelDetail', 'modelDetailOutput', 'modelOpacity', 'modelOpacityOutput', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'modelField', 'model', 'modelEdgeAngle', 'modelEdgeAngleOutput', 'modelDetail', 'modelDetailOutput', 'modelOpacity', 'modelOpacityOutput', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'outputFormat', 'outputResolution', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status', 'overflowStatus'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
 const animationState = { time: 0 };
 const crtPipeline = createCrtPipeline({
-  sourceCanvas: canvas, outputCanvas: crtCanvas, sourceWidth: W, sourceHeight: H, outputWidth: EXPORT_W, outputHeight: EXPORT_H,
+  sourceCanvas: canvas, outputCanvas: crtCanvas, sourceWidth: initialFormat.logicalWidth, sourceHeight: initialFormat.logicalHeight, outputWidth: initialFormat.exportWidth, outputHeight: initialFormat.exportHeight,
   getTreatment: () => controls.crt.value,
   getSetting: name => Number(controls[CRT_CONTROL_IDS[name]].value) / 100,
   getTime: () => animationState.time
@@ -34,8 +36,9 @@ const SCALE_STEPS = [1, 2, 4];
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const BODY_BORDER_GLYPHS = { square: 'petscii-upper-70', rounded: 'petscii-upper-55' };
 const PROJECT_FORMAT = 'gk-promo-project';
-const PROJECT_VERSION = 1;
+const PROJECT_VERSION = 3;
 const PROJECT_FONT_CONTROLS = ['font', 'headerFont', 'detailFont', 'ctaFont', 'footerFont'];
+const FONT_TARGETS = { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' };
 const PROJECT_SCALE_CONTROLS = ['headerScale', 'detailScale', 'bodyScale', 'ctaScale', 'footerScale'];
 const PROJECT_COPY_CONTROLS = { header: 'headline', detail: 'detail', body: 'body', cta: 'cta', hours: 'hours', footer: 'footer' };
 const DEFAULT_SECTION_ORDER = ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'];
@@ -44,6 +47,7 @@ const DEFAULT_MODEL_SETTINGS = { edgeThreshold: 1, targetVertices: 500, opacity:
 const DEFAULT_MODEL_ID = 'asteroids';
 const CUSTOM_TEMPLATE_ID = '__custom_project__';
 let sectionOrder = [...DEFAULT_SECTION_ORDER];
+let layoutProfiles = { portrait: null, landscape: null };
 controls.model.replaceChildren(...Object.entries(MODEL_SOURCES).map(([id, source]) => new Option(source.label, id)));
 controls.model.value = DEFAULT_MODEL_ID;
 let activeModelSettings = { ...DEFAULT_MODEL_SETTINGS };
@@ -91,7 +95,11 @@ const colors = {
   pulse: { background: '#1a1020', text: '#f0c7de', highlight: '#c7eeb8', shadow: '#6a3e66', accent: '#6fcbc1', muted: '#7d537a' },
   solar: { background: '#1a150d', text: '#f2d89c', highlight: '#cfefa7', shadow: '#774c3b', accent: '#e76f51', muted: '#71654b' },
   emerald: { background: '#07130e', text: '#b9f6c7', highlight: '#f4ffd6', shadow: '#1e5c45', accent: '#35d07f', muted: '#4f9270' },
-  cobalt: { background: '#101427', text: '#d9e2ff', highlight: '#ffd56a', shadow: '#394b87', accent: '#5b8cff', muted: '#7181ad' }
+  cobalt: { background: '#101427', text: '#d9e2ff', highlight: '#ffd56a', shadow: '#394b87', accent: '#5b8cff', muted: '#7181ad' },
+  amethyst: { background: '#160d26', text: '#e6d8ff', highlight: '#ffe38a', shadow: '#5a3974', accent: '#bc79ff', muted: '#77658f' },
+  copper: { background: '#181515', text: '#e8d8b9', highlight: '#a4e5df', shadow: '#6d5547', accent: '#d68b45', muted: '#89745f' },
+  polar: { background: '#081b26', text: '#d6f4f4', highlight: '#ffb95e', shadow: '#26586c', accent: '#38b9d5', muted: '#568492' },
+  ruby: { background: '#210b13', text: '#ffd3df', highlight: '#86e8dd', shadow: '#713149', accent: '#ef4c70', muted: '#875264' }
 };
 function syncThemePreview() {
   const palette = colors[controls.theme.value];
@@ -171,7 +179,7 @@ const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createF
   }
 });
 let recording = false;
-const gameBackgrounds = createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle: () => controls.gameStyle.value, getModel: () => controls.model.value, getModelSettings: () => activeModelSettings });
+const gameBackgrounds = createGameBackgrounds({ context: ctx, width: initialFormat.logicalWidth, height: initialFormat.logicalHeight, images: moonLanderImages, getStyle: () => controls.gameStyle.value, getModel: () => controls.model.value, getModelSettings: () => activeModelSettings });
 controls.modelEdgeAngle.addEventListener('input', scheduleModelSettings); controls.modelDetail.addEventListener('input', scheduleModelSettings); controls.modelOpacity.addEventListener('input', scheduleModelSettings);
 const imageBlock = createMonochromeImageBlock({
   getSettings: getImageSettings,
@@ -181,11 +189,13 @@ const imageBlock = createMonochromeImageBlock({
   }
 });
 const promoRenderer = createPromoRenderer({
-  context: ctx, canvas, exportContext: exportCtx, width: W, height: H, exportScale: EXPORT_SCALE,
+  context: ctx, canvas, exportContext: exportCtx, width: initialFormat.logicalWidth, height: initialFormat.logicalHeight, exportScale: initialFormat.exportScale,
   controls, colors, logoImages, legacyGlyphs, gameBackgrounds, imageBlock, crtPipeline, contentVisibility, scrollModes,
   textAlignments, textVerticalAlignments, getBodyBorderStyle: () => bodyBorderStyle,
   getFonts: () => ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont }),
-  getTextScale: textScale, getSectionOrder: () => sectionOrder, animationState, leaderTabToken: LEADER_TAB_TOKEN
+  getTextScale: textScale, getSectionOrder: () => sectionOrder, getOutputFormat: () => outputFormat(activeOutputFormatId),
+  onOverflowChange: sections => { controls.overflowStatus.textContent = sections.length ? `CONTENT WARNING: ${sections.map(section => section.toUpperCase()).join(', ')} DOES NOT FULLY FIT` : ''; },
+  animationState, leaderTabToken: LEADER_TAB_TOKEN
 });
 const rightDock = document.querySelector('.right-dock');
 function normalizeSectionOrder(value) {
@@ -203,9 +213,19 @@ function syncSectionOrder(order = DEFAULT_SECTION_ORDER) {
   sectionOrder.forEach(sectionName => rightDock.append(sections.get(sectionName)));
   sectionOrder.forEach((sectionName, index) => {
     const summary = sections.get(sectionName).querySelector('summary');
-    summary.setAttribute('aria-label', `${summary.querySelector('span:last-child').textContent}, composition item ${index + 1} of ${sectionOrder.length}. Drag or use Alt plus arrow keys to reorder.`);
-    summary.setAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
+    const anchored = activeOutputFormatId === 'landscape' && ['logo', 'footer'].includes(sectionName);
+    summary.draggable = !anchored;
+    summary.setAttribute('aria-label', anchored ? `${summary.querySelector('span:last-child').textContent}, fixed landscape region.` : `${summary.querySelector('span:last-child').textContent}, composition item ${index + 1} of ${sectionOrder.length}. Drag or use Alt plus arrow keys to reorder.`);
+    if (anchored) summary.removeAttribute('aria-keyshortcuts'); else summary.setAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
   });
+}
+function landscapeSectionRegion(sectionName) {
+  if (sectionName === 'header' || sectionName === 'detail') return 'top';
+  if (sectionName === 'image' || sectionName === 'body' || sectionName === 'cta') return 'content';
+  return sectionName;
+}
+function sectionsCanReorder(sectionName, targetName) {
+  return activeOutputFormatId !== 'landscape' || landscapeSectionRegion(sectionName) === landscapeSectionRegion(targetName) && ['top', 'content'].includes(landscapeSectionRegion(sectionName));
 }
 function clearSectionDropTargets() {
   rightDock.querySelectorAll('.drop-before, .drop-after').forEach(section => section.classList.remove('drop-before', 'drop-after'));
@@ -221,6 +241,7 @@ rightDock.addEventListener('dragstart', event => {
   const summary = event.target.closest('[data-composite-section] > summary');
   if (!summary) return;
   const section = summary.parentElement;
+  if (activeOutputFormatId === 'landscape' && ['logo', 'footer'].includes(section.dataset.compositeSection)) { event.preventDefault(); return; }
   section.classList.add('is-dragging');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', section.dataset.compositeSection);
@@ -228,7 +249,7 @@ rightDock.addEventListener('dragstart', event => {
 rightDock.addEventListener('dragover', event => {
   const target = event.target.closest('[data-composite-section]');
   const dragging = rightDock.querySelector('.is-dragging');
-  if (!target || !dragging || target === dragging) return;
+  if (!target || !dragging || target === dragging || !sectionsCanReorder(dragging.dataset.compositeSection, target.dataset.compositeSection)) return;
   event.preventDefault();
   clearSectionDropTargets();
   target.classList.add(event.clientY >= target.getBoundingClientRect().top + target.offsetHeight / 2 ? 'drop-after' : 'drop-before');
@@ -236,7 +257,7 @@ rightDock.addEventListener('dragover', event => {
 rightDock.addEventListener('drop', event => {
   const target = event.target.closest('[data-composite-section]');
   const dragging = rightDock.querySelector('.is-dragging');
-  if (!target || !dragging || target === dragging) return;
+  if (!target || !dragging || target === dragging || !sectionsCanReorder(dragging.dataset.compositeSection, target.dataset.compositeSection)) return;
   event.preventDefault();
   moveSection(dragging.dataset.compositeSection, target.dataset.compositeSection, target.classList.contains('drop-after'));
   dragging.classList.remove('is-dragging');
@@ -251,8 +272,11 @@ rightDock.addEventListener('keydown', event => {
   const summary = event.target.closest('[data-composite-section] > summary');
   if (!summary) return;
   const sectionName = summary.parentElement.dataset.compositeSection;
+  if (activeOutputFormatId === 'landscape' && ['logo', 'footer'].includes(sectionName)) return;
   const currentIndex = sectionOrder.indexOf(sectionName);
-  const nextIndex = currentIndex + (event.key === 'ArrowUp' ? -1 : 1);
+  const direction = event.key === 'ArrowUp' ? -1 : 1;
+  let nextIndex = currentIndex + direction;
+  while (nextIndex >= 0 && nextIndex < sectionOrder.length && !sectionsCanReorder(sectionName, sectionOrder[nextIndex])) nextIndex += direction;
   if (nextIndex < 0 || nextIndex >= sectionOrder.length) return;
   event.preventDefault();
   const nextOrder = [...sectionOrder];
@@ -262,6 +286,89 @@ rightDock.addEventListener('keydown', event => {
   controls.status.textContent = `${sectionName.toUpperCase()} moved to composition position ${nextIndex + 1}.`;
 });
 syncSectionOrder();
+function captureLayoutProfile() {
+  return {
+    sectionOrder: [...sectionOrder],
+    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, selectedFontName(controlName)])),
+    scales: Object.fromEntries(PROJECT_SCALE_CONTROLS.map(controlName => [controlName, controls[controlName].value])),
+    alignments: { ...textAlignments },
+    verticalAlignments: { ...textVerticalAlignments },
+    imageAlign: controls.imageAlign.value,
+    imageScale: Number(controls.imageScale.value)
+  };
+}
+function landscapeProfileFromPortrait(portrait) {
+  const sectionOrder = portrait.sectionOrder.filter(section => section !== 'image');
+  const ctaIndex = sectionOrder.indexOf('cta');
+  sectionOrder.splice(ctaIndex >= 0 ? ctaIndex + 1 : sectionOrder.indexOf('body') + 1, 0, 'image');
+  return {
+    sectionOrder,
+    fonts: { ...portrait.fonts },
+    scales: { ...portrait.scales },
+    alignments: { ...portrait.alignments, header: 'left', detail: 'left' },
+    verticalAlignments: { ...portrait.verticalAlignments, header: 'center', detail: 'top', footer: 'bottom' },
+    imageAlign: portrait.imageAlign,
+    imageScale: portrait.imageScale
+  };
+}
+function mergeLayoutProfile(base, override = {}) {
+  return {
+    sectionOrder: [...(override.sectionOrder || base.sectionOrder)],
+    fonts: { ...base.fonts, ...(override.fonts || {}) },
+    scales: { ...base.scales, ...(override.scales || {}) },
+    alignments: { ...base.alignments, ...(override.alignments || {}) },
+    verticalAlignments: { ...base.verticalAlignments, ...(override.verticalAlignments || {}) },
+    imageAlign: override.imageAlign || base.imageAlign,
+    imageScale: override.imageScale ?? base.imageScale
+  };
+}
+function applyLayoutProfile(profile) {
+  if (!profile) return Promise.resolve();
+  Object.entries(profile.scales).forEach(([controlName, value]) => { controls[controlName].value = value; syncScaleOutput(controlName); });
+  Object.assign(textAlignments, profile.alignments); Object.assign(textVerticalAlignments, profile.verticalAlignments);
+  controls.imageAlign.value = profile.imageAlign; controls.imageScale.value = profile.imageScale; syncImageControls();
+  syncSectionOrder(profile.sectionOrder);
+  document.querySelectorAll('[data-toolbar]').forEach(toolbar => {
+    const section = toolbar.dataset.toolbar;
+    toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
+    toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
+  });
+  syncCharacterToolAvailability();
+  return applyProfileFonts(profile.fonts);
+}
+function resetLayoutProfiles(layoutDefaults = {}) {
+  const portrait = mergeLayoutProfile(captureLayoutProfile(), layoutDefaults.portrait);
+  layoutProfiles = {
+    portrait,
+    landscape: mergeLayoutProfile(landscapeProfileFromPortrait(portrait), layoutDefaults.landscape)
+  };
+  return applyLayoutProfile(layoutProfiles[activeOutputFormatId]);
+}
+function syncOutputFormatUI() {
+  const format = outputFormat(activeOutputFormatId);
+  controls.outputFormat.querySelectorAll('[data-output-format]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.outputFormat === activeOutputFormatId)));
+  controls.outputResolution.textContent = `${format.exportWidth} x ${format.exportHeight} / ${format.label}`;
+  const preview = canvas.closest('.preview'); preview.dataset.outputFormat = activeOutputFormatId;
+  preview.setAttribute('aria-label', `${format.name} animated promotion preview`);
+  canvas.setAttribute('aria-label', `${format.name} composition at ${format.exportWidth} by ${format.exportHeight}`);
+}
+function setOutputFormat(formatId, { captureCurrent = true, announce = true } = {}) {
+  if (!OUTPUT_FORMATS[formatId] || formatId === activeOutputFormatId) { syncOutputFormatUI(); return; }
+  if (recording) { controls.status.textContent = 'Wait for MP4 recording to finish before changing formats.'; return; }
+  if (captureCurrent) layoutProfiles[activeOutputFormatId] = captureLayoutProfile();
+  const sourceProfile = layoutProfiles[activeOutputFormatId] || captureLayoutProfile();
+  if (!layoutProfiles[formatId]) layoutProfiles[formatId] = formatId === 'landscape' ? landscapeProfileFromPortrait(sourceProfile) : mergeLayoutProfile(sourceProfile);
+  activeOutputFormatId = formatId;
+  applyLayoutProfile(layoutProfiles[activeOutputFormatId]).catch(error => { controls.status.textContent = `Could not load format fonts: ${error.message}`; });
+  promoRenderer.resize(outputFormat(activeOutputFormatId));
+  syncOutputFormatUI();
+  if (announce) controls.status.textContent = `${outputFormat(activeOutputFormatId).name} composition active.`;
+}
+controls.outputFormat.addEventListener('click', event => {
+  const button = event.target.closest('[data-output-format]');
+  if (button) setOutputFormat(button.dataset.outputFormat);
+});
+syncOutputFormatUI();
 ['imageResolution', 'imageThreshold', 'imageContrast', 'imageDitherAmount'].forEach(controlName => {
   controls[controlName].addEventListener('input', () => { syncImageControls(); imageBlock.process(); });
 });
@@ -476,8 +583,43 @@ function projectImageSettings(value) {
     source: { dataUrl, name }
   };
 }
+function projectLayoutProfile(value, label) {
+  const profile = projectRecord(value, label);
+  const fonts = projectRecord(profile.fonts, `${label} fonts`);
+  const scales = projectRecord(profile.scales, `${label} scales`);
+  const alignments = projectRecord(profile.alignments, `${label} alignments`);
+  const verticalAlignments = projectRecord(profile.verticalAlignments, `${label} vertical alignments`);
+  const validatedScales = {};
+  PROJECT_SCALE_CONTROLS.forEach(controlName => { validatedScales[controlName] = projectChoice(scales[controlName], ['0', '1', '2'], `${label} ${controlName}`); });
+  return {
+    sectionOrder: projectSectionOrder(profile.sectionOrder),
+    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, projectChoice(fonts[controlName], [...controls[controlName].options].map(option => option.textContent), `${label} ${controlName}`)])),
+    scales: validatedScales,
+    alignments: {
+      header: projectChoice(alignments.header, ['left', 'center', 'right'], `${label} header alignment`), detail: projectChoice(alignments.detail, ['left', 'center', 'right'], `${label} detail alignment`),
+      body: projectChoice(alignments.body, ['left', 'center', 'right'], `${label} body alignment`), cta: projectChoice(alignments.cta, ['left', 'center', 'right'], `${label} call to action alignment`), footer: projectChoice(alignments.footer, ['left', 'center', 'right'], `${label} footer alignment`)
+    },
+    verticalAlignments: {
+      header: projectChoice(verticalAlignments.header, ['top', 'center', 'bottom'], `${label} header vertical alignment`), detail: projectChoice(verticalAlignments.detail, ['top', 'center', 'bottom'], `${label} detail vertical alignment`),
+      body: projectChoice(verticalAlignments.body, ['top', 'center', 'bottom'], `${label} body vertical alignment`), cta: projectChoice(verticalAlignments.cta, ['top', 'center', 'bottom'], `${label} call to action vertical alignment`), footer: projectChoice(verticalAlignments.footer, ['top', 'center', 'bottom'], `${label} footer vertical alignment`)
+    },
+    imageAlign: projectChoice(profile.imageAlign, ['left', 'center', 'right'], `${label} image alignment`),
+    imageScale: projectInteger(profile.imageScale, 20, 100, `${label} image display width`)
+  };
+}
 function selectedFontName(controlName) {
   return controls[controlName].selectedOptions[0]?.textContent || '';
+}
+function selectProfileFonts(fonts) {
+  PROJECT_FONT_CONTROLS.forEach(controlName => {
+    const option = [...controls[controlName].options].find(item => item.textContent === fonts[controlName]);
+    if (option) controls[controlName].value = option.value;
+  });
+}
+function applyProfileFonts(fonts) {
+  selectProfileFonts(fonts);
+  renderFontPickers();
+  return Promise.all(PROJECT_FONT_CONTROLS.map(controlName => loadSelectedFont(controlName, FONT_TARGETS[controlName], false)));
 }
 function setCustomProjectTemplate() {
   let option = [...controls.template.options].find(item => item.value === CUSTOM_TEMPLATE_ID);
@@ -488,12 +630,17 @@ function setCustomProjectTemplate() {
   controls.template.value = CUSTOM_TEMPLATE_ID;
 }
 function createProject() {
+  layoutProfiles[activeOutputFormatId] = captureLayoutProfile();
+  if (!layoutProfiles.portrait) layoutProfiles.portrait = captureLayoutProfile();
+  if (!layoutProfiles.landscape) layoutProfiles.landscape = landscapeProfileFromPortrait(layoutProfiles.portrait);
   return {
     format: PROJECT_FORMAT,
     version: PROJECT_VERSION,
     savedAt: new Date().toISOString(),
     copy: Object.fromEntries(Object.entries(PROJECT_COPY_CONTROLS).map(([name, controlName]) => [name, controls[controlName].value])),
     settings: {
+      outputFormat: activeOutputFormatId,
+      layoutProfiles: { portrait: mergeLayoutProfile(layoutProfiles.portrait), landscape: mergeLayoutProfile(layoutProfiles.landscape) },
       theme: controls.theme.value,
       gameStyle: controls.gameStyle.value,
       model: controls.model.value,
@@ -508,13 +655,8 @@ function createProject() {
         mode: controls.crt.value,
         controls: Object.fromEntries(Object.entries(CRT_CONTROL_IDS).map(([name, controlName]) => [name, Number(controls[controlName].value)]))
       },
-      fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, selectedFontName(controlName)])),
-      scales: Object.fromEntries(PROJECT_SCALE_CONTROLS.map(controlName => [controlName, controls[controlName].value])),
-      alignments: { ...textAlignments },
-      verticalAlignments: { ...textVerticalAlignments },
       visibility: { ...contentVisibility },
       scrollModes: { ...scrollModes },
-      sectionOrder: [...sectionOrder],
       image: { ...getImageSettings(), source: imageBlock.getSourceState() },
       bodyBorder: bodyBorderStyle
     }
@@ -527,10 +669,6 @@ function validateProject(value) {
   const copy = projectRecord(project.copy, 'Project copy');
   const settings = projectRecord(project.settings, 'Project settings');
   const crt = projectRecord(settings.crt, 'CRT settings');
-  const projectFonts = projectRecord(settings.fonts, 'Font settings');
-  const projectScales = projectRecord(settings.scales, 'Text scale settings');
-  const alignments = projectRecord(settings.alignments, 'Text alignment settings');
-  const verticalAlignments = projectRecord(settings.verticalAlignments, 'Vertical alignment settings');
   const visibility = projectRecord(settings.visibility, 'Visibility settings');
   const projectScrollModes = projectRecord(settings.scrollModes, 'Scrolling settings');
   const validSelectValues = controlName => [...controls[controlName].options].map(option => option.value);
@@ -541,19 +679,18 @@ function validateProject(value) {
     if (!Number.isInteger(number) || number < Number(control.min) || number > Number(control.max)) throw new Error(`CRT ${name} must be a whole number between ${control.min} and ${control.max}.`);
     validatedCrtControls[name] = number;
   });
-  const validatedFonts = {};
-  PROJECT_FONT_CONTROLS.forEach(controlName => {
-    const fontName = projectChoice(projectFonts[controlName], [...controls[controlName].options].map(option => option.textContent), `${controlName} font`);
-    validatedFonts[controlName] = fontName;
-  });
-  const validatedScales = {};
-  PROJECT_SCALE_CONTROLS.forEach(controlName => { validatedScales[controlName] = projectChoice(projectScales[controlName], ['0', '1', '2'], `${controlName} scale`); });
   const validatedCopy = {};
   Object.keys(PROJECT_COPY_CONTROLS).forEach(name => { validatedCopy[name] = projectString(copy[name], `${name} copy`); });
+  const validatedImage = projectImageSettings(settings.image);
+  const savedProfiles = projectRecord(settings.layoutProfiles, 'Layout profiles');
+  const validatedPortraitProfile = projectLayoutProfile(savedProfiles.portrait, 'Portrait layout');
+  const validatedLandscapeProfile = projectLayoutProfile(savedProfiles.landscape, 'Landscape layout');
   const legacyWireframe = settings.gameStyle === 'wireframe';
   return {
     copy: validatedCopy,
     settings: {
+      outputFormat: projectChoice(settings.outputFormat, Object.keys(OUTPUT_FORMATS), 'Output format'),
+      layoutProfiles: { portrait: validatedPortraitProfile, landscape: validatedLandscapeProfile },
       theme: projectChoice(settings.theme, Object.keys(colors), 'Color theme'),
       gameStyle: projectChoice(legacyWireframe ? 'model' : settings.gameStyle, validSelectValues('gameStyle'), 'Background style'),
       model: projectChoice(settings.model || (legacyWireframe ? 'ironman' : DEFAULT_MODEL_ID), validSelectValues('model'), '3D model'),
@@ -568,24 +705,13 @@ function validateProject(value) {
         mode: projectChoice(crt.mode, validSelectValues('crt'), 'CRT mode'),
         controls: validatedCrtControls
       },
-      fonts: validatedFonts,
-      scales: validatedScales,
-      alignments: {
-        header: projectChoice(alignments.header, ['left', 'center', 'right'], 'Header alignment'), detail: projectChoice(alignments.detail, ['left', 'center', 'right'], 'Detail alignment'),
-        body: projectChoice(alignments.body, ['left', 'center', 'right'], 'Body alignment'), cta: projectChoice(alignments.cta, ['left', 'center', 'right'], 'Call to action alignment'), footer: projectChoice(alignments.footer, ['left', 'center', 'right'], 'Footer alignment')
-      },
-      verticalAlignments: {
-        header: projectChoice(verticalAlignments.header, ['top', 'center', 'bottom'], 'Header vertical alignment'), detail: projectChoice(verticalAlignments.detail, ['top', 'center', 'bottom'], 'Detail vertical alignment'),
-        body: projectChoice(verticalAlignments.body, ['top', 'center', 'bottom'], 'Body vertical alignment'), cta: projectChoice(verticalAlignments.cta, ['top', 'center', 'bottom'], 'Call to action vertical alignment'), footer: projectChoice(verticalAlignments.footer, ['top', 'center', 'bottom'], 'Footer vertical alignment')
-      },
       visibility: {
         detail: projectBoolean(visibility.detail, 'Detail visibility'), cta: projectBoolean(visibility.cta, 'Call to action visibility'), hours: projectBoolean(visibility.hours, 'Hours visibility')
       },
       scrollModes: {
         detail: projectChoice(projectScrollModes.detail, ['off', 'ticker', 'reveal'], 'Detail scroll mode'), hours: projectChoice(projectScrollModes.hours, ['off', 'ticker', 'reveal'], 'Hours scroll mode')
       },
-      sectionOrder: projectSectionOrder(settings.sectionOrder),
-      image: projectImageSettings(settings.image),
+      image: validatedImage,
       bodyBorder: projectChoice(settings.bodyBorder, ['none', 'square', 'rounded'], 'Body border')
     }
   };
@@ -598,18 +724,14 @@ async function applyProject(project) {
   controls.crtLook.value = settings.crt.look; controls.crt.value = settings.crt.mode;
   Object.entries(settings.crt.controls).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; });
   Object.entries(PROJECT_COPY_CONTROLS).forEach(([name, controlName]) => { controls[controlName].value = copy[name]; });
-  Object.entries(settings.scales).forEach(([controlName, value]) => { controls[controlName].value = value; });
-  Object.assign(textAlignments, settings.alignments); Object.assign(textVerticalAlignments, settings.verticalAlignments);
-  Object.assign(contentVisibility, settings.visibility); Object.assign(scrollModes, settings.scrollModes); syncSectionOrder(settings.sectionOrder); bodyBorderStyle = settings.bodyBorder;
+  Object.assign(contentVisibility, settings.visibility); Object.assign(scrollModes, settings.scrollModes); bodyBorderStyle = settings.bodyBorder;
   setImageSettings(settings.image); controls.imageFile.value = ''; controls.imageUrl.value = '';
+  layoutProfiles = settings.layoutProfiles; activeOutputFormatId = settings.outputFormat;
+  const fontLoad = applyLayoutProfile(layoutProfiles[activeOutputFormatId]); promoRenderer.resize(outputFormat(activeOutputFormatId)); syncOutputFormatUI();
   const imageLoad = settings.image.source.dataUrl ? imageBlock.loadProjectSource(settings.image.source.dataUrl, settings.image.source.name) : Promise.resolve(imageBlock.clear());
-  PROJECT_FONT_CONTROLS.forEach(controlName => {
-    const option = [...controls[controlName].options].find(item => item.textContent === settings.fonts[controlName]);
-    controls[controlName].value = option.value;
-  });
   syncCrtControls(); PROJECT_SCALE_CONTROLS.forEach(syncScaleOutput); syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls();
   renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState(); setCustomProjectTemplate();
-  await Promise.all([imageLoad, ...PROJECT_FONT_CONTROLS.map(controlName => loadSelectedFont(controlName, { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName], false))]);
+  await Promise.all([imageLoad, fontLoad]);
 }
 async function applyTemplate(template) {
   controls.theme.value = template.theme; controls.gameStyle.value = template.gameStyle || 'asteroids'; controls.model.value = template.model || DEFAULT_MODEL_ID; controls.logo.value = template.logo || 'pixel'; controls.classic.checked = template.classic;
@@ -618,9 +740,11 @@ async function applyTemplate(template) {
   Object.entries(template.crtControls || {}).forEach(([name, value]) => { controls[CRT_CONTROL_IDS[name]].value = value; }); syncCrtControls();
   controls.headline.value = template.headline; controls.detail.value = template.detail; controls.body.value = template.body;
   controls.cta.value = template.cta; controls.hours.value = template.hours; controls.footer.value = template.footer;
+  selectProfileFonts(template.fonts);
   Object.entries(template.scales).forEach(([controlName, value]) => { controls[controlName].value = value; syncScaleOutput(controlName); });
   Object.assign(textAlignments, template.alignments); Object.assign(textVerticalAlignments, template.verticalAlignments); Object.assign(contentVisibility, template.visibility); Object.assign(scrollModes, template.scrollModes || {}); syncSectionOrder(template.sectionOrder || DEFAULT_SECTION_ORDER); bodyBorderStyle = template.bodyBorder || 'none';
   setImageSettings({ ...DEFAULT_IMAGE_SETTINGS, ...(template.image || {}) }); imageBlock.clear(); controls.imageFile.value = ''; controls.imageUrl.value = '';
+  const fontLoad = resetLayoutProfiles(template.layouts || {});
   const imageLoad = template.image?.source ? imageBlock.loadBundledSource(template.image.source, template.image.sourceName) : Promise.resolve();
   document.querySelectorAll('[data-toolbar]').forEach(toolbar => {
     const section = toolbar.dataset.toolbar;
@@ -628,13 +752,7 @@ async function applyTemplate(template) {
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
   syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState();
-  await Promise.all([imageLoad, ...Object.entries(template.fonts).map(([controlName, fontName]) => {
-    const option = [...controls[controlName].options].find(item => item.textContent === fontName);
-    if (!option) return Promise.resolve();
-    controls[controlName].value = option.value;
-    const target = { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' }[controlName];
-    return loadSelectedFont(controlName, target, false);
-  })]);
+  await Promise.all([imageLoad, fontLoad]);
 }
 controls.template.addEventListener('change', () => {
   applyTemplate(templates[controls.template.value]).then(() => { controls.status.textContent = `${controls.template.selectedOptions[0].textContent} template loaded.`; }).catch(error => { controls.status.textContent = `Could not load template: ${error.message}`; });
@@ -777,16 +895,20 @@ controls.projectFile.addEventListener('change', async () => {
     controls.projectSave.disabled = false; controls.projectLoad.disabled = false;
   }
 });
-controls.png.addEventListener('click', () => exportCanvas.toBlob(blob => { download(blob, 'gk-promo-1080x1350.png'); controls.status.textContent = 'PNG exported at 1080 x 1350.'; }, 'image/png'));
+controls.png.addEventListener('click', () => {
+  const format = outputFormat(activeOutputFormatId);
+  exportCanvas.toBlob(blob => { download(blob, `gk-promo-${format.exportWidth}x${format.exportHeight}.png`); controls.status.textContent = `PNG exported at ${format.exportWidth} x ${format.exportHeight}.`; }, 'image/png');
+});
 controls.record.addEventListener('click', () => {
   if (recording || !window.MediaRecorder) return;
   const mimeType = MP4_MIME_TYPES.find(type => MediaRecorder.isTypeSupported(type));
   if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4. Use Safari on iOS or macOS.'; return; }
   const stream = exportCanvas.captureStream(30); const chunks = []; let recorder;
   try { recorder = new MediaRecorder(stream, { mimeType }); } catch (error) { stream.getTracks().forEach(track => track.stop()); controls.status.textContent = `Could not start MP4 recording: ${error.message}`; return; }
-  recording = true; controls.record.textContent = 'RECORDING...';
+  const recordingFormat = outputFormat(activeOutputFormatId);
+  recording = true; controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
   recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-  recorder.onstop = () => { download(new Blob(chunks, { type: recorder.mimeType || mimeType }), 'gk-promo-1080x1350.mp4'); recording = false; controls.record.textContent = 'EXPORT 15 SEC MP4'; stream.getTracks().forEach(track => track.stop()); };
+  recorder.onstop = () => { download(new Blob(chunks, { type: recorder.mimeType || mimeType }), `gk-promo-${recordingFormat.exportWidth}x${recordingFormat.exportHeight}.mp4`); recording = false; controls.record.textContent = 'EXPORT 15 SEC MP4'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = false; }); stream.getTracks().forEach(track => track.stop()); };
   recorder.start(); setTimeout(() => recorder.stop(), 15000);
 });
 async function initializeFonts() {

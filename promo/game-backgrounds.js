@@ -1,4 +1,4 @@
-import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=26';
+import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=27';
 
 export const MODEL_SOURCES = {
   asteroids: { label: 'Asteroids upright', url: './models/asteroids.3ds', excludeMeshes: ['Mesh09'], removeDanglers: true },
@@ -8,7 +8,8 @@ export const MODEL_SOURCES = {
   pacman: { label: 'Pac-Man arcade cabinet', url: './models/pac-man_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
 };
 
-export function createGameBackgrounds({ context: ctx, width: W, height: H, images: moonLanderImages, getStyle, getModel, getModelSettings }) {
+export function createGameBackgrounds({ context: ctx, width: initialWidth, height: initialHeight, images: moonLanderImages, getStyle, getModel, getModelSettings }) {
+  let W = initialWidth, H = initialHeight;
   const MODEL_BACKGROUND_OPACITY = .48;
   const moonLanderTintCache = new Map();
   const random = value => { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); };
@@ -16,6 +17,13 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
   function resetStars() {
     seed += 1;
     stars = Array.from({ length: 120 }, (_, index) => ({ x: Math.floor(random(seed * 101 + index * 3) * W), y: Math.floor(random(seed * 103 + index * 3 + 1) * H), z: .2 + random(seed * 107 + index * 3 + 2) }));
+  }
+  function resize(width, height) {
+    if (width === W && height === H) return;
+    W = width; H = height;
+    stars = Array.from({ length: 120 }, (_, index) => ({ x: Math.floor(random(seed * 101 + index * 3) * W), y: Math.floor(random(seed * 103 + index * 3 + 1) * H), z: .2 + random(seed * 107 + index * 3 + 2) }));
+    asteroidsGame = null;
+    wireframeCabinet?.resize(Math.round(W / 3), Math.round(H / 3));
   }
   const VECTOR_DIRECTION_STEPS = 64;
   // Proportions follow the original DVG ShipDir0 and ThrustDir0 vector paths.
@@ -266,7 +274,7 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
   }
   function drawModelBackground(palette, time) {
     if (!wireframeCabinet) {
-      wireframeCabinet = createWireframeCabinet({ width: 180, height: 225 });
+      wireframeCabinet = createWireframeCabinet({ width: Math.round(W / 3), height: Math.round(H / 3) });
     }
     if (!wireframeCabinet) return;
     const modelId = getModel?.() || 'asteroids';
@@ -301,5 +309,5 @@ export function createGameBackgrounds({ context: ctx, width: W, height: H, image
     else drawStarfieldBackground(palette, time);
   }
   resetStars();
-  return { draw: drawGameBackground, reset: resetStars };
+  return { draw: drawGameBackground, reset: resetStars, resize };
 }

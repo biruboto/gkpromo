@@ -78,7 +78,9 @@ const CRT_FRAGMENT_SHADER = `
     gl_FragColor = vec4(color, 1.0);
   }
 `;
-export function createCrtPipeline({ sourceCanvas, outputCanvas, sourceWidth, sourceHeight, outputWidth, outputHeight, getTreatment, getSetting, getTime }) {
+export function createCrtPipeline({ sourceCanvas, outputCanvas, sourceWidth: initialSourceWidth, sourceHeight: initialSourceHeight, outputWidth: initialOutputWidth, outputHeight: initialOutputHeight, getTreatment, getSetting, getTime }) {
+  let sourceWidth = initialSourceWidth, sourceHeight = initialSourceHeight;
+  let outputWidth = initialOutputWidth, outputHeight = initialOutputHeight;
   let crtRenderer = null;
   function compileCrtShader(gl, type, source) {
     const shader = gl.createShader(type);
@@ -154,5 +156,10 @@ export function createCrtPipeline({ sourceCanvas, outputCanvas, sourceWidth, sou
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     return outputCanvas;
   }
-  return { render: renderCrtPiFrame };
+  function resize({ sourceWidth: nextSourceWidth, sourceHeight: nextSourceHeight, outputWidth: nextOutputWidth, outputHeight: nextOutputHeight }) {
+    sourceWidth = nextSourceWidth; sourceHeight = nextSourceHeight;
+    outputWidth = nextOutputWidth; outputHeight = nextOutputHeight;
+    outputCanvas.width = outputWidth; outputCanvas.height = outputHeight;
+  }
+  return { render: renderCrtPiFrame, resize };
 }

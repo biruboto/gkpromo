@@ -13,20 +13,80 @@ export function calculateSectionLayout(order, sectionHeights, { top, bottom, gap
   return { heights, positions, orderedSections, contentBottom: sectionY - gap };
 }
 
+export function calculateLandscapeSafeArea(width, height) {
+  const safeWidth = Math.min(width, Math.round(height * 1.5));
+  return { x: Math.round((width - safeWidth) / 2), width: safeWidth };
+}
+
+export function calculateLandscapeLayout({ width, height, sectionOrder, detailHeight, ctaHeight, footerHeight, hasImage, imageHeight = 0 }) {
+  const marginY = 24, gap = 8, columnGap = 16, logoWidth = 272;
+  const safeArea = calculateLandscapeSafeArea(width, height); const safeRight = safeArea.x + safeArea.width;
+  const logo = { x: safeArea.x, y: marginY, width: logoWidth, height: 88 };
+  const headerX = safeArea.x + logoWidth + columnGap;
+  const headerWidth = safeRight - headerX;
+  const topOrder = sectionOrder.filter(section => section === 'header' || section === 'detail');
+  const topHeights = { header: 80, detail: detailHeight };
+  const topRects = {};
+  let topY = marginY;
+  topOrder.forEach(section => {
+    if (!topHeights[section]) return;
+    topRects[section] = { x: headerX, y: topY, width: headerWidth, height: topHeights[section] };
+    topY += topHeights[section] + gap;
+  });
+  const topBottom = Math.max(marginY + logo.height, topY - gap);
+  const footer = { x: safeArea.x, y: height - marginY - footerHeight, width: safeArea.width, height: footerHeight };
+  const contentY = topBottom + gap;
+  const contentBottom = footer.y - gap;
+  const contentHeight = Math.max(96, contentBottom - contentY);
+  const hasCta = ctaHeight > 0;
+  const imageOrderIndex = sectionOrder.indexOf('image');
+  const ctaOrderIndex = sectionOrder.indexOf('cta');
+  const slotsSwapped = hasImage && hasCta && imageOrderIndex >= 0 && ctaOrderIndex >= 0 && imageOrderIndex < ctaOrderIndex;
+  const mediaSection = hasImage && hasCta ? slotsSwapped ? 'cta' : 'image' : hasImage ? 'image' : null;
+  const actionSection = hasImage && hasCta ? slotsSwapped ? 'image' : 'cta' : hasCta ? 'cta' : null;
+  const mainX = mediaSection ? headerX : safeArea.x;
+  const mainWidth = safeRight - mainX;
+  const maximumActionHeight = Math.max(0, contentHeight - 96 - gap);
+  const requestedActionHeight = actionSection === 'image' ? imageHeight : actionSection === 'cta' ? ctaHeight : 0;
+  const actionHeight = Math.min(requestedActionHeight, maximumActionHeight);
+  const mainOrder = sectionOrder.filter(section => section === 'body' || section === actionSection);
+  const bodyHeight = Math.max(96, contentHeight - (actionHeight ? actionHeight + gap : 0));
+  const mainHeights = { body: bodyHeight };
+  if (actionSection) mainHeights[actionSection] = actionHeight;
+  const mainRects = {};
+  let mainY = contentY;
+  mainOrder.forEach(section => {
+    if (!mainHeights[section] && section !== 'body') return;
+    mainRects[section] = { x: mainX, y: mainY, width: mainWidth, height: mainHeights[section], slot: section === actionSection ? 'action' : 'body' };
+    mainY += mainHeights[section] + gap;
+  });
+  const mediaRect = { x: safeArea.x, y: contentY, width: logoWidth, height: contentHeight, slot: 'media' };
+  return {
+    logo,
+    image: hasImage ? mediaSection === 'image' ? mediaRect : mainRects.image : null,
+    header: topRects.header,
+    detail: topRects.detail,
+    body: mainRects.body,
+    cta: hasCta ? mediaSection === 'cta' ? mediaRect : mainRects.cta : null,
+    footer,
+    slotsSwapped
+  };
+}
+
 export function createPromoRenderer({
-  context: ctx, canvas, exportContext: exportCtx, width: W, height: H, exportScale: EXPORT_SCALE,
+  context: ctx, canvas, exportContext: exportCtx, width: initialWidth, height: initialHeight, exportScale: initialExportScale,
   controls, colors, logoImages, legacyGlyphs, gameBackgrounds, imageBlock, crtPipeline, contentVisibility, scrollModes,
-  textAlignments, textVerticalAlignments, getBodyBorderStyle, getFonts, getTextScale: textScale, getSectionOrder, animationState, leaderTabToken
+  textAlignments, textVerticalAlignments, getBodyBorderStyle, getFonts, getTextScale: textScale, getSectionOrder, getOutputFormat, onOverflowChange, animationState, leaderTabToken
 }) {
-  const LAYOUT_TOP_Y = 24, LAYOUT_BOTTOM_Y = 648, SECTION_GAP = 8;
-  const TEXT_FIELD_X = 24, TEXT_FIELD_WIDTH = W - 48;
-  const BODY_FIELD_X = TEXT_FIELD_X + 8, BODY_FIELD_WIDTH = TEXT_FIELD_WIDTH - 12;
+  let W = initialWidth, H = initialHeight, EXPORT_SCALE = initialExportScale;
+  const LAYOUT_TOP_Y = 24, SECTION_GAP = 8;
+  const TEXT_FIELD_X = 24;
   const LOGO_FIELD_HEIGHT = 88, HEADER_FIELD_HEIGHT = 80, DETAIL_FIELD_HEIGHT = 48, MIN_BODY_FIELD_HEIGHT = 96, CTA_FIELD_HEIGHT = 64;
   const MAX_IMAGE_FIELD_HEIGHT = 240;
   const CTA_VERTICAL_OFFSET = 8;
   const FOOTER_FIELD_HEIGHT = 76;
   const FOOTER_VERTICAL_OFFSET = 8;
-  const FOOTER_TEXT_WIDTH = 414;
+  const PORTRAIT_FOOTER_TEXT_WIDTH = 414;
   const HOURS_SCALE = 2;
   const HOURS_ADDRESS_GAP = 4;
   const TICKER_SPEED = 28, REVEAL_PAUSE = .7, MOTION_SPEED = 1;
@@ -309,7 +369,7 @@ export function createPromoRenderer({
   function wrap(value, maximumWidth, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
     const lines = []; let line = '';
     value.trim().replace(/\s+/g, ' ').split(' ').forEach(word => { const next = line ? `${line} ${word}` : word; if (textWidth(next, scale, font, fontKey, spacing) > maximumWidth && line) { lines.push(line); line = word; } else line = next; });
-    if (line) lines.push(line); return normalizeEffectsAcrossLines(lines).slice(0, 4);
+    if (line) lines.push(line); return normalizeEffectsAcrossLines(lines);
   }
   function wrapPreservingSpaces(value, maximumWidth, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
     const lines = []; let line = '';
@@ -362,16 +422,16 @@ export function createPromoRenderer({
     });
     return normalizeEffectsAcrossLines(lines).slice(0, maximumLines);
   }
-  function drawImageCentered(image, y, scale = 4) {
+  function drawImageCentered(image, y, scale = 4, centerX = W / 2) {
     if (!image.complete || !image.naturalWidth) return;
     const width = image.naturalWidth * scale; const height = image.naturalHeight * scale;
-    ctx.drawImage(image, Math.round((W - width) / 2), y, width, height);
+    ctx.drawImage(image, Math.round(centerX - width / 2), y, width, height);
   }
   function logoReflectionColors(color) {
     const value = color.slice(1); const rgb = [Number.parseInt(value.slice(0, 2), 16), Number.parseInt(value.slice(2, 4), 16), Number.parseInt(value.slice(4, 6), 16)];
     return LOGO_REFLECTION_LEVELS.map(level => rgb.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1))));
   }
-  function drawAnimatedLogo(y, palette, time, scale = 4) {
+  function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2) {
     const image = logoImages.pixel;
     if (!image.complete || !image.naturalWidth) return;
     logoPixels.width = image.naturalWidth; logoPixels.height = image.naturalHeight;
@@ -389,9 +449,9 @@ export function createPromoRenderer({
       imageData.data[index] = color[0]; imageData.data[index + 1] = color[1]; imageData.data[index + 2] = color[2];
     }
     logoCtx.putImageData(imageData, 0, 0);
-    ctx.drawImage(logoPixels, Math.round((W - logoPixels.width * scale) / 2), y, logoPixels.width * scale, logoPixels.height * scale);
+    ctx.drawImage(logoPixels, Math.round(centerX - logoPixels.width * scale / 2), y, logoPixels.width * scale, logoPixels.height * scale);
   }
-  function drawClassicArcade(y, palette, scale = 4) {
+  function drawClassicArcade(y, palette, scale = 4, centerX = W / 2) {
     const image = logoImages.classic;
     if (!image.complete || !image.naturalWidth) return;
     classicPixels.width = image.naturalWidth; classicPixels.height = image.naturalHeight;
@@ -403,7 +463,7 @@ export function createPromoRenderer({
       imageData.data[index] = color[0]; imageData.data[index + 1] = color[1]; imageData.data[index + 2] = color[2];
     }
     classicCtx.putImageData(imageData, 0, 0);
-    ctx.drawImage(classicPixels, Math.round((W - classicPixels.width * scale) / 2), y, classicPixels.width * scale, classicPixels.height * scale);
+    ctx.drawImage(classicPixels, Math.round(centerX - classicPixels.width * scale / 2), y, classicPixels.width * scale, classicPixels.height * scale);
   }
   function drawTextBoundaries(rectangles, palette) {
     ctx.save(); ctx.strokeStyle = palette.muted; ctx.globalAlpha = .8; ctx.lineWidth = 1;
@@ -413,99 +473,130 @@ export function createPromoRenderer({
   function alignmentPoint(x, width, alignment) { return alignment === 'right' ? x + width : alignment === 'center' ? x + width / 2 : x; }
   function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
+  let previousOverflowKey = '';
   function render(now) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
     const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = palette.background; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
+    const format = getOutputFormat(); const isLandscape = format.id === 'landscape'; const sectionOrder = getSectionOrder();
     ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
     gameBackgrounds.draw(palette, time);
 
-    const titleScale = textScale('headerScale');
-    const titleLineHeight = titleScale * 10;
+    const imageBitmap = imageBlock.getBitmap(palette[controls.imageColor.value]);
+    const portraitTextWidth = W - 48;
+    const landscapeSafeArea = calculateLandscapeSafeArea(W, H);
+    const headerFieldWidth = isLandscape ? landscapeSafeArea.width - 272 - 16 : portraitTextWidth;
+    const landscapeMainWidth = imageBitmap ? headerFieldWidth : landscapeSafeArea.width;
+    const landscapeSlotsSwapped = isLandscape && Boolean(imageBitmap) && contentVisibility.cta && controls.cta.value.trim()
+      && sectionOrder.indexOf('image') < sectionOrder.indexOf('cta');
+    const overflow = new Set();
+    const boundedLines = (value, maximumWidth, scale, font, fontKey, spacing, maximumLines, preserveSpaces = false) => {
+      const allLines = wrapWithLineBreaks(value, maximumWidth, scale, font, fontKey, spacing, Number.MAX_SAFE_INTEGER, preserveSpaces);
+      if (allLines.length > maximumLines || allLines.some(line => !leaderLineParts(line) && textWidth(line, scale, font, fontKey, spacing) > maximumWidth)) overflow.add(fontKey);
+      return allLines.slice(0, maximumLines);
+    };
+
+    const titleScale = textScale('headerScale'); const titleLineHeight = titleScale * 10;
     const maxHeaderLines = Math.max(1, Math.floor(HEADER_FIELD_HEIGHT / titleLineHeight));
-    const headerLines = wrapWithLineBreaks(controls.headline.value, TEXT_FIELD_WIDTH, titleScale, headerFont, 'header', HEADER_TEXT_SPACING, maxHeaderLines);
+    const headerLines = boundedLines(controls.headline.value, headerFieldWidth, titleScale, headerFont, 'header', HEADER_TEXT_SPACING, maxHeaderLines);
     const headerAlignment = textAlignments.header;
 
     const showDetail = contentVisibility.detail && controls.detail.value.trim();
     const detailScale = textScale('detailScale'); const detailLineHeight = detailScale * 12;
     const maxDetailLines = Math.max(1, Math.floor(DETAIL_FIELD_HEIGHT / detailLineHeight));
-    const detailLines = showDetail ? scrollModes.detail === 'off' ? wrapWithLineBreaks(controls.detail.value, TEXT_FIELD_WIDTH, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, maxDetailLines) : [singleLineValue(controls.detail.value)] : [];
+    const detailLines = showDetail ? scrollModes.detail === 'off' ? boundedLines(controls.detail.value, headerFieldWidth, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, maxDetailLines) : [singleLineValue(controls.detail.value)] : [];
     const detailAlignment = textAlignments.detail;
     const detailFieldHeight = showDetail ? Math.min(DETAIL_FIELD_HEIGHT, detailLines.length * detailLineHeight + 8) : 0;
 
-    const cta = controls.cta.value;
-    const ctaScale = textScale('ctaScale'); const buttonMaxWidth = W - 64; const ctaPadding = 12 * ctaScale;
-    const ctaLines = contentVisibility.cta && cta.trim() ? wrapWithLineBreaks(cta, buttonMaxWidth - ctaPadding * 2, ctaScale, ctaFont, 'cta', BODY_TEXT_SPACING, 3, true).filter(line => line.trim()).slice(0, 2) : [];
-    const showCta = ctaLines.length > 0;
+    const ctaScale = textScale('ctaScale'); const ctaPadding = 12 * ctaScale;
+    const buttonMaxWidth = isLandscape ? landscapeSlotsSwapped ? 272 : landscapeMainWidth : W - 64;
+    const maximumCtaLines = isLandscape && landscapeSlotsSwapped ? 5 : 2;
+    const allCtaLines = contentVisibility.cta && controls.cta.value.trim() ? wrapWithLineBreaks(controls.cta.value, buttonMaxWidth - ctaPadding * 2, ctaScale, ctaFont, 'cta', BODY_TEXT_SPACING, Number.MAX_SAFE_INTEGER, true).filter(line => line.trim()) : [];
+    if (allCtaLines.length > maximumCtaLines || allCtaLines.some(line => textWidth(line, ctaScale, ctaFont, 'cta') > buttonMaxWidth - ctaPadding * 2)) overflow.add('cta');
+    const ctaLines = allCtaLines.slice(0, maximumCtaLines); const showCta = ctaLines.length > 0;
     const ctaGlyphHeight = ctaScale * 8; const ctaLineHeight = ctaScale * 10;
     const buttonHeight = showCta ? ctaGlyphHeight + (ctaLines.length - 1) * ctaLineHeight + 20 : 0;
     const ctaFieldHeight = showCta ? Math.max(CTA_FIELD_HEIGHT, buttonHeight + CTA_VERTICAL_OFFSET * 2) : 0;
 
     const footerScale = textScale('footerScale'); const footerLineHeight = footerScale * 12; const hoursLineHeight = HOURS_SCALE * 12;
-    const hoursScrolling = scrollModes.hours !== 'off';
-    const hoursLines = contentVisibility.hours && controls.hours.value.trim() ? hoursScrolling ? [singleLineValue(controls.hours.value)] : wrapWithLineBreaks(controls.hours.value, FOOTER_TEXT_WIDTH, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, 1) : [];
-    const footerLines = wrapWithLineBreaks(controls.footer.value, FOOTER_TEXT_WIDTH, footerScale, footerFont, 'footer', BODY_TEXT_SPACING, 2);
+    const hoursScrolling = scrollModes.hours !== 'off'; const footerTextWidth = isLandscape ? Math.min(600, landscapeSafeArea.width) : PORTRAIT_FOOTER_TEXT_WIDTH;
+    const allHoursLines = contentVisibility.hours && controls.hours.value.trim() ? hoursScrolling ? [singleLineValue(controls.hours.value)] : wrapWithLineBreaks(controls.hours.value, footerTextWidth, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, Number.MAX_SAFE_INTEGER) : [];
+    if (!hoursScrolling && allHoursLines.length > 1) overflow.add('hours');
+    const hoursLines = allHoursLines.slice(0, 1);
+    const allFooterLines = wrapWithLineBreaks(controls.footer.value, footerTextWidth, footerScale, footerFont, 'footer', BODY_TEXT_SPACING, Number.MAX_SAFE_INTEGER);
+    if (allFooterLines.length > 2 || allFooterLines.some(line => textWidth(line, footerScale, footerFont, 'footer') > footerTextWidth)) overflow.add('footer');
+    const footerLines = allFooterLines.slice(0, 2);
     const hoursGap = hoursLines.length && footerLines.length ? HOURS_ADDRESS_GAP : 0;
     const footerHeight = hoursLines.length * hoursLineHeight + hoursGap + footerLines.length * footerLineHeight;
     const footerFieldHeight = Math.max(FOOTER_FIELD_HEIGHT, footerHeight);
 
-    const imageBitmap = imageBlock.getBitmap(palette[controls.imageColor.value]);
-    let imageWidth = 0, imageHeight = 0;
-    if (imageBitmap) {
-      const desiredWidth = Math.round(TEXT_FIELD_WIDTH * Number(controls.imageScale.value) / 100);
-      const desiredHeight = Math.max(1, Math.round(desiredWidth * imageBitmap.height / imageBitmap.width));
-      const fixedWithoutImage = LOGO_FIELD_HEIGHT + HEADER_FIELD_HEIGHT + detailFieldHeight + ctaFieldHeight + footerFieldHeight;
-      const visibleSectionCount = 5 + (detailFieldHeight ? 1 : 0) + (ctaFieldHeight ? 1 : 0);
-      const maximumHeight = Math.max(24, LAYOUT_BOTTOM_Y - LAYOUT_TOP_Y - fixedWithoutImage - MIN_BODY_FIELD_HEIGHT - (visibleSectionCount - 1) * SECTION_GAP);
-      imageHeight = Math.min(desiredHeight, MAX_IMAGE_FIELD_HEIGHT, maximumHeight);
-      imageWidth = Math.max(1, Math.round(imageHeight * imageBitmap.width / imageBitmap.height));
+    let imageWidth = 0, imageHeight = 0, rectangles;
+    if (isLandscape) {
+      const imageSlotWidth = landscapeSlotsSwapped ? headerFieldWidth : 272;
+      const desiredImageWidth = imageBitmap ? Math.round(imageSlotWidth * Number(controls.imageScale.value) / 100) : 0;
+      const desiredImageHeight = imageBitmap ? Math.max(1, Math.round(desiredImageWidth * imageBitmap.height / imageBitmap.width)) : 0;
+      rectangles = calculateLandscapeLayout({ width: W, height: H, sectionOrder, detailHeight: detailFieldHeight, ctaHeight: ctaFieldHeight, footerHeight: footerFieldHeight, hasImage: Boolean(imageBitmap), imageHeight: desiredImageHeight });
+      if (imageBitmap && rectangles.image) {
+        const desiredWidth = Math.round(rectangles.image.width * Number(controls.imageScale.value) / 100);
+        const desiredHeight = Math.max(1, Math.round(desiredWidth * imageBitmap.height / imageBitmap.width));
+        imageHeight = Math.min(desiredHeight, rectangles.image.height);
+        imageWidth = Math.max(1, Math.round(imageHeight * imageBitmap.width / imageBitmap.height));
+      }
+    } else {
+      if (imageBitmap) {
+        const desiredWidth = Math.round(portraitTextWidth * Number(controls.imageScale.value) / 100);
+        const desiredHeight = Math.max(1, Math.round(desiredWidth * imageBitmap.height / imageBitmap.width));
+        const fixedWithoutImage = LOGO_FIELD_HEIGHT + HEADER_FIELD_HEIGHT + detailFieldHeight + ctaFieldHeight + footerFieldHeight;
+        const visibleSectionCount = 5 + (detailFieldHeight ? 1 : 0) + (ctaFieldHeight ? 1 : 0);
+        const maximumHeight = Math.max(24, H - 27 - LAYOUT_TOP_Y - fixedWithoutImage - MIN_BODY_FIELD_HEIGHT - (visibleSectionCount - 1) * SECTION_GAP);
+        imageHeight = Math.min(desiredHeight, MAX_IMAGE_FIELD_HEIGHT, maximumHeight);
+        imageWidth = Math.max(1, Math.round(imageHeight * imageBitmap.width / imageBitmap.height));
+      }
+      const portraitLayout = calculateSectionLayout(sectionOrder, { logo: LOGO_FIELD_HEIGHT, image: imageHeight, header: HEADER_FIELD_HEIGHT, detail: detailFieldHeight, body: 0, cta: ctaFieldHeight, footer: footerFieldHeight }, { top: LAYOUT_TOP_Y, bottom: H - 27, gap: SECTION_GAP, minimumFlexibleHeight: MIN_BODY_FIELD_HEIGHT });
+      rectangles = {
+        logo: { x: 0, y: portraitLayout.positions.logo, width: W, height: LOGO_FIELD_HEIGHT },
+        image: imageBitmap ? { x: TEXT_FIELD_X, y: portraitLayout.positions.image, width: portraitTextWidth, height: imageHeight } : null,
+        header: { x: TEXT_FIELD_X, y: portraitLayout.positions.header, width: portraitTextWidth, height: HEADER_FIELD_HEIGHT },
+        detail: showDetail ? { x: TEXT_FIELD_X, y: portraitLayout.positions.detail, width: portraitTextWidth, height: detailFieldHeight } : null,
+        body: { x: TEXT_FIELD_X, y: portraitLayout.positions.body, width: portraitTextWidth, height: portraitLayout.heights.body },
+        cta: showCta ? { x: 32, y: portraitLayout.positions.cta, width: W - 64, height: ctaFieldHeight } : null,
+        footer: { x: TEXT_FIELD_X, y: portraitLayout.positions.footer, width: portraitTextWidth, height: footerFieldHeight }
+      };
     }
 
-    const layout = calculateSectionLayout(getSectionOrder(), {
-      logo: LOGO_FIELD_HEIGHT, image: imageHeight, header: HEADER_FIELD_HEIGHT, detail: detailFieldHeight, body: 0, cta: ctaFieldHeight, footer: footerFieldHeight
-    }, {
-      top: LAYOUT_TOP_Y, bottom: LAYOUT_BOTTOM_Y, gap: SECTION_GAP, minimumFlexibleHeight: MIN_BODY_FIELD_HEIGHT
-    });
-    const sectionHeights = layout.heights; const sectionPositions = layout.positions;
+    const boundaries = []; const logoCenterX = rectangles.logo.x + rectangles.logo.width / 2; const logoScale = isLandscape ? 2 : 4; const logoY = rectangles.logo.y + (isLandscape ? 10 : 0);
+    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX);
+    else drawImageCentered(logoImages[controls.logo.value], logoY, logoScale, logoCenterX);
+    if (controls.classic.checked) drawClassicArcade(rectangles.logo.y + 50, palette, 4, logoCenterX);
 
-    const boundaries = [];
-    const logoFieldY = sectionPositions.logo;
-    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoFieldY, palette, time);
-    else drawImageCentered(logoImages[controls.logo.value], logoFieldY);
-    if (controls.classic.checked) drawClassicArcade(logoFieldY + 50, palette);
-
-    if (imageBitmap) {
-      const imageFieldY = sectionPositions.image;
-      const imageX = alignedStart(TEXT_FIELD_X, TEXT_FIELD_WIDTH, imageWidth, controls.imageAlign.value);
+    if (imageBitmap && rectangles.image) {
+      const imageX = alignedStart(rectangles.image.x, rectangles.image.width, imageWidth, controls.imageAlign.value);
+      const imageY = isLandscape ? rectangles.image.y + Math.round((rectangles.image.height - imageHeight) / 2) : rectangles.image.y;
       ctx.save(); ctx.globalAlpha = Number(controls.imageOpacity.value) / 100; ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(imageBitmap, imageX, imageFieldY, imageWidth, imageHeight); ctx.restore();
-      boundaries.push({ x: imageX, y: imageFieldY, width: imageWidth, height: imageHeight });
+      ctx.drawImage(imageBitmap, imageX, imageY, imageWidth, imageHeight); ctx.restore();
+      boundaries.push({ x: imageX, y: imageY, width: imageWidth, height: imageHeight });
     }
 
-    const headerFieldY = sectionPositions.header;
-    const titleY = verticallyAlignedStart(headerFieldY, HEADER_FIELD_HEIGHT, headerLines.length * titleLineHeight, textVerticalAlignments.header);
-    headerLines.forEach((line, index) => styledText('headline', line, alignmentPoint(TEXT_FIELD_X, TEXT_FIELD_WIDTH, headerAlignment), titleY + index * titleLineHeight, palette.text, palette.shadow, titleScale, headerAlignment, headerFont, 'header', HEADER_TEXT_SPACING));
-    boundaries.push({ x: TEXT_FIELD_X, y: headerFieldY, width: TEXT_FIELD_WIDTH, height: HEADER_FIELD_HEIGHT });
+    const titleY = verticallyAlignedStart(rectangles.header.y, rectangles.header.height, headerLines.length * titleLineHeight, textVerticalAlignments.header);
+    headerLines.forEach((line, index) => styledText('headline', line, alignmentPoint(rectangles.header.x, rectangles.header.width, headerAlignment), titleY + index * titleLineHeight, palette.text, palette.shadow, titleScale, headerAlignment, headerFont, 'header', HEADER_TEXT_SPACING));
+    boundaries.push(rectangles.header);
 
-    if (showDetail) {
-      const detailFieldY = sectionPositions.detail;
-      const detailY = verticallyAlignedStart(detailFieldY, detailFieldHeight, detailLines.length * detailLineHeight, textVerticalAlignments.detail);
+    if (showDetail && rectangles.detail) {
+      const detailY = verticallyAlignedStart(rectangles.detail.y, rectangles.detail.height, detailLines.length * detailLineHeight, textVerticalAlignments.detail);
       detailLines.forEach((line, index) => {
         const lineY = detailY + index * detailLineHeight;
-        if (scrollModes.detail === 'off') styledText('body', line, alignmentPoint(TEXT_FIELD_X, TEXT_FIELD_WIDTH, detailAlignment), lineY, palette.accent, palette.shadow, detailScale, detailAlignment, detailFont, 'detail');
-        else scrollingText(line, TEXT_FIELD_X, TEXT_FIELD_WIDTH, lineY, palette.accent, palette.shadow, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, scrollModes.detail);
+        if (scrollModes.detail === 'off') styledText('body', line, alignmentPoint(rectangles.detail.x, rectangles.detail.width, detailAlignment), lineY, palette.accent, palette.shadow, detailScale, detailAlignment, detailFont, 'detail');
+        else scrollingText(line, rectangles.detail.x, rectangles.detail.width, lineY, palette.accent, palette.shadow, detailScale, detailFont, 'detail', BODY_TEXT_SPACING, scrollModes.detail);
       });
-      boundaries.push({ x: TEXT_FIELD_X, y: detailFieldY, width: TEXT_FIELD_WIDTH, height: detailFieldHeight });
+      boundaries.push(rectangles.detail);
     }
 
-    const bodyFieldY = sectionPositions.body; const bodyFieldHeight = sectionHeights.body;
-    const bodyScale = textScale('bodyScale'); const bodyLineHeight = bodyScale * 12;
-    const maxBodyLines = Math.max(1, Math.floor(bodyFieldHeight / bodyLineHeight));
-    const bodyLines = wrapWithLineBreaks(controls.body.value, BODY_FIELD_WIDTH, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING, maxBodyLines, true);
-    const bodyAlignment = textAlignments.body;
-    const bodyY = verticallyAlignedStart(bodyFieldY, bodyFieldHeight, bodyLines.length * bodyLineHeight, textVerticalAlignments.body);
-    const bodyLineWidths = bodyLines.map(line => leaderLineParts(line) ? BODY_FIELD_WIDTH : textWidth(line, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING));
+    const bodyRect = { x: rectangles.body.x + 8, y: rectangles.body.y, width: rectangles.body.width - 12, height: rectangles.body.height };
+    const bodyScale = textScale('bodyScale'); const bodyLineHeight = bodyScale * 12; const maxBodyLines = Math.max(1, Math.floor(bodyRect.height / bodyLineHeight));
+    const bodyLines = boundedLines(controls.body.value, bodyRect.width, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING, maxBodyLines, true);
+    const bodyAlignment = textAlignments.body; const bodyY = verticallyAlignedStart(bodyRect.y, bodyRect.height, bodyLines.length * bodyLineHeight, textVerticalAlignments.body);
+    const bodyLineWidths = bodyLines.map(line => leaderLineParts(line) ? bodyRect.width : textWidth(line, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING));
     if (getBodyBorderStyle() !== 'none' && bodyLines.length) {
-      const bodyLineStarts = bodyLineWidths.map(width => alignedStart(BODY_FIELD_X, BODY_FIELD_WIDTH, width, bodyAlignment));
+      const bodyLineStarts = bodyLineWidths.map(width => alignedStart(bodyRect.x, bodyRect.width, width, bodyAlignment));
       const contentLeft = Math.min(...bodyLineStarts), contentRight = Math.max(...bodyLineStarts.map((start, index) => start + bodyLineWidths[index]));
       const contentBottom = bodyY + (bodyLines.length - 1) * bodyLineHeight + bodyScale * 10;
       const borderX = Math.floor((contentLeft - 16) / 8) * 8, borderY = Math.floor((bodyY - 16) / 8) * 8;
@@ -514,40 +605,50 @@ export function createPromoRenderer({
     }
     bodyLines.forEach((line, index) => {
       const lineY = bodyY + index * bodyLineHeight;
-      if (leaderLineParts(line)) leaderText(line, BODY_FIELD_X, BODY_FIELD_WIDTH, lineY, palette.text, palette.shadow, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING);
-      else styledText('body', line, alignmentPoint(BODY_FIELD_X, BODY_FIELD_WIDTH, bodyAlignment), lineY, palette.text, palette.shadow, bodyScale, bodyAlignment);
+      if (leaderLineParts(line)) leaderText(line, bodyRect.x, bodyRect.width, lineY, palette.text, palette.shadow, bodyScale, bodyFont, 'body', BODY_TEXT_SPACING);
+      else styledText('body', line, alignmentPoint(bodyRect.x, bodyRect.width, bodyAlignment), lineY, palette.text, palette.shadow, bodyScale, bodyAlignment);
     });
-    boundaries.push({ x: BODY_FIELD_X, y: bodyFieldY, width: BODY_FIELD_WIDTH, height: bodyFieldHeight });
+    boundaries.push(bodyRect);
 
-    if (showCta) {
-      const buttonWidth = Math.min(buttonMaxWidth, Math.max(...ctaLines.map(line => textWidth(line, ctaScale, ctaFont, 'cta'))) + ctaPadding * 2);
-      const ctaFieldY = sectionPositions.cta; const ctaY = verticallyAlignedStart(ctaFieldY + CTA_VERTICAL_OFFSET, ctaFieldHeight - CTA_VERTICAL_OFFSET * 2, buttonHeight, textVerticalAlignments.cta);
-      const ctaX = alignedStart(32, W - 64, buttonWidth, textAlignments.cta);
+    if (showCta && rectangles.cta) {
+      const buttonWidth = Math.min(rectangles.cta.width, Math.max(...ctaLines.map(line => textWidth(line, ctaScale, ctaFont, 'cta'))) + ctaPadding * 2);
+      const ctaY = verticallyAlignedStart(rectangles.cta.y + CTA_VERTICAL_OFFSET, rectangles.cta.height - CTA_VERTICAL_OFFSET * 2, buttonHeight, textVerticalAlignments.cta);
+      const ctaX = alignedStart(rectangles.cta.x, rectangles.cta.width, buttonWidth, textAlignments.cta);
       ctx.fillStyle = palette.accent; ctx.fillRect(ctaX, ctaY, buttonWidth, buttonHeight);
       const ctaTextY = ctaY + Math.round((buttonHeight - (ctaGlyphHeight + (ctaLines.length - 1) * ctaLineHeight)) / 2);
       ctaLines.forEach((line, index) => styledText('body', line, ctaX + buttonWidth / 2, ctaTextY + index * ctaLineHeight, palette.background, palette.shadow, ctaScale, 'center', ctaFont, 'cta'));
-      boundaries.push({ x: 32, y: ctaFieldY, width: W - 64, height: ctaFieldHeight });
+      boundaries.push(rectangles.cta);
     }
 
-    const footerFieldY = sectionPositions.footer;
-    const footerY = verticallyAlignedStart(footerFieldY, footerFieldHeight, footerHeight, textVerticalAlignments.footer) + FOOTER_VERTICAL_OFFSET;
-    const footerViewportX = alignedStart(TEXT_FIELD_X, TEXT_FIELD_WIDTH, FOOTER_TEXT_WIDTH, 'center'); const footerTextCenter = TEXT_FIELD_X + TEXT_FIELD_WIDTH / 2;
+    const footerY = verticallyAlignedStart(rectangles.footer.y, rectangles.footer.height, footerHeight, textVerticalAlignments.footer) + FOOTER_VERTICAL_OFFSET;
+    const footerViewportWidth = Math.min(footerTextWidth, rectangles.footer.width); const footerViewportX = alignedStart(rectangles.footer.x, rectangles.footer.width, footerViewportWidth, 'center'); const footerTextCenter = rectangles.footer.x + rectangles.footer.width / 2;
     hoursLines.forEach((line, index) => {
       const lineY = footerY + index * hoursLineHeight;
-      if (hoursScrolling) scrollingText(line, footerViewportX, FOOTER_TEXT_WIDTH, lineY, palette.text, palette.shadow, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, scrollModes.hours);
+      if (hoursScrolling) scrollingText(line, footerViewportX, footerViewportWidth, lineY, palette.text, palette.shadow, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, scrollModes.hours);
       else styledText('body', line, footerTextCenter, lineY, palette.text, palette.shadow, HOURS_SCALE, 'center', hoursFont, 'hours');
     });
     footerLines.forEach((line, index) => styledText('body', line, footerTextCenter, footerY + hoursLines.length * hoursLineHeight + hoursGap + index * footerLineHeight, palette.accent, palette.shadow, footerScale, 'center', footerFont, 'footer'));
-    boundaries.push({ x: TEXT_FIELD_X, y: footerFieldY, width: TEXT_FIELD_WIDTH, height: footerFieldHeight });
+    boundaries.push(rectangles.footer);
+
     const finalFrame = crtPipeline.render();
     if (finalFrame !== canvas) ctx.drawImage(finalFrame, 0, 0, W, H);
     exportCtx.drawImage(finalFrame, 0, 0, W * EXPORT_SCALE, H * EXPORT_SCALE);
     if (controls.boundaries.checked) drawTextBoundaries(boundaries, palette);
+    const overflowSections = [...overflow].sort(); const overflowKey = overflowSections.join(',');
+    if (overflowKey !== previousOverflowKey) { previousOverflowKey = overflowKey; onOverflowChange?.(overflowSections); }
+    return { overflowSections };
+  }
+  function resize(format) {
+    W = format.logicalWidth; H = format.logicalHeight; EXPORT_SCALE = format.exportScale;
+    canvas.width = W; canvas.height = H; ctx.imageSmoothingEnabled = false;
+    exportCtx.canvas.width = format.exportWidth; exportCtx.canvas.height = format.exportHeight; exportCtx.imageSmoothingEnabled = false;
+    gameBackgrounds.resize(W, H);
+    crtPipeline.resize({ sourceWidth: W, sourceHeight: H, outputWidth: format.exportWidth, outputHeight: format.exportHeight });
   }
   function clearFontCaches() { glyphCache.clear(); glyphBoundsCache.clear(); }
   function drawLegacyGlyphPreview(canvasElement, glyphData, color) {
     const tileCtx = canvasElement.getContext('2d'); tileCtx.clearRect(0, 0, 16, 16); tileCtx.imageSmoothingEnabled = false;
     tileCtx.drawImage(legacyGlyph(glyphData, color), 0, 0, 16, 16);
   }
-  return { clearFontCaches, drawLegacyGlyphPreview, render };
+  return { clearFontCaches, drawLegacyGlyphPreview, render, resize };
 }

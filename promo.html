@@ -13,15 +13,17 @@
     body { margin: 0; min-width: 320px; background: #05080d; color: var(--ink); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .app { width: min(1600px, 100%); min-height: 100vh; margin: 0 auto; display: grid; grid-template-columns: 290px minmax(540px, 1fr) 400px; align-items: start; }
     .preview { min-width: 0; min-height: 100vh; padding: 24px; display: grid; align-content: start; justify-items: center; gap: 12px; overflow-x: auto; }
-    .preview-header { width: 540px; display: flex; align-items: baseline; justify-content: space-between; color: var(--muted); }
+    .preview-header { width: min(540px, 100%); display: flex; align-items: baseline; justify-content: space-between; color: var(--muted); }
     .preview-header strong { color: var(--ink); font-size: 15px; }
-    #preview { width: 540px; height: 675px; display: block; flex: none; image-rendering: pixelated; background: #020208; border: 1px solid #344a61; box-shadow: 0 18px 50px #000a; }
+    #preview { width: min(540px, 100%); height: auto; display: block; flex: none; image-rendering: pixelated; background: #020208; border: 1px solid #344a61; box-shadow: 0 18px 50px #000a; }
+    .preview[data-output-format="landscape"] .preview-header, .preview[data-output-format="landscape"] #preview { width: min(720px, 100%); }
     .status { min-height: 18px; color: var(--muted); font-size: 12px; }
+    .status-warning { color: #ffdf4d; }
     .dock { min-width: 0; height: 100vh; padding: 24px 18px; overflow-y: auto; display: grid; align-content: start; gap: 6px; background: #05080d; }
     .left-dock { border-right: 1px solid var(--line); }
     .right-dock { border-left: 1px solid var(--line); }
     h1 { margin: 0; line-height: 0; } .composer-title { display: block; max-width: 100%; height: 32px; image-rendering: pixelated; } .eyebrow { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
-    fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 5px; } label { color: var(--muted); font-size: 10px; }
+    fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 5px; } label, legend { padding: 0; color: var(--muted); font-size: 10px; }
     input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 3px; padding: 7px 8px; background: var(--panel); color: var(--ink); font: inherit; }
     input[type="range"] { padding: 0; accent-color: var(--accent); }
     textarea { min-height: 68px; resize: vertical; } input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
@@ -36,6 +38,7 @@
     .control-section[open] summary::after { content: '-'; color: var(--accent); }
     .control-section summary:focus-visible { outline: 1px solid var(--accent); outline-offset: -3px; }
     .sortable-section summary { cursor: grab; }
+    .sortable-section summary[draggable="false"] { cursor: default; }
     .sortable-section summary:active { cursor: grabbing; }
     .section-grip { width: 16px; height: 20px; flex: 0 0 16px; display: grid; place-items: center; color: var(--muted); }
     .section-grip svg { width: 14px; height: 14px; }
@@ -89,6 +92,11 @@
     .scale-toggle button:last-child { border-right: 0; }
     .scale-toggle button:hover { background: #102031; border-color: var(--line); }
     .scale-toggle button[aria-pressed="true"] { background: #003948; color: var(--ink); }
+    .format-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+    .format-toggle button { min-height: 30px; padding: 0 8px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--muted); font-size: 10px; }
+    .format-toggle button:last-child { border-right: 0; }
+    .format-toggle button:hover { background: #102031; border-color: var(--line); }
+    .format-toggle button[aria-pressed="true"] { background: #003948; color: var(--ink); }
     .control-toolbar { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 3px; }
     .toolbar-label { min-height: 30px; display: grid; place-items: center; color: var(--muted); }
     .toolbar-label svg { width: 14px; height: 14px; }
@@ -165,8 +173,9 @@
         <summary>BASIC SETTINGS</summary>
         <div class="section-body">
           <fieldset><label for="template">TEMPLATE</label><select id="template"></select></fieldset>
+          <fieldset><legend>OUTPUT FORMAT</legend><div id="outputFormat" class="format-toggle" role="group" aria-label="Output format"><button type="button" data-output-format="portrait" aria-pressed="true">1080 x 1350</button><button type="button" data-output-format="landscape" aria-pressed="false">1920 x 1080</button></div></fieldset>
           <div class="theme-row">
-            <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option><option value="emerald">Emerald Terminal</option><option value="cobalt">Cobalt Gold</option></select></fieldset>
+            <fieldset><label for="theme">COLOR THEME</label><select id="theme"><option value="yuNo" selected>CRT Sunset</option><option value="neon">Neon Space</option><option value="pulse">Signal Pulse</option><option value="solar">Solar Flare</option><option value="emerald">Emerald Terminal</option><option value="cobalt">Cobalt Gold</option><option value="amethyst">Amethyst Night</option><option value="copper">Copper Circuit</option><option value="polar">Polar Signal</option><option value="ruby">Ruby Relay</option></select></fieldset>
             <div id="themePreview" class="palette-preview" role="img" aria-label="Current color theme preview"></div>
           </div>
           <fieldset><label for="gameStyle">BACKGROUND STYLE</label><select id="gameStyle"><option value="asteroids" selected>Asteroids</option><option value="moon-patrol">Moon Patrol</option><option value="starfield">Starfield</option><option value="model">3D Model</option></select></fieldset>
@@ -190,10 +199,11 @@
         </div>
       </details>
     </aside>
-    <section class="preview" aria-label="Animated Instagram post preview">
-      <div class="preview-header"><strong>LIVE COMPOSITION</strong><span>1080 x 1350 / 4:5</span></div>
+    <section class="preview" data-output-format="portrait" aria-label="Animated promotion preview">
+      <div class="preview-header"><strong>LIVE COMPOSITION</strong><span id="outputResolution">1080 x 1350 / 4:5</span></div>
       <canvas id="preview" width="540" height="675" aria-label="Animated promotion preview"></canvas>
       <output id="status" class="status" aria-live="polite">Loading renderer...</output>
+      <output id="overflowStatus" class="status status-warning" aria-live="polite"></output>
     </section>
     <aside class="dock right-dock" aria-label="Text and artwork controls">
       <details class="control-section sortable-section" data-composite-section="logo">
@@ -277,13 +287,14 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=228'],
-      ['fonts', './promo/fonts.js?v=228'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=234'],
-      ['image block', './promo/image-block.js?v=236'],
-      ['renderer', './promo/renderer.js?v=232'],
-      ['rich text editor', './promo/rich-text-editor.js?v=228'],
-      ['templates', './promo/templates.js?v=235'],
+      ['CRT', './promo/crt.js?v=255'],
+      ['fonts', './promo/fonts.js?v=255'],
+      ['output formats', './promo/formats.js?v=255'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=255'],
+      ['image block', './promo/image-block.js?v=255'],
+      ['renderer', './promo/renderer.js?v=255'],
+      ['rich text editor', './promo/rich-text-editor.js?v=255'],
+      ['templates', './promo/templates.js?v=255'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -293,7 +304,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=236');
+      await import('./promo/app.js?v=255');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

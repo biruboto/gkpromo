@@ -120,6 +120,10 @@ export function createWireframeCabinet({ width, height }) {
       return installImportedSource(source, loadId);
     }
     let lastColor = null; let lastOpacity = null;
+    function resize(nextWidth, nextHeight) {
+      width = Math.max(1, Math.round(nextWidth)); height = Math.max(1, Math.round(nextHeight));
+      renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
+    }
     function render({ color = '#00ddff', opacity = .65, elapsed = 0, yaw = -.62, pitch = 0, zoom = 1, cameraPitch = 0, cameraOrbit = 0, projection = 'perspective', wobble = true } = {}) {
       const safeZoom = Math.max(.45, Math.min(4.5, zoom)); const baseDistance = Math.hypot(3.6, 2.5, 6.2);
       const azimuth = Math.atan2(6.2, 3.6) + cameraOrbit; const elevation = Math.max(-1.35, Math.min(1.35, Math.asin(2.5 / baseDistance) + cameraPitch));
@@ -135,7 +139,7 @@ export function createWireframeCabinet({ width, height }) {
       cabinet.rotation.y = yaw + (wobble ? Math.sin(elapsed * .62) * .14 : 0); cabinet.rotation.x = pitch + (wobble ? Math.sin(elapsed * .44) * .035 : 0);
       renderer.clear(); renderer.render(scene, projection === 'orthographic' ? orthographicCamera : camera); return renderer.domElement;
     }
-    return { canvas: renderer.domElement, loadSource, loadFbxSource, loadObjSource, loadGlbSource, render };
+    return { canvas: renderer.domElement, loadSource, loadFbxSource, loadObjSource, loadGlbSource, render, resize };
   } catch (error) {
     console.warn('Wireframe cabinet unavailable:', error);
     return null;

@@ -42,6 +42,7 @@ export const templates = {
     verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'top', footer: 'bottom' },
     visibility: { detail: false, cta: true, hours: true }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'none',
     sectionOrder: ['logo', 'header', 'detail', 'body', 'cta', 'image', 'footer'],
+    layouts: { landscape: { sectionOrder: ['logo', 'header', 'detail', 'body', 'image', 'cta', 'footer'] } },
     image: { source: './assets/images/tmnt.png', sourceName: 'tmnt.png', resolution: 149, threshold: 77, contrast: 160, dither: 'bayer2', ditherAmount: 67, color: 'highlight', align: 'center', scale: 64, opacity: 100, invert: true },
     fonts: { font: 'Cabaret Bold', headerFont: 'You Squared', detailFont: 'Reactor', ctaFont: 'Needlecast Heavy', footerFont: 'Cinema Bold' },
     crtControls: { curve: 130, rgb: 50, scanline: 40, mask: 50, vignette: 120, drift: 7, bloom: 120, glow: 170 }
