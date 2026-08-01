@@ -1,11 +1,11 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=255';
-import { createFontManager } from './fonts.js?v=255';
-import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=255';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=255';
-import { createMonochromeImageBlock } from './image-block.js?v=255';
-import { createPromoRenderer } from './renderer.js?v=255';
-import { createRichTextEditor } from './rich-text-editor.js?v=255';
-import { populateTemplateSelect, templates } from './templates.js?v=255';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=256';
+import { createFontManager } from './fonts.js?v=256';
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=256';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=256';
+import { createMonochromeImageBlock } from './image-block.js?v=256';
+import { createPromoRenderer } from './renderer.js?v=256';
+import { createRichTextEditor } from './rich-text-editor.js?v=256';
+import { populateTemplateSelect, templates } from './templates.js?v=256';
 
 let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
 const initialFormat = outputFormat(activeOutputFormatId);
@@ -937,4 +937,3 @@ controls.status.textContent = 'Loading header font library...';
 initializeFonts();
 loadLegacyGlyphs().then(drawBorderGlyphPreviews).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; });
 resumeFrame();
-
