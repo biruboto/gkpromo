@@ -159,6 +159,8 @@
     @media (max-width: 600px) {
       .app { padding: min(812px, calc(125vw + 97px)) 16px 16px; }
       .preview { position: fixed; z-index: 10; top: 0; left: 0; right: 0; padding: 12px 16px; background: #05080d; }
+      .preview-header, #preview { width: min(540px, 100%, calc(80dvh - 92px)); }
+      .preview[data-output-format="landscape"] .preview-header, .preview[data-output-format="landscape"] #preview { width: min(720px, 100%, calc(177.778dvh - 205px)); }
       .app:has(.preview[data-output-format="landscape"]) { padding-top: min(440px, calc(56.25vw + 119px)); }
     }
   </style>
