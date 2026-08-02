@@ -1,0 +1,3474 @@
+{
+  "version": 1,
+  "cellSize": 8,
+  "characterStart": 32,
+  "fonts": [
+    {
+      "id": "1943",
+      "name": "1943",
+      "manufacturer": "Capcom",
+      "file": "1943-1943 (Capcom).png",
+      "asset": "1943.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "aass",
+      "name": "Air Assault",
+      "manufacturer": "IREM",
+      "file": "aass-Air Assault (IREM).png",
+      "asset": "aass.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "acro",
+      "name": "Acrobat Mission",
+      "manufacturer": "UPL",
+      "file": "acro-Acrobat Mission (UPL).png",
+      "asset": "acro.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "aerof",
+      "name": "Aero Fighters",
+      "manufacturer": "Kaneko",
+      "file": "aerof-Aero Fighters (Kaneko).png",
+      "asset": "aerof.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "aftb",
+      "name": "Afterburner",
+      "manufacturer": "Sega",
+      "file": "aftb-Afterburner (Sega).png",
+      "asset": "aftb.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "airb",
+      "name": "Air Buster",
+      "manufacturer": "Kaneko",
+      "file": "airb-Air Buster (Kaneko).png",
+      "asset": "airb.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "aof2",
+      "name": "Art of Fighting 2",
+      "manufacturer": "SNK",
+      "file": "aof2-Art of Fighting 2 (SNK).png",
+      "asset": "aof2.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "apbat",
+      "name": "Armed Police Batrider",
+      "manufacturer": "Raizing",
+      "file": "apbat-Armed Police Batrider (Raizing).png",
+      "asset": "apbat.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "arab",
+      "name": "Arabian Magic",
+      "manufacturer": "Capcom",
+      "file": "arab-Arabian Magic (Capcom).png",
+      "asset": "arab.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade Classic",
+      "manufacturer": "",
+      "file": "arcade-Arcade Classic.png",
+      "asset": "arcade.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "arka",
+      "name": "ArkArea",
+      "manufacturer": "UPL",
+      "file": "arka-ArkArea (UPL).png",
+      "asset": "arka.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "armo",
+      "name": "ArmoredWarriors",
+      "manufacturer": "Capcom",
+      "file": "armo-ArmoredWarriors (Capcom).png",
+      "asset": "armo.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "ass",
+      "name": "Assault",
+      "manufacturer": "Namco",
+      "file": "ass-Assault (Namco).png",
+      "asset": "ass.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "astx",
+      "name": "Asterix",
+      "manufacturer": "Konami",
+      "file": "astx-Asterix (Konami).png",
+      "asset": "astx.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "atascii",
+      "name": "ATASCII",
+      "manufacturer": "",
+      "file": "atascii-ATASCII.png",
+      "asset": "atascii.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "aura",
+      "name": "Aurail",
+      "manufacturer": "Sega",
+      "file": "aura-Aurail (Sega).png",
+      "asset": "aura.png",
+      "width": 760,
+      "height": 160,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T"
+      ]
+    },
+    {
+      "id": "avng",
+      "name": "Avengers",
+      "manufacturer": "Capcom",
+      "file": "avng-Avengers (Capcom).png",
+      "asset": "avng.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "bakr",
+      "name": "Battle Bakraid",
+      "manufacturer": "Eighting",
+      "file": "bakr-Battle Bakraid (Eighting).png",
+      "asset": "bakr.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "baku",
+      "name": "Bakuretsu Breaker",
+      "manufacturer": "Kaneko",
+      "file": "baku-Bakuretsu Breaker (Kaneko).png",
+      "asset": "baku.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "bats",
+      "name": "Batsugun",
+      "manufacturer": "Toaplan",
+      "file": "bats-Batsugun (Toaplan).png",
+      "asset": "bats.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "bayr",
+      "name": "Bay Route",
+      "manufacturer": "Sega",
+      "file": "bayr-Bay Route (Sega).png",
+      "asset": "bayr.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "bcir",
+      "name": "BattleCircuit",
+      "manufacturer": "Capcom",
+      "file": "bcir-BattleCircuit (Capcom).png",
+      "asset": "bcir.png",
+      "width": 760,
+      "height": 144,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R"
+      ]
+    },
+    {
+      "id": "bdash",
+      "name": "Boulder Dash",
+      "manufacturer": "Data East",
+      "file": "bdash-Boulder Dash (Data East).png",
+      "asset": "bdash.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "bgar",
+      "name": "Battle Garegga",
+      "manufacturer": "Raizing",
+      "file": "bgar-Battle Garegga (Raizing).png",
+      "asset": "bgar.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "bios",
+      "name": "BioShipPaladin",
+      "manufacturer": "UPL",
+      "file": "bios-BioShipPaladin (UPL).png",
+      "asset": "bios.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "blaz",
+      "name": "Blazing Star",
+      "manufacturer": "Yumekobo",
+      "file": "blaz-Blazing Star (Yumekobo).png",
+      "asset": "blaz.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "blkt",
+      "name": "Black Tiger",
+      "manufacturer": "Capcom",
+      "file": "blkt-Black Tiger (Capcom).png",
+      "asset": "blkt.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "blwa",
+      "name": "Blood Warrior",
+      "manufacturer": "Kaneko",
+      "file": "blwa-Blood Warrior (Kaneko).png",
+      "asset": "blwa.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "bonz",
+      "name": "Bonanza Bros",
+      "manufacturer": "Sega",
+      "file": "bonz-Bonanza Bros (Sega).png",
+      "asset": "bonz.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "boog",
+      "name": "Boogie Wings",
+      "manufacturer": "Data East",
+      "file": "boog-Boogie Wings (Data East).png",
+      "asset": "boog.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "bubma",
+      "name": "Bubble Memories Alien",
+      "manufacturer": "Taito",
+      "file": "bubma-Bubble Memories Alien (Taito).png",
+      "asset": "bubma.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "bubs",
+      "name": "Bubble Symphony",
+      "manufacturer": "Taito",
+      "file": "bubs-Bubble Symphony (Taito).png",
+      "asset": "bubs.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "caml",
+      "name": "Cameltry",
+      "manufacturer": "Taito",
+      "file": "caml-Cameltry (Taito).png",
+      "asset": "caml.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "chiki",
+      "name": "Chiki Chiki Boys",
+      "manufacturer": "Capcom",
+      "file": "chiki-Chiki Chiki Boys (Capcom).png",
+      "asset": "chiki.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "cliff",
+      "name": "Cliffhanger - Edward Randy",
+      "manufacturer": "DataEast",
+      "file": "cliff-Cliffhanger - Edward Randy (DataEast).png",
+      "asset": "cliff.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "cmnds",
+      "name": "Commando-Special",
+      "manufacturer": "Capcom",
+      "file": "cmnds-Commando-Special (Capcom).png",
+      "asset": "cmnds.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "cotn",
+      "name": "Cotton",
+      "manufacturer": "Sega + Success",
+      "file": "cotn-Cotton (Sega + Success).png",
+      "asset": "cotn.png",
+      "width": 760,
+      "height": 128,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P"
+      ]
+    },
+    {
+      "id": "cshk",
+      "name": "Captain Sky Hawk",
+      "manufacturer": "RARE",
+      "file": "cshk-Captain Sky Hawk (RARE).png",
+      "asset": "cshk.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "cyba",
+      "name": "Cybattler",
+      "manufacturer": "Jaleco",
+      "file": "cyba-Cybattler (Jaleco).png",
+      "asset": "cyba.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "ddcrew",
+      "name": "D D Crew",
+      "manufacturer": "Sega",
+      "file": "ddcrew-D D Crew (Sega).png",
+      "asset": "ddcrew.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "dddon",
+      "name": "Don Doko Don",
+      "manufacturer": "Taito",
+      "file": "dddon-Don Doko Don (Taito).png",
+      "asset": "dddon.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "ddp",
+      "name": "DoDonPachi",
+      "manufacturer": "Cave",
+      "file": "ddp-DoDonPachi (Cave).png",
+      "asset": "ddp.png",
+      "width": 760,
+      "height": 96,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    },
+    {
+      "id": "ddr",
+      "name": "Dance Dance Revolution",
+      "manufacturer": "Konami",
+      "file": "ddr-Dance Dance Revolution (Konami).png",
+      "asset": "ddr.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "ddux",
+      "name": "Dynamite Dux",
+      "manufacturer": "Sega",
+      "file": "ddux-Dynamite Dux (Sega).png",
+      "asset": "ddux.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "deta",
+      "name": "Detana Twinbee",
+      "manufacturer": "Konami",
+      "file": "deta-Detana Twinbee (Konami).png",
+      "asset": "deta.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "dima",
+      "name": "Dimahoo",
+      "manufacturer": "Raizing",
+      "file": "dima-Dimahoo (Raizing).png",
+      "asset": "dima.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "drbr",
+      "name": "Dragon Breed",
+      "manufacturer": "Irem",
+      "file": "drbr-Dragon Breed (Irem).png",
+      "asset": "drbr.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "dsab",
+      "name": "Dragon Saber",
+      "manufacturer": "Namco",
+      "file": "dsab-Dragon Saber (Namco).png",
+      "asset": "dsab.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "dspir",
+      "name": "Dragon Spirit",
+      "manufacturer": "Namco",
+      "file": "dspir-Dragon Spirit (Namco).png",
+      "asset": "dspir.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "f1dr",
+      "name": "F1 Dream",
+      "manufacturer": "Capcom",
+      "file": "f1dr-F1 Dream (Capcom).png",
+      "asset": "f1dr.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "fhawk",
+      "name": "Fighting Hawk",
+      "manufacturer": "Taito",
+      "file": "fhawk-Fighting Hawk (Taito).png",
+      "asset": "fhawk.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "flak",
+      "name": "Flak Attack",
+      "manufacturer": "Konami",
+      "file": "flak-Flak Attack (Konami).png",
+      "asset": "flak.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "flys",
+      "name": "Flying Shark",
+      "manufacturer": "Taito",
+      "file": "flys-Flying Shark (Taito).png",
+      "asset": "flys.png",
+      "width": 760,
+      "height": 128,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P"
+      ]
+    },
+    {
+      "id": "fstarf",
+      "name": "Final Star Force",
+      "manufacturer": "Tecmo",
+      "file": "fstarf-Final Star Force (Tecmo).png",
+      "asset": "fstarf.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "fz",
+      "name": "Fantasy Zone",
+      "manufacturer": "Sega",
+      "file": "fz-Fantasy Zone (Sega).png",
+      "asset": "fz.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "gaia",
+      "name": "Gaiapolis",
+      "manufacturer": "Konami",
+      "file": "gaia-Gaiapolis (Konami).png",
+      "asset": "gaia.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "gain",
+      "name": "Gain Ground",
+      "manufacturer": "Sega",
+      "file": "gain-Gain Ground (Sega).png",
+      "asset": "gain.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "garou",
+      "name": "Garou Densetsu",
+      "manufacturer": "SNK",
+      "file": "garou-Garou Densetsu (SNK).png",
+      "asset": "garou.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "gng1",
+      "name": "Ghosts n Goblins",
+      "manufacturer": "Capcom",
+      "file": "gng1-Ghosts n Goblins (Capcom).png",
+      "asset": "gng1.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "gng2",
+      "name": "Ghouls n Ghosts",
+      "manufacturer": "Capcom",
+      "file": "gng2-Ghouls n Ghosts (Capcom).png",
+      "asset": "gng2.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "godz",
+      "name": "Godzilla",
+      "manufacturer": "Banpresto",
+      "file": "godz-Godzilla (Banpresto).png",
+      "asset": "godz.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "gond",
+      "name": "Gondomania",
+      "manufacturer": "Data East",
+      "file": "gond-Gondomania (Data East).png",
+      "asset": "gond.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "gradius",
+      "name": "Gradius",
+      "manufacturer": "",
+      "file": "gradius-Gradius.png",
+      "asset": "gradius.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "gradius2",
+      "name": "Gradius 2",
+      "manufacturer": "Konami",
+      "file": "gradius2-Gradius 2 (Konami).png",
+      "asset": "gradius2.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "gradius3",
+      "name": "Gradius 3",
+      "manufacturer": "Konami",
+      "file": "gradius3-Gradius 3 (Konami).png",
+      "asset": "gradius3.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "gradius4",
+      "name": "Gradius 4",
+      "manufacturer": "Konami",
+      "file": "gradius4-Gradius 4 (Konami).png",
+      "asset": "gradius4.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "guar",
+      "name": "Guardians",
+      "manufacturer": "Banpresto",
+      "file": "guar-Guardians (Banpresto).png",
+      "asset": "guar.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "gunb",
+      "name": "GunBuster",
+      "manufacturer": "Taito",
+      "file": "gunb-GunBuster (Taito).png",
+      "asset": "gunb.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "gunn",
+      "name": "GunNail",
+      "manufacturer": "NMK",
+      "file": "gunn-GunNail (NMK).png",
+      "asset": "gunn.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "guns",
+      "name": "Gun.Smoke",
+      "manufacturer": "Capcom",
+      "file": "guns-Gun.Smoke (Capcom).png",
+      "asset": "guns.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "gyrs",
+      "name": "Gyruss",
+      "manufacturer": "Konami",
+      "file": "gyrs-Gyruss (Konami).png",
+      "asset": "gyrs.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "hach",
+      "name": "Hacha Mecha Fighter",
+      "manufacturer": "NMK",
+      "file": "hach-Hacha Mecha Fighter (NMK).png",
+      "asset": "hach.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "hatt",
+      "name": "Hat Trick Hero 95",
+      "manufacturer": "Taito",
+      "file": "hatt-Hat Trick Hero 95 (Taito).png",
+      "asset": "hatt.png",
+      "width": 760,
+      "height": 104,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M"
+      ]
+    },
+    {
+      "id": "hypr",
+      "name": "Hyper Crash",
+      "manufacturer": "Konami",
+      "file": "hypr-Hyper Crash (Konami).png",
+      "asset": "hypr.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "imgf",
+      "name": "Image Fight",
+      "manufacturer": "IREM",
+      "file": "imgf-Image Fight (IREM).png",
+      "asset": "imgf.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "joenm",
+      "name": "Joe and Mac",
+      "manufacturer": "Data East",
+      "file": "joenm-Joe and Mac (Data East).png",
+      "asset": "joenm.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "kais",
+      "name": "Kaiser Knuckle",
+      "manufacturer": "Taito",
+      "file": "kais-Kaiser Knuckle (Taito).png",
+      "asset": "kais.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "kiki",
+      "name": "Kiki Kaikai",
+      "manufacturer": "Taito",
+      "file": "kiki-Kiki Kaikai (Taito).png",
+      "asset": "kiki.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "kira",
+      "name": "Kirameki Star Road",
+      "manufacturer": "Taito",
+      "file": "kira-Kirameki Star Road (Taito).png",
+      "asset": "kira.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "klax",
+      "name": "Klax",
+      "manufacturer": "Atari",
+      "file": "klax-Klax (Atari).png",
+      "asset": "klax.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "klaxa",
+      "name": "Klax Alternate",
+      "manufacturer": "Atari",
+      "file": "klaxa-Klax Alternate (Atari).png",
+      "asset": "klaxa.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "kof2k",
+      "name": "King of Fighters 2000",
+      "manufacturer": "SNK",
+      "file": "kof2k-King of Fighters 2000 (SNK).png",
+      "asset": "kof2k.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "kof2k1",
+      "name": "King of Fighters 2001",
+      "manufacturer": "SNK",
+      "file": "kof2k1-King of Fighters 2001 (SNK).png",
+      "asset": "kof2k1.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "kof2k2",
+      "name": "King of Fighters 2002",
+      "manufacturer": "SNK",
+      "file": "kof2k2-King of Fighters 2002 (SNK).png",
+      "asset": "kof2k2.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "kof2k3",
+      "name": "King of Fighters 2003",
+      "manufacturer": "SNK",
+      "file": "kof2k3-King of Fighters 2003 (SNK).png",
+      "asset": "kof2k3.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "kof97",
+      "name": "King of Fighters 97",
+      "manufacturer": "SNK",
+      "file": "kof97-King of Fighters 97 (SNK).png",
+      "asset": "kof97.png",
+      "width": 760,
+      "height": 96,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    },
+    {
+      "id": "kof97i",
+      "name": "King of Fighters 97 Italic",
+      "manufacturer": "SNK",
+      "file": "kof97i-King of Fighters 97 Italic (SNK).png",
+      "asset": "kof97i.png",
+      "width": 760,
+      "height": 96,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    },
+    {
+      "id": "ladu",
+      "name": "Last Duel",
+      "manufacturer": "Capcom",
+      "file": "ladu-Last Duel (Capcom).png",
+      "asset": "ladu.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "last",
+      "name": "Last Resort",
+      "manufacturer": "SNK",
+      "file": "last-Last Resort (SNK).png",
+      "asset": "last.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "lastb",
+      "name": "Last Blade 2",
+      "manufacturer": "SNK",
+      "file": "lastb-Last Blade 2 (SNK).png",
+      "asset": "lastb.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "lghost",
+      "name": "Laser Ghost",
+      "manufacturer": "Sega",
+      "file": "lghost-Laser Ghost (Sega).png",
+      "asset": "lghost.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "libr",
+      "name": "Light Bringer",
+      "manufacturer": "Capcom",
+      "file": "libr-Light Bringer (Capcom).png",
+      "asset": "libr.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "lwing",
+      "name": "Legendary Wings",
+      "manufacturer": "Capcom",
+      "file": "lwing-Legendary Wings (Capcom).png",
+      "asset": "lwing.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "mars",
+      "name": "Mars Matrix",
+      "manufacturer": "Capcom",
+      "file": "mars-Mars Matrix (Capcom).png",
+      "asset": "mars.png",
+      "width": 760,
+      "height": 96,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    },
+    {
+      "id": "mgs",
+      "name": "Metal Gear Solid",
+      "manufacturer": "Konami",
+      "file": "mgs-Metal Gear Solid (Konami).png",
+      "asset": "mgs.png",
+      "width": 768,
+      "height": 32,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "mjack",
+      "name": "Michael Jackson Moonwalker",
+      "manufacturer": "",
+      "file": "mjack-Michael Jackson Moonwalker.png",
+      "asset": "mjack.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "moma",
+      "name": "Monster Mauler",
+      "manufacturer": "Konami",
+      "file": "moma-Monster Mauler (Konami).png",
+      "asset": "moma.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "mt",
+      "name": "Major Title",
+      "manufacturer": "IREM",
+      "file": "mt-Major Title (IREM).png",
+      "asset": "mt.png",
+      "width": 760,
+      "height": 104,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M"
+      ]
+    },
+    {
+      "id": "muni",
+      "name": "Mutant Night",
+      "manufacturer": "UPL",
+      "file": "muni-Mutant Night (UPL).png",
+      "asset": "muni.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "mwar",
+      "name": "Metal Warriors",
+      "manufacturer": "Konami",
+      "file": "mwar-Metal Warriors (Konami).png",
+      "asset": "mwar.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "namco2",
+      "name": "Namco Classic Gradient",
+      "manufacturer": "",
+      "file": "namco2-Namco Classic Gradient.png",
+      "asset": "namco2.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "nds",
+      "name": "Dangerous Seed",
+      "manufacturer": "Namco",
+      "file": "nds-Dangerous Seed (Namco).png",
+      "asset": "nds.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "nebu",
+      "name": "Nebulas Ray",
+      "manufacturer": "Namco",
+      "file": "nebu-Nebulas Ray (Namco).png",
+      "asset": "nebu.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "niga",
+      "name": "Ninja Gaiden",
+      "manufacturer": "Tecmo",
+      "file": "niga-Ninja Gaiden (Tecmo).png",
+      "asset": "niga.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "ninj",
+      "name": "Ninja Masters",
+      "manufacturer": "ADK",
+      "file": "ninj-Ninja Masters (ADK).png",
+      "asset": "ninj.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "ninjak",
+      "name": "Ninja Kids",
+      "manufacturer": "Taito",
+      "file": "ninjak-Ninja Kids (Taito).png",
+      "asset": "ninjak.png",
+      "width": 768,
+      "height": 40,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "ninjas",
+      "name": "Ninja Spirit",
+      "manufacturer": "IREM",
+      "file": "ninjas-Ninja Spirit (IREM).png",
+      "asset": "ninjas.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "nstrike",
+      "name": "Night Striker",
+      "manufacturer": "Taito",
+      "file": "nstrike-Night Striker (Taito).png",
+      "asset": "nstrike.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "ord",
+      "name": "Ordyne",
+      "manufacturer": "Namco",
+      "file": "ord-Ordyne.png (Namco).png",
+      "asset": "ord.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "outf",
+      "name": "Outfoxies",
+      "manufacturer": "Namco",
+      "file": "outf-Outfoxies (Namco).png",
+      "asset": "outf.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "pabom",
+      "name": "Panic Bomber",
+      "manufacturer": "Hudson",
+      "file": "pabom-Panic Bomber (Hudson).png",
+      "asset": "pabom.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "paro",
+      "name": "Parodius DA!",
+      "manufacturer": "Konami",
+      "file": "paro-Parodius DA! (Konami).png",
+      "asset": "paro.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "pckf",
+      "name": "Pickford Brothers",
+      "manufacturer": "",
+      "file": "pckf-Pickford Brothers.png",
+      "asset": "pckf.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "psr2",
+      "name": "Pachinko Sexy Reaction 2",
+      "manufacturer": "Sammy",
+      "file": "psr2-Pachinko Sexy Reaction 2 (Sammy).png",
+      "asset": "psr2.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "pubu",
+      "name": "Puzzle Bobble",
+      "manufacturer": "Taito",
+      "file": "pubu-Puzzle Bobble (Taito).png",
+      "asset": "pubu.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "puls",
+      "name": "Pulstar",
+      "manufacturer": "Aicom",
+      "file": "puls-Pulstar (Aicom).png",
+      "asset": "puls.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "qtet",
+      "name": "Quartet 2",
+      "manufacturer": "Sega",
+      "file": "qtet-Quartet 2 (Sega).png",
+      "asset": "qtet.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "quake",
+      "name": "Quake",
+      "manufacturer": "id",
+      "file": "quake-Quake (id).png",
+      "asset": "quake.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "raph",
+      "name": "Rapid Hero",
+      "manufacturer": "MTC",
+      "file": "raph-Rapid Hero (MTC).png",
+      "asset": "raph.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "rayf",
+      "name": "RayForce",
+      "manufacturer": "Taito",
+      "file": "rayf-RayForce (Taito).png",
+      "asset": "rayf.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "rcop",
+      "name": "Robocop",
+      "manufacturer": "Data East",
+      "file": "rcop-Robocop (Data East).png",
+      "asset": "rcop.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "rcop2",
+      "name": "Robocop 2",
+      "manufacturer": "Data East",
+      "file": "rcop2-Robocop 2 (Data East).png",
+      "asset": "rcop2.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "rezon",
+      "name": "Rezon",
+      "manufacturer": "Allumer",
+      "file": "rezon-Rezon (Allumer).png",
+      "asset": "rezon.png",
+      "width": 768,
+      "height": 8,
+      "slotCount": 96,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "rf",
+      "name": "Raiden Fighters",
+      "manufacturer": "Seibu",
+      "file": "rf-Raiden Fighters (Seibu).png",
+      "asset": "rf.png",
+      "width": 728,
+      "height": 80,
+      "slotCount": 91,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "ridef",
+      "name": "Riding Fight",
+      "manufacturer": "Taito",
+      "file": "ridef-Riding Fight (Taito).png",
+      "asset": "ridef.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "riotc",
+      "name": "Riot City",
+      "manufacturer": "Sega",
+      "file": "riotc-Riot City (Sega).png",
+      "asset": "riotc.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "roadr",
+      "name": "Road Riot",
+      "manufacturer": "Atari",
+      "file": "roadr-Road Riot (Atari).png",
+      "asset": "roadr.png",
+      "width": 768,
+      "height": 24,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "robot",
+      "name": "Robotron",
+      "manufacturer": "Williams",
+      "file": "robot-Robotron (Williams).png",
+      "asset": "robot.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "rtl",
+      "name": "R Type LEO",
+      "manufacturer": "Irem",
+      "file": "rtl-R Type LEO (Irem).png",
+      "asset": "rtl.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "rtype",
+      "name": "R Type",
+      "manufacturer": "Irem",
+      "file": "rtype-R Type (Irem).png",
+      "asset": "rtype.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "rumba",
+      "name": "Rumba Lumber",
+      "manufacturer": "Taito",
+      "file": "rumba-Rumba Lumber (Taito).png",
+      "asset": "rumba.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "sabo",
+      "name": "Saboten Bombers",
+      "manufacturer": "NMK",
+      "file": "sabo-Saboten Bombers (NMK).png",
+      "asset": "sabo.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "sala2",
+      "name": "Salamander 2",
+      "manufacturer": "Konami",
+      "file": "sala2-Salamander 2 (Konami).png",
+      "asset": "sala2.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "samsho2",
+      "name": "Samurai Shodown 2",
+      "manufacturer": "SNK",
+      "file": "samsho2-Samurai Shodown 2 (SNK).png",
+      "asset": "samsho2.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "samsho3",
+      "name": "Samurai Shodown 3",
+      "manufacturer": "SNK",
+      "file": "samsho3-Samurai Shodown 3 (SNK).png",
+      "asset": "samsho3.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "sar",
+      "name": "Search and Rescue",
+      "manufacturer": "SNK",
+      "file": "sar-Search and Rescue (SNK).png",
+      "asset": "sar.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "sboom",
+      "name": "Sonic Boom",
+      "manufacturer": "Sega",
+      "file": "sboom-Sonic Boom (Sega).png",
+      "asset": "sboom.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "sdi",
+      "name": "SDI",
+      "manufacturer": "Sega",
+      "file": "sdi-SDI (Sega).png",
+      "asset": "sdi.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "sexy",
+      "name": "Parodius",
+      "manufacturer": "Konami",
+      "file": "sexy-Parodius (Konami).png",
+      "asset": "sexy.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "sf2",
+      "name": "Street Fighter II",
+      "manufacturer": "Capcom",
+      "file": "sf2-Street Fighter II (Capcom).png",
+      "asset": "sf2.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "sf3",
+      "name": "Street Fighter III",
+      "manufacturer": "Capcom",
+      "file": "sf3-Street Fighter III (Capcom).png",
+      "asset": "sf3.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "sf33",
+      "name": "Street Fighter III 3rd Strike",
+      "manufacturer": "Capcom",
+      "file": "sf33-Street Fighter III 3rd Strike (Capcom).png",
+      "asset": "sf33.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "sfz3",
+      "name": "Street Fighter Zero 3",
+      "manufacturer": "Capcom",
+      "file": "sfz3-Street Fighter Zero 3 (Capcom).png",
+      "asset": "sfz3.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "shda",
+      "name": "ShadowDancer",
+      "manufacturer": "Sega",
+      "file": "shda-ShadowDancer (Sega).png",
+      "asset": "shda.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "shinobi",
+      "name": "Shinobi",
+      "manufacturer": "Sega",
+      "file": "shinobi-Shinobi (Sega).png",
+      "asset": "shinobi.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "simp",
+      "name": "The Simpsons",
+      "manufacturer": "Konami",
+      "file": "simp-The Simpsons (Konami).png",
+      "asset": "simp.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "skys",
+      "name": "Sky Soldier",
+      "manufacturer": "SNK",
+      "file": "skys-Sky Soldier (SNK).png",
+      "asset": "skys.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "smar",
+      "name": "Super Mario Bros 3",
+      "manufacturer": "Nintendo",
+      "file": "smar-Super Mario Bros 3 (Nintendo).png",
+      "asset": "smar.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "snow",
+      "name": "Snow Bros",
+      "manufacturer": "Toaplan",
+      "file": "snow-Snow Bros (Toaplan).png",
+      "asset": "snow.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "sold",
+      "name": "Soldam",
+      "manufacturer": "Jaleco",
+      "file": "sold-Soldam (Jaleco).png",
+      "asset": "sold.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "solo",
+      "name": "Solomons Key",
+      "manufacturer": "Tecmo",
+      "file": "solo-Solomons Key (Tecmo).png",
+      "asset": "solo.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "sorst",
+      "name": "Sorcer Striker",
+      "manufacturer": "Raizing",
+      "file": "sorst-Sorcer Striker (Raizing).png",
+      "asset": "sorst.png",
+      "width": 760,
+      "height": 24,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "spdr",
+      "name": "Speed Rumbler",
+      "manufacturer": "Capcom",
+      "file": "spdr-Speed Rumbler (Capcom).png",
+      "asset": "spdr.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "spin95",
+      "name": "Space Invaders 95",
+      "manufacturer": "Taito",
+      "file": "spin95-Space Invaders 95 (Taito).png",
+      "asset": "spin95.png",
+      "width": 768,
+      "height": 56,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "ssf2",
+      "name": "Super Street Fighter 2",
+      "manufacturer": "Capcom",
+      "file": "ssf2-Super Street Fighter 2 (Capcom).png",
+      "asset": "ssf2.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "strider",
+      "name": "Strider Hiryu",
+      "manufacturer": "Capcom",
+      "file": "strider-Strider Hiryu (Capcom).png",
+      "asset": "strider.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "supgt",
+      "name": "Super GT 24",
+      "manufacturer": "Jaleco",
+      "file": "supgt-Super GT 24 (Jaleco).png",
+      "asset": "supgt.png",
+      "width": 768,
+      "height": 32,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "sworm",
+      "name": "Silk Worm",
+      "manufacturer": "Tecmo",
+      "file": "sworm-Silk Worm (Tecmo).png",
+      "asset": "sworm.png",
+      "width": 760,
+      "height": 40,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    {
+      "id": "takeda",
+      "name": "Takeda Shingen",
+      "manufacturer": "Jaleco",
+      "file": "takeda-Takeda Shingen (Jaleco).png",
+      "asset": "takeda.png",
+      "width": 768,
+      "height": 16,
+      "slotCount": 96,
+      "transparentFromTopLeft": true,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "terra",
+      "name": "Terra Force",
+      "manufacturer": "Nichibutsu",
+      "file": "terra-Terra Force (Nichibutsu).png",
+      "asset": "terra.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "tetris",
+      "name": "Tetris",
+      "manufacturer": "Sega",
+      "file": "tetris-Tetris (Sega).png",
+      "asset": "tetris.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "thdr",
+      "name": "Thunder Dragon",
+      "manufacturer": "NMK",
+      "file": "thdr-Thunder Dragon (NMK).png",
+      "asset": "thdr.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "times",
+      "name": "Time Soldiers",
+      "manufacturer": "ADK",
+      "file": "times-Time Soldiers (ADK).png",
+      "asset": "times.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "tmek",
+      "name": "T-Mek",
+      "manufacturer": "Atari",
+      "file": "tmek-T-Mek (Atari).png",
+      "asset": "tmek.png",
+      "width": 760,
+      "height": 16,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "tp84",
+      "name": "Time Pilot 84",
+      "manufacturer": "Konami",
+      "file": "tp84-Time Pilot 84 (Konami).png",
+      "asset": "tp84.png",
+      "width": 760,
+      "height": 80,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    },
+    {
+      "id": "trs",
+      "name": "Top Ranking Stars",
+      "manufacturer": "Taito",
+      "file": "trs-Top Ranking Stars (Taito).png",
+      "asset": "trs.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "trx",
+      "name": "Truxton",
+      "manufacturer": "Toaplan",
+      "file": "trx-Truxton (Toaplan).png",
+      "asset": "trx.png",
+      "width": 760,
+      "height": 176,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V"
+      ]
+    },
+    {
+      "id": "twin",
+      "name": "Twin Cobra",
+      "manufacturer": "Toaplan",
+      "file": "twin-Twin Cobra (Toaplan).png",
+      "asset": "twin.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "twin2",
+      "name": "Twin Cobra II",
+      "manufacturer": "Taito",
+      "file": "twin2-Twin Cobra II (Taito).png",
+      "asset": "twin2.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "twinb",
+      "name": "Twinbee",
+      "manufacturer": "Konami",
+      "file": "twinB-Twinbee (Konami).png",
+      "asset": "twinb.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "twq",
+      "name": "Twin Qix",
+      "manufacturer": "Taito",
+      "file": "twq-Twin Qix (Taito).png",
+      "asset": "twq.png",
+      "width": 760,
+      "height": 48,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    {
+      "id": "typh",
+      "name": "Typhoon",
+      "manufacturer": "Konami",
+      "file": "typh-Typhoon (Konami).png",
+      "asset": "typh.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "unsq",
+      "name": "UN Squadron",
+      "manufacturer": "Capcom",
+      "file": "unsq-UN Squadron (Capcom).png",
+      "asset": "unsq.png",
+      "width": 760,
+      "height": 56,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    {
+      "id": "vict",
+      "name": "Victory Road",
+      "manufacturer": "SNK",
+      "file": "vict-Victory Road (SNK).png",
+      "asset": "vict.png",
+      "width": 760,
+      "height": 8,
+      "slotCount": 95,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "waku",
+      "name": "Waku Waku 7",
+      "manufacturer": "Sunsoft",
+      "file": "waku-Waku Waku 7 (Sunsoft).png",
+      "asset": "waku.png",
+      "width": 760,
+      "height": 64,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ]
+    },
+    {
+      "id": "wboy",
+      "name": "Wonder Boy",
+      "manufacturer": "Sega",
+      "file": "wboy-Wonder Boy (Sega).png",
+      "asset": "wboy.png",
+      "width": 760,
+      "height": 72,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I"
+      ]
+    },
+    {
+      "id": "wfang",
+      "name": "Wolf Fang",
+      "manufacturer": "Taito",
+      "file": "wfang-Wolf Fang (Taito).png",
+      "asset": "wfang.png",
+      "width": 768,
+      "height": 24,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "wildp",
+      "name": "Wild Pilot",
+      "manufacturer": "Jaleco",
+      "file": "wildp-Wild Pilot (Jaleco).png",
+      "asset": "wildp.png",
+      "width": 768,
+      "height": 32,
+      "slotCount": 96,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "will",
+      "name": "Willow",
+      "manufacturer": "Capcom",
+      "file": "will-Willow (Capcom).png",
+      "asset": "will.png",
+      "width": 760,
+      "height": 96,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    },
+    {
+      "id": "xain",
+      "name": "Solar Warrior",
+      "manufacturer": "Technos",
+      "file": "xain-Solar Warrior (Technos).png",
+      "asset": "xain.png",
+      "width": 760,
+      "height": 32,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "xexex",
+      "name": "Xexex",
+      "manufacturer": "Konami",
+      "file": "xexex-Xexex (Konami).png",
+      "asset": "xexex.png",
+      "width": 760,
+      "height": 88,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K"
+      ]
+    },
+    {
+      "id": "zwing",
+      "name": "Zero Wing",
+      "manufacturer": "Toaplan",
+      "file": "zwing-Zero Wing (Toaplan).png",
+      "asset": "zwing.png",
+      "width": 760,
+      "height": 128,
+      "slotCount": 95,
+      "variants": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "id": "ketsui",
+      "name": "Ketsui",
+      "manufacturer": "Cave",
+      "file": "ketsui-Ketsui (Cave).png",
+      "width": 750,
+      "height": 80,
+      "reason": "Sheet dimensions are not divisible by 8."
+    },
+    {
+      "id": "skyfox",
+      "name": "Sky Fox",
+      "manufacturer": "Nichibutsu",
+      "file": "skyfox-Sky Fox (Nichibutsu).png",
+      "width": 759,
+      "height": 16,
+      "reason": "Sheet dimensions are not divisible by 8."
+    },
+    {
+      "id": "tataka",
+      "name": "Tatakae Big Fighter",
+      "manufacturer": "Nichibutsu",
+      "file": "tataka-Tatakae Big Fighter (Nichibutsu).png",
+      "width": 759,
+      "height": 56,
+      "reason": "Sheet dimensions are not divisible by 8."
+    }
+  ]
+}

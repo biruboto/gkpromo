@@ -30,7 +30,7 @@
 - The selected template is applied after the font library initializes, so its defaults override the literal fallback input values in `promo.html` on first load.
 - All templates set CRT Mode to off but do not change the finishing sliders; CRT settings are selected independently when preparing an export.
 - Exports are PNG and a 15-second 30fps MP4 when the browser supports `MediaRecorder` MP4. The exporter intentionally does not fall back to WebM because iOS saving was the requirement.
-- `SAVE PROJECT` downloads a versioned, pretty-printed JSON project with the `.gkp` extension. Project version 3 stores the active output format and both complete layout profiles, including their font selections, alongside the shared content/settings. `LOAD PROJECT` accepts the current version 3 format. The rich-copy source remains in the established token syntax rather than being converted to Markdown.
+- `SAVE PROJECT` downloads a versioned, pretty-printed JSON project with the `.gkp` extension. Project version 4 stores the active output format and both complete layout profiles, including stable Default/Games font IDs and per-role Games variants, alongside the shared content/settings. `LOAD PROJECT` accepts version 4 and migrates version 3 font names while loading. The rich-copy source remains in the established token syntax rather than being converted to Markdown.
 - The live composer reports enabled text sections that exceed their format field. Overflow warnings do not block export, and preview, PNG, and MP4 continue to use the same composition.
 - The current composer uses a flat palette background and animated stars. No transparency or background gradient is applied.
 - The detail field collapses to its rendered copy height plus an 8-pixel buffer. The body begins 8 pixels below it when shown, or 24 pixels below its position when hidden, and expands to the footer whenever CTA is hidden. With CTA enabled, the body grows to fit up to 10 rendered lines before the CTA is placed beneath it.
@@ -84,7 +84,9 @@
 ## Promo Font Pipeline
 
 - Promo fonts are normalized `.h` bitmap headers, separate from the HUD `.fnt` files.
-- `assets/font-data-h/index.json` maps display names to browser-facing files in `assets/font-data-h/`. `promo/fonts.js` parses the first 768 hexadecimal bytes as 96 printable 8x8 ASCII glyphs (`0x20`-`0x7E`).
+- `assets/font-data-h/index.json` maps display names to browser-facing files in `assets/font-data-h/`. `promo/fonts.js` parses the first 768 hexadecimal bytes as 96 8x8 slots beginning at `0x20`; the text renderer uses printable ASCII through `0x7E`.
+- The Games library is sourced from the PNG sheets in `arcade/`. `arcade/index.json` exposes only sheets whose dimensions align to an 8x8 grid; each 8-pixel-high band is a lettered variant. The generator copies accepted sheets to URL-safe names under `assets/arcade-fonts/`. Games metadata is loaded when its picker tab is opened, and only the selected browser asset is fetched. The renderer preserves source RGBA colors while palette color remains available to stroke, shadow, and underline effects.
+- Games fonts can be selected for every promo text role. Missing characters stay blank and produce a content warning rather than falling back to a visually unrelated font.
 - The custom font picker is rendered in JavaScript. `Reactor` appears only once and is the initial header selection. Favorites are persisted in `localStorage` under `gk-promo-font-favorites`, appear in a Favorites group at the top, and use a fill-only heart state.
 - Up/Down on a focused font trigger steps through the underlying font select, including after favorites change. Preserve that behavior when touching picker code.
 - `assets/fonts/` and `assets/fonts/source-headers/` are source material; `assets/font-data-h/` is the browser-facing catalog.
@@ -100,6 +102,7 @@
 ## Extension Rules
 
 - Add a promo font by placing its normalized `.h` file in `assets/font-data-h/` and adding it to `assets/font-data-h/index.json`.
+- Add a Games font sheet under `arcade/`, then run `node scripts/generate-arcade-font-index.mjs`. Run the same command with `--check` to verify that the committed manifest is current. Sources are rejected rather than cropped or resized when either dimension is not divisible by 8.
 - Add a special glyph by appending a normalized entry to `assets/glyphs/legacy-glyphs.json`; keep IDs stable because document source stores them. Image-backed emoji also need their `8x8` PNG under `assets/images/emoji/`.
 - Preserve `ctx.imageSmoothingEnabled = false`, integer canvas scales, and direct bitmap rendering. Avoid CSS resampling or mixed-resolution render paths.
 - Run `Get-ChildItem promo -Filter *.js | ForEach-Object { node --check $_.FullName }` after JavaScript changes. Do not start a local server or browser automatically; Zed Live Server is the local preview workflow.

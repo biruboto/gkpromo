@@ -76,7 +76,7 @@ export function calculateLandscapeLayout({ width, height, sectionOrder, detailHe
 export function createPromoRenderer({
   context: ctx, canvas, exportContext: exportCtx, width: initialWidth, height: initialHeight, exportScale: initialExportScale,
   controls, colors, logoImages, legacyGlyphs, gameBackgrounds, imageBlock, crtPipeline, contentVisibility, scrollModes,
-  textAlignments, textVerticalAlignments, getBodyBorderStyle, getFonts, getTextScale: textScale, getSectionOrder, getOutputFormat, onOverflowChange, animationState, leaderTabToken
+  textAlignments, textVerticalAlignments, getBodyBorderStyle, getFonts, getTextScale: textScale, getSectionOrder, getOutputFormat, onOverflowChange, onMissingGlyphsChange, animationState, leaderTabToken
 }) {
   let W = initialWidth, H = initialHeight, EXPORT_SCALE = initialExportScale;
   const LAYOUT_TOP_Y = 24, SECTION_GAP = 8;
@@ -103,30 +103,57 @@ export function createPromoRenderer({
   const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
   const LOGO_REFLECTION_LEVELS = [.8, 1, 1.32, 1.6];
   let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455', activeBackgroundColor = '#000000';
+  let missingArcadeGlyphs = new Map();
   function superscriptScale(scale) { return Math.max(1, Math.round(scale / 2)); }
+  function isArcadeFont(font) { return font?.kind === 'arcade'; }
   function glyphIndexFor(character) {
     const codepoint = character.codePointAt(0);
     // Header fonts are ordered directly from printable ASCII space through tilde.
     return codepoint >= 0x20 && codepoint <= 0x7e ? codepoint - 0x20 : 0x1f;
   }
-  function glyph(character, color, font = bodyFont, fontKey = 'body') {
+  function arcadePixelPresent(font, glyphIndex, row, column) {
+    if (!isArcadeFont(font) || glyphIndex < 0 || glyphIndex >= font.slotCount) return false;
+    return font.pixels[(row * font.atlas.width + glyphIndex * 8 + column) * 4 + 3] >= 32;
+  }
+  function fontPixelPresent(font, glyphIndex, row, column) {
+    if (isArcadeFont(font)) return arcadePixelPresent(font, glyphIndex, row, column);
+    return Boolean((font?.[glyphIndex * 8 + row] || 0) & (128 >> column));
+  }
+  function recordMissingArcadeGlyph(font, fontKey, character) {
+    if (!isArcadeFont(font)) return;
+    if (!missingArcadeGlyphs.has(fontKey)) missingArcadeGlyphs.set(fontKey, new Set());
+    missingArcadeGlyphs.get(fontKey).add(character);
+  }
+  function glyph(character, color, font = bodyFont, fontKey = 'body', mode = 'face') {
     const glyphIndex = glyphIndexFor(character);
-    const key = `${fontKey}:${glyphIndex}:${color}`;
+    const key = `${fontKey}:${font?.id || 'default'}:${glyphIndex}:${color}:${mode}`;
     if (glyphCache.has(key)) return glyphCache.get(key);
     const image = document.createElement('canvas'); image.width = image.height = 8;
-    const imageCtx = image.getContext('2d'); imageCtx.fillStyle = color;
-    for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) if ((font?.[glyphIndex * 8 + row] || 0) & (128 >> column)) imageCtx.fillRect(column, row, 1, 1);
+    const imageCtx = image.getContext('2d'); imageCtx.imageSmoothingEnabled = false;
+    if (isArcadeFont(font) && mode === 'face' && glyphIndex < font.slotCount) imageCtx.drawImage(font.atlas, glyphIndex * 8, 0, 8, 8, 0, 0, 8, 8);
+    else {
+      imageCtx.fillStyle = color;
+      for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) if (fontPixelPresent(font, glyphIndex, row, column)) imageCtx.fillRect(column, row, 1, 1);
+    }
     glyphCache.set(key, image); return image;
   }
   function glyphBounds(character, font = bodyFont, fontKey = 'body') {
+    if (isArcadeFont(font) && (character.codePointAt(0) < 0x20 || character.codePointAt(0) > 0x7e)) {
+      recordMissingArcadeGlyph(font, fontKey, character); return null;
+    }
     const glyphIndex = glyphIndexFor(character);
-    const key = `${fontKey}:${glyphIndex}`;
-    if (glyphBoundsCache.has(key)) return glyphBoundsCache.get(key);
+    const key = `${fontKey}:${font?.id || 'default'}:${glyphIndex}`;
+    if (glyphBoundsCache.has(key)) {
+      const cached = glyphBoundsCache.get(key);
+      if (!cached) recordMissingArcadeGlyph(font, fontKey, character);
+      return cached;
+    }
     let left = 8, right = -1, top = 8, bottom = -1;
     for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) {
-      if ((font?.[glyphIndex * 8 + row] || 0) & (128 >> column)) { left = Math.min(left, column); right = Math.max(right, column); top = Math.min(top, row); bottom = Math.max(bottom, row); }
+      if (fontPixelPresent(font, glyphIndex, row, column)) { left = Math.min(left, column); right = Math.max(right, column); top = Math.min(top, row); bottom = Math.max(bottom, row); }
     }
     const bounds = right < 0 ? null : { left, width: right - left + 1, top, bottom };
+    if (!bounds) recordMissingArcadeGlyph(font, fontKey, character);
     glyphBoundsCache.set(key, bounds); return bounds;
   }
   function legacyGlyph(glyphData, color) {
@@ -301,8 +328,9 @@ export function createPromoRenderer({
         ctx.save(); ctx.translate(spinX + spinWidth, drawY); ctx.scale(-1, 1);
         ctx.drawImage(glyphImage, 0, 0, spinWidth, 8 * glyphScale); ctx.restore();
       };
-      const image = glyphLayout.effects.includes('reflect') ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
-      const strokeImage = glyphLayout.effects.includes('stroke') ? glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, activeStrokeColor) : glyph(glyphLayout.character, activeStrokeColor, font, fontKey) : null;
+      const sourceColorFont = glyphLayout.type === 'font' && isArcadeFont(font);
+      const image = glyphLayout.effects.includes('reflect') && !sourceColorFont ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
+      const strokeImage = glyphLayout.effects.includes('stroke') ? glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, activeStrokeColor) : glyph(glyphLayout.character, activeStrokeColor, font, fontKey, 'silhouette') : null;
       if (strokeImage) {
         const strokeThickness = scale;
         for (const offsetY of [-1, 0, 1]) for (const offsetX of [-1, 0, 1]) {
@@ -310,7 +338,7 @@ export function createPromoRenderer({
         }
       }
       if (forceShadow || glyphLayout.effects.includes('shadow')) {
-        const shadowImage = glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, shadowColor) : glyph(glyphLayout.character, shadowColor, font, fontKey);
+        const shadowImage = glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, shadowColor) : glyph(glyphLayout.character, shadowColor, font, fontKey, 'silhouette');
         ctx.save(); ctx.globalAlpha *= SHADOW_ALPHA;
         drawGlyphImage(shadowImage, start + glyphLayout.x + glyphScale, glyphY + glyphScale);
         ctx.restore();
@@ -321,7 +349,7 @@ export function createPromoRenderer({
         const glyphStart = Math.round(start + glyphLayout.x);
         const glyphEnd = glyphStart + glyphLayout.bounds.width * glyphScale;
         if (segment?.run === glyphLayout.underlineRun && segment.y === glyphY && segment.thickness === glyphScale) segment.end = glyphEnd;
-        else underlineSegments.push({ run: glyphLayout.underlineRun, color: glyphColor, start: glyphStart, end: glyphEnd, y: glyphY, thickness: glyphScale });
+        else underlineSegments.push({ run: glyphLayout.underlineRun, color: sourceColorFont ? color : glyphColor, start: glyphStart, end: glyphEnd, y: glyphY, thickness: glyphScale });
       }
     });
     underlineSegments.forEach(segment => {
@@ -435,7 +463,7 @@ export function createPromoRenderer({
     const image = logoImages.pixel;
     if (!image.complete || !image.naturalWidth) return;
     logoPixels.width = image.naturalWidth; logoPixels.height = image.naturalHeight;
-    const logoCtx = logoPixels.getContext('2d'); logoCtx.drawImage(image, 0, 0);
+    const logoCtx = logoPixels.getContext('2d', { willReadFrequently: true }); logoCtx.drawImage(image, 0, 0);
     const imageData = logoCtx.getImageData(0, 0, logoPixels.width, logoPixels.height);
     const reflection = logoReflectionColors(palette.accent);
     const phase = Math.floor(time * 4) % reflection.length;
@@ -455,7 +483,7 @@ export function createPromoRenderer({
     const image = logoImages.classic;
     if (!image.complete || !image.naturalWidth) return;
     classicPixels.width = image.naturalWidth; classicPixels.height = image.naturalHeight;
-    const classicCtx = classicPixels.getContext('2d'); classicCtx.drawImage(image, 0, 0);
+    const classicCtx = classicPixels.getContext('2d', { willReadFrequently: true }); classicCtx.drawImage(image, 0, 0);
     const imageData = classicCtx.getImageData(0, 0, classicPixels.width, classicPixels.height);
     const color = logoReflectionColors(palette.accent)[3];
     for (let index = 0; index < imageData.data.length; index += 4) {
@@ -473,9 +501,10 @@ export function createPromoRenderer({
   function alignmentPoint(x, width, alignment) { return alignment === 'right' ? x + width : alignment === 'center' ? x + width / 2 : x; }
   function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
-  let previousOverflowKey = '';
+  let previousOverflowKey = '', previousMissingGlyphsKey = '';
   function render(now) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
+    missingArcadeGlyphs = new Map();
     const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = palette.background; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
     const format = getOutputFormat(); const isLandscape = format.id === 'landscape'; const sectionOrder = getSectionOrder();
     ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
@@ -636,7 +665,10 @@ export function createPromoRenderer({
     if (controls.boundaries.checked) drawTextBoundaries(boundaries, palette);
     const overflowSections = [...overflow].sort(); const overflowKey = overflowSections.join(',');
     if (overflowKey !== previousOverflowKey) { previousOverflowKey = overflowKey; onOverflowChange?.(overflowSections); }
-    return { overflowSections };
+    const missingGlyphs = [...missingArcadeGlyphs].map(([section, characters]) => ({ section, characters: [...characters].sort() }));
+    const missingGlyphsKey = JSON.stringify(missingGlyphs);
+    if (missingGlyphsKey !== previousMissingGlyphsKey) { previousMissingGlyphsKey = missingGlyphsKey; onMissingGlyphsChange?.(missingGlyphs); }
+    return { overflowSections, missingGlyphs };
   }
   function resize(format) {
     W = format.logicalWidth; H = format.logicalHeight; EXPORT_SCALE = format.exportScale;

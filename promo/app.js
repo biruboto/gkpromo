@@ -1,11 +1,11 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=261';
-import { createFontManager } from './fonts.js?v=261';
-import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=261';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=261';
-import { createMonochromeImageBlock } from './image-block.js?v=261';
-import { createPromoRenderer } from './renderer.js?v=261';
-import { createRichTextEditor } from './rich-text-editor.js?v=261';
-import { populateTemplateSelect, templates } from './templates.js?v=261';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=264';
+import { createFontManager } from './fonts.js?v=264';
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=264';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=264';
+import { createMonochromeImageBlock } from './image-block.js?v=264';
+import { createPromoRenderer } from './renderer.js?v=264';
+import { createRichTextEditor } from './rich-text-editor.js?v=264';
+import { populateTemplateSelect, templates } from './templates.js?v=264';
 
 let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
 const initialFormat = outputFormat(activeOutputFormatId);
@@ -36,7 +36,7 @@ const SCALE_STEPS = [1, 2, 4];
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const BODY_BORDER_GLYPHS = { square: 'petscii-upper-70', rounded: 'petscii-upper-55' };
 const PROJECT_FORMAT = 'gk-promo-project';
-const PROJECT_VERSION = 3;
+const PROJECT_VERSION = 4;
 const PROJECT_FONT_CONTROLS = ['font', 'headerFont', 'detailFont', 'ctaFont', 'footerFont'];
 const FONT_TARGETS = { font: 'body', headerFont: 'header', detailFont: 'detail', ctaFont: 'cta', footerFont: 'footer' };
 const PROJECT_SCALE_CONTROLS = ['headerScale', 'detailScale', 'bodyScale', 'ctaScale', 'footerScale'];
@@ -165,7 +165,7 @@ function syncImageControls() {
 }
 populateTemplateSelect(controls.template);
 const legacyGlyphs = new Map();
-const { loadFont, populateFonts, loadSelectedFont, renderFontPickers } = createFontManager({
+const { getFontSetting, loadFont, populateFonts, loadSelectedFont, prepareProjectFonts, renderFontPickers, selectFontSettings, validateFontSetting } = createFontManager({
   controls,
   onFontChange: () => promoRenderer.clearFontCaches(),
   onFontLoaded: (target, font) => {
@@ -188,13 +188,21 @@ const imageBlock = createMonochromeImageBlock({
     controls.imageAutoThreshold.disabled = !imageBlock.hasImage();
   }
 });
+const contentWarnings = { overflow: [], missingGlyphs: [] };
+function syncContentWarnings() {
+  const warnings = [];
+  if (contentWarnings.overflow.length) warnings.push(`${contentWarnings.overflow.map(section => section.toUpperCase()).join(', ')} DOES NOT FULLY FIT`);
+  contentWarnings.missingGlyphs.forEach(({ section, characters }) => warnings.push(`${section.toUpperCase()} FONT IS MISSING ${characters.join(' ')}`));
+  controls.overflowStatus.textContent = warnings.length ? `CONTENT WARNING: ${warnings.join(' / ')}` : '';
+}
 const promoRenderer = createPromoRenderer({
   context: ctx, canvas, exportContext: exportCtx, width: initialFormat.logicalWidth, height: initialFormat.logicalHeight, exportScale: initialFormat.exportScale,
   controls, colors, logoImages, legacyGlyphs, gameBackgrounds, imageBlock, crtPipeline, contentVisibility, scrollModes,
   textAlignments, textVerticalAlignments, getBodyBorderStyle: () => bodyBorderStyle,
   getFonts: () => ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont }),
   getTextScale: textScale, getSectionOrder: () => sectionOrder, getOutputFormat: () => outputFormat(activeOutputFormatId),
-  onOverflowChange: sections => { controls.overflowStatus.textContent = sections.length ? `CONTENT WARNING: ${sections.map(section => section.toUpperCase()).join(', ')} DOES NOT FULLY FIT` : ''; },
+  onOverflowChange: sections => { contentWarnings.overflow = sections; syncContentWarnings(); },
+  onMissingGlyphsChange: missingGlyphs => { contentWarnings.missingGlyphs = missingGlyphs; syncContentWarnings(); },
   animationState, leaderTabToken: LEADER_TAB_TOKEN
 });
 const rightDock = document.querySelector('.right-dock');
@@ -289,7 +297,7 @@ syncSectionOrder();
 function captureLayoutProfile() {
   return {
     sectionOrder: [...sectionOrder],
-    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, selectedFontName(controlName)])),
+    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, getFontSetting(controlName)])),
     scales: Object.fromEntries(PROJECT_SCALE_CONTROLS.map(controlName => [controlName, controls[controlName].value])),
     alignments: { ...textAlignments },
     verticalAlignments: { ...textVerticalAlignments },
@@ -593,7 +601,7 @@ function projectLayoutProfile(value, label) {
   PROJECT_SCALE_CONTROLS.forEach(controlName => { validatedScales[controlName] = projectChoice(scales[controlName], ['0', '1', '2'], `${label} ${controlName}`); });
   return {
     sectionOrder: projectSectionOrder(profile.sectionOrder),
-    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, projectChoice(fonts[controlName], [...controls[controlName].options].map(option => option.textContent), `${label} ${controlName}`)])),
+    fonts: Object.fromEntries(PROJECT_FONT_CONTROLS.map(controlName => [controlName, validateFontSetting(fonts[controlName], `${label} ${controlName}`)])),
     scales: validatedScales,
     alignments: {
       header: projectChoice(alignments.header, ['left', 'center', 'right'], `${label} header alignment`), detail: projectChoice(alignments.detail, ['left', 'center', 'right'], `${label} detail alignment`),
@@ -607,14 +615,8 @@ function projectLayoutProfile(value, label) {
     imageScale: projectInteger(profile.imageScale, 20, 100, `${label} image display width`)
   };
 }
-function selectedFontName(controlName) {
-  return controls[controlName].selectedOptions[0]?.textContent || '';
-}
 function selectProfileFonts(fonts) {
-  PROJECT_FONT_CONTROLS.forEach(controlName => {
-    const option = [...controls[controlName].options].find(item => item.textContent === fonts[controlName]);
-    if (option) controls[controlName].value = option.value;
-  });
+  selectFontSettings(fonts);
 }
 function applyProfileFonts(fonts) {
   selectProfileFonts(fonts);
@@ -665,7 +667,7 @@ function createProject() {
 function validateProject(value) {
   const project = projectRecord(value, 'Project');
   if (project.format !== PROJECT_FORMAT) throw new Error('This is not a GK Promo project file.');
-  if (project.version !== PROJECT_VERSION) throw new Error(`Project version ${project.version ?? 'unknown'} is not supported.`);
+  if (![3, PROJECT_VERSION].includes(project.version)) throw new Error(`Project version ${project.version ?? 'unknown'} is not supported.`);
   const copy = projectRecord(project.copy, 'Project copy');
   const settings = projectRecord(project.settings, 'Project settings');
   const crt = projectRecord(settings.crt, 'CRT settings');
@@ -717,6 +719,7 @@ function validateProject(value) {
   };
 }
 async function applyProject(project) {
+  await prepareProjectFonts(project);
   const { copy, settings } = validateProject(project);
   controls.theme.value = settings.theme; controls.gameStyle.value = settings.gameStyle; controls.model.value = settings.model; controls.modelEdgeAngle.value = settings.modelEdgeAngle; controls.modelDetail.value = settings.modelDetail; controls.modelOpacity.value = settings.modelOpacity; activeModelSettings = readModelSettings(); syncModelSettings(); controls.logo.value = settings.logo;
   syncModelField();
