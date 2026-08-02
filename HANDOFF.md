@@ -2,9 +2,10 @@
 
 ## Repository and Preview
 
-- `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, orchestrated by `promo/app.js`. `sequence.html` is the separate 4:5 staged-animation workspace, orchestrated by `sequence/app.js`.
+- `hud.html` is the interactive GK HUD. `promo.html` is the active GK Promo Composer, orchestrated by `promo/app.js`. `sequence.html` is the separate 4:5 staged-animation workspace, orchestrated by `sequence/app.js`; its `System HUD` backdrop ports the HUD's Three.js voxel ship, starfield, logo treatment, bitmap frame, and systems readout into portrait, using the lab's global CRT preview/export pipeline.
 - Sequence Lab includes a Three.js `Wireframe Cabinet` backdrop: a no-art, low-poly arcade cabinet built from the 26in W x 30in D x 73in reference silhouette, with only cabinet, control-deck, monitor, marquee, and coin-door linework.
 - `cabinet.html` is the dedicated tuning page for the shared wireframe models. It provides rotation, view, line color, and opacity controls without the sequence UI, and lets the user switch between `models/asteroids.3ds` and `models/ironman.3ds`. Imported meshes are converted into linework at runtime; the procedural cabinet is the fallback if the initial asset cannot load.
+- `models/gk-logo-extrusion.glb` is the pixel-extruded Ground Kontrol wordmark used by Promo's `Ground Kontrol extrusion` model option. `models/gk-hud-ship.glb` is the pixel-extruded source silhouette of the standalone HUD ship, used by Promo's `Ground Kontrol HUD ship` option. Regenerate them with `node scripts/generate-gk-logo-extrusion.mjs logo` and `node scripts/generate-gk-logo-extrusion.mjs ship`, respectively. The shared wireframe loader supports `normalization: 'max'` for the wide wordmark, which centers it vertically; cabinet assets continue to use height normalization.
 - Preview with Zed Live Server from the repository root. Both active pages fetch local assets and must be served over HTTP.
 - There is no build step. The promo page uses Lucide from its CDN; the HUD imports Three.js from jsDelivr.
 - When editing the promo JavaScript, advance the shared cache-busting query in `promo.html` and the imports at the top of `promo/app.js` (`v=255` at this handoff).

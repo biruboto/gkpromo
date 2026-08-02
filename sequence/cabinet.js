@@ -1,4 +1,4 @@
-import { createWireframeCabinet } from './cabinet-wireframe.js?v=26';
+import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
 
 const INTERNAL_W = 180, INTERNAL_H = 225, PREVIEW_W = 540, PREVIEW_H = 675;
 const sources = {

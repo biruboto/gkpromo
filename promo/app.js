@@ -1,11 +1,11 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=257';
-import { createFontManager } from './fonts.js?v=257';
-import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=257';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=257';
-import { createMonochromeImageBlock } from './image-block.js?v=257';
-import { createPromoRenderer } from './renderer.js?v=257';
-import { createRichTextEditor } from './rich-text-editor.js?v=257';
-import { populateTemplateSelect, templates } from './templates.js?v=257';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=261';
+import { createFontManager } from './fonts.js?v=261';
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=261';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=261';
+import { createMonochromeImageBlock } from './image-block.js?v=261';
+import { createPromoRenderer } from './renderer.js?v=261';
+import { createRichTextEditor } from './rich-text-editor.js?v=261';
+import { populateTemplateSelect, templates } from './templates.js?v=261';
 
 let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
 const initialFormat = outputFormat(activeOutputFormatId);

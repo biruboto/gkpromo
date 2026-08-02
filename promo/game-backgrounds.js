@@ -1,9 +1,11 @@
-import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=27';
+import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=29';
 
 export const MODEL_SOURCES = {
   asteroids: { label: 'Asteroids upright', url: './models/asteroids.3ds', excludeMeshes: ['Mesh09'], removeDanglers: true },
   elvira: { label: 'Elvira', url: './models/elvira.3ds' },
   ironman: { label: 'Iron Man pinball', url: './models/ironman.3ds' },
+  gklogo: { label: 'Ground Kontrol extrusion', url: './models/gk-logo-extrusion.glb', format: 'glb', normalization: 'max' },
+  gkship: { label: 'GK Ship', url: './models/gk-hud-ship.glb?v=2', format: 'glb' },
   neogeo: { label: 'Neo Geo arcade cabinet', url: './models/neo-geo_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
   pacman: { label: 'Pac-Man arcade cabinet', url: './models/pac-man_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
 };

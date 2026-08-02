@@ -64,10 +64,11 @@ export function createWireframeCabinet({ width, height }) {
     line([point(-7, 5, -15), point(7, 5, -15), point(7, 17, -15), point(-7, 17, -15)], true);
     line([point(0, 31, -18), point(0, 38, -18)]); line([point(-5, 31, -18), point(5, 31, -18)]);
     let sourceLoadId = 0;
-    function installImportedSource(source, loadId, sourceBounds = null) {
+    function installImportedSource(source, loadId, sourceBounds = null, { normalization = 'height' } = {}) {
       source.updateMatrixWorld(true); const bounds = sourceBounds || new THREE.Box3().setFromObject(source); const size = bounds.getSize(new THREE.Vector3());
-      if (!size.y) throw new Error('Imported model has no visible height.');
-      const scale = 2.55 / size.y; source.scale.setScalar(scale); source.position.set(-bounds.getCenter(new THREE.Vector3()).x * scale, -bounds.min.y * scale - 1.27, -bounds.getCenter(new THREE.Vector3()).z * scale);
+      const referenceSize = normalization === 'max' ? Math.max(size.x, size.y, size.z) : size.y;
+      if (!referenceSize) throw new Error('Imported model has no visible size.');
+      const scale = 2.55 / referenceSize; const center = bounds.getCenter(new THREE.Vector3()); source.scale.setScalar(scale); source.position.set(-center.x * scale, normalization === 'max' ? -center.y * scale : -bounds.min.y * scale - 1.27, -center.z * scale);
       if (loadId !== sourceLoadId) return false;
       importedCabinet.clear(); importedCabinet.add(source); importedCabinet.visible = true; proceduralCabinet.visible = false;
       return true;
@@ -107,7 +108,7 @@ export function createWireframeCabinet({ width, height }) {
       if (!source.children.length) throw new Error('The OBJ did not contain usable mesh geometry.');
       return installImportedSource(source, loadId);
     }
-    async function loadGlbSource(url, { targetVertices = 500, edgeThreshold = 1 } = {}) {
+    async function loadGlbSource(url, { targetVertices = 500, edgeThreshold = 1, normalization = 'height' } = {}) {
       const loadId = ++sourceLoadId; const response = await fetch(url); if (!response.ok) throw new Error(`model request returned ${response.status}`);
       const buffer = await response.arrayBuffer(); const parsed = await new Promise((resolve, reject) => new GLTFLoader().parse(buffer, './models/', resolve, reject));
       parsed.scene.updateMatrixWorld(true); const source = new THREE.Group();
@@ -117,7 +118,7 @@ export function createWireframeCabinet({ width, height }) {
         const geometry = removalCount ? new SimplifyModifier().modify(mergedGeometry, removalCount) : mergedGeometry; source.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, edgeThreshold), material));
       });
       if (!source.children.length) throw new Error('The GLB did not contain usable mesh geometry.');
-      return installImportedSource(source, loadId);
+      return installImportedSource(source, loadId, null, { normalization });
     }
     let lastColor = null; let lastOpacity = null;
     function resize(nextWidth, nextHeight) {

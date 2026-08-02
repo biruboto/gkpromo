@@ -212,7 +212,7 @@
       <canvas id="preview" width="540" height="675" aria-label="Animated promotion preview"></canvas>
       <output id="status" class="status" aria-live="polite">Loading renderer...</output>
       <output id="overflowStatus" class="status status-warning" aria-live="polite"></output>
-      <small class="build-version">BUILD V257</small>
+      <small class="build-version">BUILD V261</small>
     </section>
     <aside class="dock right-dock" aria-label="Text and artwork controls">
       <details class="control-section sortable-section" data-composite-section="logo">
@@ -296,14 +296,14 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=257'],
-      ['fonts', './promo/fonts.js?v=257'],
-      ['output formats', './promo/formats.js?v=257'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=257'],
-      ['image block', './promo/image-block.js?v=257'],
-      ['renderer', './promo/renderer.js?v=257'],
-      ['rich text editor', './promo/rich-text-editor.js?v=257'],
-      ['templates', './promo/templates.js?v=257'],
+      ['CRT', './promo/crt.js?v=261'],
+      ['fonts', './promo/fonts.js?v=261'],
+      ['output formats', './promo/formats.js?v=261'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=261'],
+      ['image block', './promo/image-block.js?v=261'],
+      ['renderer', './promo/renderer.js?v=261'],
+      ['rich text editor', './promo/rich-text-editor.js?v=261'],
+      ['templates', './promo/templates.js?v=261'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -313,7 +313,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=257');
+      await import('./promo/app.js?v=261');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');
