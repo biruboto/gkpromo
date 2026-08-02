@@ -328,6 +328,7 @@ function captureLayoutProfile() {
     scales: Object.fromEntries(PROJECT_SCALE_CONTROLS.map(controlName => [controlName, controls[controlName].value])),
     alignments: { ...textAlignments },
     verticalAlignments: { ...textVerticalAlignments },
+    scrollModes: { ...scrollModes },
     imageAlign: controls.imageAlign.value,
     imageScale: Number(controls.imageScale.value)
   };
@@ -342,6 +343,7 @@ function landscapeProfileFromPortrait(portrait) {
     scales: { ...portrait.scales },
     alignments: { ...portrait.alignments, header: 'center', detail: 'center' },
     verticalAlignments: { ...portrait.verticalAlignments, header: 'center', detail: 'top', footer: 'bottom' },
+    scrollModes: { ...portrait.scrollModes },
     imageAlign: portrait.imageAlign,
     imageScale: portrait.imageScale
   };
@@ -353,6 +355,7 @@ function mergeLayoutProfile(base, override = {}) {
     scales: { ...base.scales, ...(override.scales || {}) },
     alignments: { ...base.alignments, ...(override.alignments || {}) },
     verticalAlignments: { ...base.verticalAlignments, ...(override.verticalAlignments || {}) },
+    scrollModes: { ...base.scrollModes, ...(override.scrollModes || {}) },
     imageAlign: override.imageAlign || base.imageAlign,
     imageScale: override.imageScale ?? base.imageScale
   };
@@ -361,6 +364,7 @@ function applyLayoutProfile(profile) {
   if (!profile) return Promise.resolve();
   Object.entries(profile.scales).forEach(([controlName, value]) => { controls[controlName].value = value; syncScaleOutput(controlName); });
   Object.assign(textAlignments, profile.alignments); Object.assign(textVerticalAlignments, profile.verticalAlignments);
+  if (profile.scrollModes) { Object.assign(scrollModes, profile.scrollModes); syncScrollModes(); }
   controls.imageAlign.value = profile.imageAlign; controls.imageScale.value = profile.imageScale; syncImageControls();
   syncSectionOrder(profile.sectionOrder);
   document.querySelectorAll('[data-toolbar]').forEach(toolbar => {
@@ -624,6 +628,7 @@ function projectLayoutProfile(value, label) {
   const scales = projectRecord(profile.scales, `${label} scales`);
   const alignments = projectRecord(profile.alignments, `${label} alignments`);
   const verticalAlignments = projectRecord(profile.verticalAlignments, `${label} vertical alignments`);
+  const profileScrollModes = profile.scrollModes ? projectRecord(profile.scrollModes, `${label} scrolling`) : null;
   const validatedScales = {};
   PROJECT_SCALE_CONTROLS.forEach(controlName => { validatedScales[controlName] = projectChoice(scales[controlName], ['0', '1', '2'], `${label} ${controlName}`); });
   return {
@@ -638,6 +643,10 @@ function projectLayoutProfile(value, label) {
       header: projectChoice(verticalAlignments.header, ['top', 'center', 'bottom'], `${label} header vertical alignment`), detail: projectChoice(verticalAlignments.detail, ['top', 'center', 'bottom'], `${label} detail vertical alignment`),
       body: projectChoice(verticalAlignments.body, ['top', 'center', 'bottom'], `${label} body vertical alignment`), cta: projectChoice(verticalAlignments.cta, ['top', 'center', 'bottom'], `${label} call to action vertical alignment`), footer: projectChoice(verticalAlignments.footer, ['top', 'center', 'bottom'], `${label} footer vertical alignment`)
     },
+    ...(profileScrollModes ? { scrollModes: {
+      detail: projectChoice(profileScrollModes.detail, ['off', 'ticker', 'reveal'], `${label} detail scroll mode`),
+      hours: projectChoice(profileScrollModes.hours, ['off', 'ticker', 'reveal'], `${label} hours scroll mode`)
+    } } : {}),
     imageAlign: projectChoice(profile.imageAlign, ['left', 'center', 'right'], `${label} image alignment`),
     imageScale: projectInteger(profile.imageScale, 20, 100, `${label} image display width`)
   };

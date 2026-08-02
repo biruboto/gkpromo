@@ -19,16 +19,17 @@ export const templates = {
     alignments: { header: 'center', detail: 'center', body: 'center', cta: 'center', footer: 'center' },
     verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'center', footer: 'bottom' },
     visibility: { detail: false, cta: true, hours: true }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'rounded',
+    layouts: { landscape: { fonts: { font: 'Bauhaus' }, verticalAlignments: { body: 'center' }, scrollModes: { hours: 'off' } } },
     fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
   },
   announcement: {
     theme: 'pulse', gameStyle: 'moon-patrol', logo: 'pixel', classic: true, boundaries: false, crt: 'off',
     headline: '[[effect:shadow]]Friday 7/17\n[[effect:blink]]Closed[[/effect]][[/effect]]', detail: 'Until 7PM',
-    body: 'Opening to the\npublic at7PM (21+)',
+    body: '[[effect:stroke]]Opening to the\npublic at7PM (21+)[[/effect]]',
     cta: 'MORE DETAILS SOON', hours: 'ALL AGES NOON-5PM [[petscii-upper-5a]] 21+ 5PM-MIDNIGHT', footer: '[[effect:stroke]]115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR[[/effect]]\n[[effect:stroke]]www.groundkontrol.com[[/effect]]',
-    scales: { headerScale: '2', detailScale: '1', bodyScale: '1', ctaScale: '1', footerScale: '1' },
+    scales: { headerScale: '2', detailScale: '1', bodyScale: '2', ctaScale: '1', footerScale: '1' },
     alignments: { header: 'center', detail: 'center', body: 'center', cta: 'center', footer: 'center' },
-    verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'center', footer: 'bottom' },
+    verticalAlignments: { header: 'center', detail: 'top', body: 'center', cta: 'center', footer: 'bottom' },
     visibility: { detail: true, cta: false, hours: false }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'rounded',
     fonts: { font: 'Beachball', headerFont: 'Reactor', detailFont: 'Reactor', ctaFont: 'ZX Eurostile', footerFont: 'Cinema Bold' }
   },
@@ -42,9 +43,9 @@ export const templates = {
     verticalAlignments: { header: 'center', detail: 'top', body: 'top', cta: 'top', footer: 'bottom' },
     visibility: { detail: false, cta: true, hours: true }, scrollModes: { detail: 'off', hours: 'reveal' }, bodyBorder: 'none',
     sectionOrder: ['logo', 'header', 'detail', 'body', 'cta', 'image', 'footer'],
-    layouts: { landscape: { sectionOrder: ['logo', 'header', 'detail', 'body', 'image', 'cta', 'footer'] } },
+    layouts: { landscape: { sectionOrder: ['logo', 'header', 'detail', 'body', 'image', 'cta', 'footer'], verticalAlignments: { cta: 'bottom' }, scrollModes: { hours: 'off' } } },
     image: { source: './assets/images/tmnt.png', sourceName: 'tmnt.png', resolution: 149, threshold: 77, contrast: 160, dither: 'bayer2', ditherAmount: 67, color: 'highlight', align: 'center', scale: 64, opacity: 100, invert: true },
-    fonts: { font: 'Cabaret Bold', headerFont: 'You Squared', detailFont: 'Reactor', ctaFont: 'Needlecast Heavy', footerFont: 'Cinema Bold' },
+    fonts: { font: 'Carton Bold', headerFont: 'You Squared', detailFont: 'Reactor', ctaFont: 'Needlecast Heavy', footerFont: 'Cinema Bold' },
     crtControls: { curve: 130, rgb: 50, scanline: 40, mask: 50, vignette: 120, drift: 7, bloom: 120, glow: 170 }
   }
 };

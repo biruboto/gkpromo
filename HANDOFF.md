@@ -59,7 +59,7 @@
 ## Promo Defaults: `ANNOUNCEMENT`
 
 - Palette: `Signal Pulse` (`pulse`); game style: Moon Patrol; logo: animated GK Pixel; Classic Arcade subtitle on; text boundaries off; CRT off.
-- Header is `Friday 7/17` and `Closed` on separate lines, with only `Closed` blinking and the complete header carrying the default toggleable drop shadow. The centered detail line reads `Until 7PM`. The top-aligned rounded body reads `Opening to the` and `public at7PM (21+)`. Hours is off; the complete two-line address carries a stroke; CTA is off by default.
+- Header is `Friday 7/17` and `Closed` on separate lines, with only `Closed` blinking and the complete header carrying the default toggleable drop shadow. The centered detail line reads `Until 7PM`. The 4x, vertically centered rounded body reads `Opening to the` and `public at7PM (21+)` with a stroke; these body settings apply to both portrait and landscape. Hours is off; the complete two-line address carries a stroke; CTA is off by default.
 
 ## Text Rendering, Effects, and Editing
 
