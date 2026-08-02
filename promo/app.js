@@ -1,11 +1,11 @@
-import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=264';
-import { createFontManager } from './fonts.js?v=264';
-import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=264';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=264';
-import { createMonochromeImageBlock } from './image-block.js?v=264';
-import { createPromoRenderer } from './renderer.js?v=264';
-import { createRichTextEditor } from './rich-text-editor.js?v=264';
-import { populateTemplateSelect, templates } from './templates.js?v=264';
+import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=265';
+import { createFontManager } from './fonts.js?v=265';
+import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=265';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=265';
+import { createMonochromeImageBlock } from './image-block.js?v=265';
+import { createPromoRenderer } from './renderer.js?v=265';
+import { createRichTextEditor } from './rich-text-editor.js?v=265';
+import { populateTemplateSelect, templates } from './templates.js?v=265';
 
 let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
 const initialFormat = outputFormat(activeOutputFormatId);
@@ -14,8 +14,8 @@ const canvas = document.querySelector('#preview');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 const crtCanvas = document.createElement('canvas');
-crtCanvas.width = initialFormat.exportWidth;
-crtCanvas.height = initialFormat.exportHeight;
+crtCanvas.width = initialFormat.logicalWidth;
+crtCanvas.height = initialFormat.logicalHeight;
 const exportCanvas = document.createElement('canvas');
 exportCanvas.width = initialFormat.exportWidth;
 exportCanvas.height = initialFormat.exportHeight;
@@ -27,7 +27,7 @@ controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
 const animationState = { time: 0 };
 const crtPipeline = createCrtPipeline({
-  sourceCanvas: canvas, outputCanvas: crtCanvas, sourceWidth: initialFormat.logicalWidth, sourceHeight: initialFormat.logicalHeight, outputWidth: initialFormat.exportWidth, outputHeight: initialFormat.exportHeight,
+  sourceCanvas: canvas, outputCanvas: crtCanvas, sourceWidth: initialFormat.logicalWidth, sourceHeight: initialFormat.logicalHeight, outputWidth: initialFormat.logicalWidth, outputHeight: initialFormat.logicalHeight,
   getTreatment: () => controls.crt.value,
   getSetting: name => Number(controls[CRT_CONTROL_IDS[name]].value) / 100,
   getTime: () => animationState.time
@@ -118,6 +118,7 @@ function syncThemePreview() {
 }
 const logoImages = Object.fromEntries(Object.entries({
   pixel: './assets/images/gklogo.png',
+  stacked: './assets/images/gklogostacked.png',
   plain: './assets/images/gklogoplain.png',
   gradient: './assets/images/gklogogradient.png',
   classic: './assets/images/classicarcade.png'
@@ -206,6 +207,12 @@ const promoRenderer = createPromoRenderer({
   animationState, leaderTabToken: LEADER_TAB_TOKEN
 });
 const rightDock = document.querySelector('.right-dock');
+const sectionDropLine = document.createElement('div');
+sectionDropLine.className = 'section-drop-line';
+sectionDropLine.hidden = true;
+sectionDropLine.setAttribute('aria-hidden', 'true');
+rightDock.append(sectionDropLine);
+let sectionDropPlacement = null;
 function normalizeSectionOrder(value) {
   if (!Array.isArray(value) || new Set(value).size !== value.length) return null;
   if (value.length === DEFAULT_SECTION_ORDER.length && value.every(section => DEFAULT_SECTION_ORDER.includes(section))) return [...value];
@@ -236,7 +243,25 @@ function sectionsCanReorder(sectionName, targetName) {
   return activeOutputFormatId !== 'landscape' || landscapeSectionRegion(sectionName) === landscapeSectionRegion(targetName) && ['top', 'content'].includes(landscapeSectionRegion(sectionName));
 }
 function clearSectionDropTargets() {
-  rightDock.querySelectorAll('.drop-before, .drop-after').forEach(section => section.classList.remove('drop-before', 'drop-after'));
+  sectionDropPlacement = null;
+  sectionDropLine.hidden = true;
+}
+function findSectionDropPlacement(dragging, clientY) {
+  const draggingName = dragging.dataset.compositeSection;
+  const eligibleSections = [...rightDock.querySelectorAll('[data-composite-section]')]
+    .filter(section => section !== dragging && sectionsCanReorder(draggingName, section.dataset.compositeSection));
+  if (!eligibleSections.length) return null;
+  const candidates = [{ section: eligibleSections[0], placeAfter: false, y: eligibleSections[0].getBoundingClientRect().top }];
+  eligibleSections.forEach((section, index) => {
+    const rect = section.getBoundingClientRect();
+    if (index < eligibleSections.length - 1) {
+      const nextRect = eligibleSections[index + 1].getBoundingClientRect();
+      candidates.push({ section, placeAfter: true, y: (rect.bottom + nextRect.top) / 2 });
+    } else {
+      candidates.push({ section, placeAfter: true, y: rect.bottom });
+    }
+  });
+  return candidates.reduce((closest, candidate) => Math.abs(candidate.y - clientY) < Math.abs(closest.y - clientY) ? candidate : closest);
 }
 function moveSection(sectionName, targetName, placeAfter) {
   const nextOrder = sectionOrder.filter(name => name !== sectionName);
@@ -255,19 +280,21 @@ rightDock.addEventListener('dragstart', event => {
   event.dataTransfer.setData('text/plain', section.dataset.compositeSection);
 });
 rightDock.addEventListener('dragover', event => {
-  const target = event.target.closest('[data-composite-section]');
   const dragging = rightDock.querySelector('.is-dragging');
-  if (!target || !dragging || target === dragging || !sectionsCanReorder(dragging.dataset.compositeSection, target.dataset.compositeSection)) return;
+  if (!dragging) return;
+  const placement = findSectionDropPlacement(dragging, event.clientY);
+  if (!placement) return;
   event.preventDefault();
-  clearSectionDropTargets();
-  target.classList.add(event.clientY >= target.getBoundingClientRect().top + target.offsetHeight / 2 ? 'drop-after' : 'drop-before');
+  sectionDropPlacement = placement;
+  const dockRect = rightDock.getBoundingClientRect();
+  sectionDropLine.style.top = `${placement.y - dockRect.top + rightDock.scrollTop - 1}px`;
+  sectionDropLine.hidden = false;
 });
 rightDock.addEventListener('drop', event => {
-  const target = event.target.closest('[data-composite-section]');
   const dragging = rightDock.querySelector('.is-dragging');
-  if (!target || !dragging || target === dragging || !sectionsCanReorder(dragging.dataset.compositeSection, target.dataset.compositeSection)) return;
+  if (!dragging || !sectionDropPlacement) return;
   event.preventDefault();
-  moveSection(dragging.dataset.compositeSection, target.dataset.compositeSection, target.classList.contains('drop-after'));
+  moveSection(dragging.dataset.compositeSection, sectionDropPlacement.section.dataset.compositeSection, sectionDropPlacement.placeAfter);
   dragging.classList.remove('is-dragging');
   clearSectionDropTargets();
 });
@@ -313,7 +340,7 @@ function landscapeProfileFromPortrait(portrait) {
     sectionOrder,
     fonts: { ...portrait.fonts },
     scales: { ...portrait.scales },
-    alignments: { ...portrait.alignments, header: 'left', detail: 'left' },
+    alignments: { ...portrait.alignments, header: 'center', detail: 'center' },
     verticalAlignments: { ...portrait.verticalAlignments, header: 'center', detail: 'top', footer: 'bottom' },
     imageAlign: portrait.imageAlign,
     imageScale: portrait.imageScale
@@ -515,7 +542,7 @@ syncCrtControls();
 });
 
 let animationId = null;
-function frame(now) { promoRenderer.render(now); animationId = requestAnimationFrame(frame); }
+function frame(now) { promoRenderer.render(now, { exportFrame: recording }); animationId = requestAnimationFrame(frame); }
 function pauseFrame() { if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; } }
 function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') animationId = requestAnimationFrame(frame); }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pauseFrame(); else resumeFrame(); });
@@ -763,7 +790,7 @@ controls.template.addEventListener('change', () => {
 function populateToolbars() {
   document.querySelectorAll('.toolbar-toggles').forEach(toolbar => {
     const section = toolbar.dataset.toolbar;
-    const buttons = Array.from({ length: 7 }, (_, index) => {
+    const buttons = Array.from({ length: section === 'body' ? 7 : 6 }, (_, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'toolbar-toggle';
       if (index < 3) {
         const alignment = ['top', 'center', 'bottom'][index];
@@ -797,7 +824,7 @@ function populateToolbars() {
   });
   document.querySelectorAll('.character-buttons').forEach(toolbar => {
     const section = toolbar.dataset.characterToolbar;
-    const buttons = Array.from({ length: 7 }, (_, index) => {
+    const buttons = Array.from({ length: 6 }, (_, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'character-slot';
       if (index === 0) {
         button.dataset.characterControl = 'highlight'; button.title = `${section} highlight selected text`;
@@ -835,8 +862,6 @@ function populateToolbars() {
         const iconElement = document.createElement('i'); iconElement.dataset.lucide = 'layers-2'; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = 'S'; button.append(iconElement);
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => applyCharacterEffect(section, 'shadow'));
-      } else {
-        button.title = `${section} character control ${index + 1}`; button.setAttribute('aria-label', `${section} character control ${index + 1}`);
       }
       if (button.dataset.characterControl) button.setAttribute('aria-pressed', 'false');
       return button;
@@ -845,7 +870,7 @@ function populateToolbars() {
   });
   document.querySelectorAll('.animation-buttons').forEach(toolbar => {
     const section = toolbar.dataset.animationToolbar;
-    const buttons = Array.from({ length: 7 }, (_, index) => {
+    const buttons = Array.from({ length: 6 }, (_, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'animation-slot';
       if (index < 6) {
         const animation = ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'][index];
@@ -856,8 +881,6 @@ function populateToolbars() {
         const iconElement = document.createElement('i'); iconElement.dataset.lucide = icon; iconElement.setAttribute('aria-hidden', 'true'); iconElement.textContent = animation[0].toUpperCase(); button.append(iconElement);
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => applyCharacterEffect(section, animation));
-      } else {
-        button.title = `${section} animation control ${index + 1}`; button.setAttribute('aria-label', `${section} animation control ${index + 1}`);
       }
       if (button.dataset.animationControl) button.setAttribute('aria-pressed', 'false');
       return button;
@@ -900,12 +923,14 @@ controls.projectFile.addEventListener('change', async () => {
 });
 controls.png.addEventListener('click', () => {
   const format = outputFormat(activeOutputFormatId);
+  promoRenderer.render(performance.now(), { exportFrame: true, staticText: true });
   exportCanvas.toBlob(blob => { download(blob, `gk-promo-${format.exportWidth}x${format.exportHeight}.png`); controls.status.textContent = `PNG exported at ${format.exportWidth} x ${format.exportHeight}.`; }, 'image/png');
 });
 controls.record.addEventListener('click', () => {
   if (recording || !window.MediaRecorder) return;
   const mimeType = MP4_MIME_TYPES.find(type => MediaRecorder.isTypeSupported(type));
   if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4. Use Safari on iOS or macOS.'; return; }
+  promoRenderer.render(performance.now(), { exportFrame: true });
   const stream = exportCanvas.captureStream(30); const chunks = []; let recorder;
   try { recorder = new MediaRecorder(stream, { mimeType }); } catch (error) { stream.getTracks().forEach(track => track.stop()); controls.status.textContent = `Could not start MP4 recording: ${error.message}`; return; }
   const recordingFormat = outputFormat(activeOutputFormatId);

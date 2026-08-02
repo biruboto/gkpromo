@@ -136,9 +136,15 @@ export function createCrtPipeline({ sourceCanvas, outputCanvas, sourceWidth: ini
     }
     return crtRenderer || null;
   }
-  function renderCrtPiFrame() {
+  function setOutputSize(nextWidth, nextHeight) {
+    if (nextWidth === outputWidth && nextHeight === outputHeight) return;
+    outputWidth = nextWidth; outputHeight = nextHeight;
+    outputCanvas.width = outputWidth; outputCanvas.height = outputHeight;
+  }
+  function renderCrtPiFrame({ outputWidth: nextOutputWidth = sourceWidth, outputHeight: nextOutputHeight = sourceHeight } = {}) {
     const strength = CRT_STRENGTHS[getTreatment()];
     if (!strength) return sourceCanvas;
+    setOutputSize(nextOutputWidth, nextOutputHeight);
     const renderer = createCrtRenderer();
     if (!renderer) return sourceCanvas;
     const { gl, program, texture, buffer, position, source, sourceSize, outputSize } = renderer;
@@ -158,8 +164,7 @@ export function createCrtPipeline({ sourceCanvas, outputCanvas, sourceWidth: ini
   }
   function resize({ sourceWidth: nextSourceWidth, sourceHeight: nextSourceHeight, outputWidth: nextOutputWidth, outputHeight: nextOutputHeight }) {
     sourceWidth = nextSourceWidth; sourceHeight = nextSourceHeight;
-    outputWidth = nextOutputWidth; outputHeight = nextOutputHeight;
-    outputCanvas.width = outputWidth; outputCanvas.height = outputHeight;
+    setOutputSize(nextOutputWidth, nextOutputHeight);
   }
   return { render: renderCrtPiFrame, resize };
 }

@@ -98,9 +98,11 @@ export function createPromoRenderer({
   const legacyGlyphBoundsCache = new Map();
   const reflectedGlyphCache = new Map();
   let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null;
+  let textAnimationDisabled = false;
   const logoPixels = document.createElement('canvas');
   const classicPixels = document.createElement('canvas');
-  const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
+  const STACKED_LOGO_SHIP_WIDTH = 12;
+  const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4, '0,0,0': 0, '102,102,102': 1, '153,153,153': 2, '204,204,204': 3, '255,255,255': 4 };
   const LOGO_REFLECTION_LEVELS = [.8, 1, 1.32, 1.6];
   let activeHighlightColor = '#ffffff', activeStrokeColor = '#000000', activeShadowColor = '#dd4455', activeBackgroundColor = '#000000';
   let missingArcadeGlyphs = new Map();
@@ -190,30 +192,30 @@ export function createPromoRenderer({
     roundedTopLeft: 'petscii-upper-55', roundedTopRight: 'petscii-upper-49', roundedBottomLeft: 'petscii-upper-4a', roundedBottomRight: 'petscii-upper-4b',
     top: 'petscii-upper-43', bottom: 'petscii-upper-43', left: 'petscii-upper-42', right: 'petscii-upper-42'
   };
-  function drawBorderGlyph(glyphId, x, y, color) {
+  function drawBorderGlyph(glyphId, x, y, color, scale = 1) {
     const glyphData = legacyGlyphs.get(glyphId);
     if (!glyphData) return false;
-    ctx.drawImage(legacyGlyph(glyphData, color), x, y, 8, 8);
+    ctx.drawImage(legacyGlyph(glyphData, color), x, y, 8 * scale, 8 * scale);
     return true;
   }
-  function drawBodyBorder(style, x, y, width, height, color) {
+  function drawBodyBorder(style, x, y, width, height, color, scale) {
     if (style === 'none') return;
-    const right = x + width - 8, bottom = y + height - 8;
-    for (let edgeX = x + 8; edgeX < right; edgeX += 8) {
-      drawBorderGlyph(BODY_BORDER_GLYPHS.top, edgeX, y, color);
-      drawBorderGlyph(BODY_BORDER_GLYPHS.bottom, edgeX, bottom, color);
+    const tile = 8 * scale, right = x + width - tile, bottom = y + height - tile;
+    for (let edgeX = x + tile; edgeX < right; edgeX += tile) {
+      drawBorderGlyph(BODY_BORDER_GLYPHS.top, edgeX, y, color, scale);
+      drawBorderGlyph(BODY_BORDER_GLYPHS.bottom, edgeX, bottom, color, scale);
     }
-    for (let edgeY = y + 8; edgeY < bottom; edgeY += 8) {
-      drawBorderGlyph(BODY_BORDER_GLYPHS.left, x, edgeY, color);
-      drawBorderGlyph(BODY_BORDER_GLYPHS.right, right, edgeY, color);
+    for (let edgeY = y + tile; edgeY < bottom; edgeY += tile) {
+      drawBorderGlyph(BODY_BORDER_GLYPHS.left, x, edgeY, color, scale);
+      drawBorderGlyph(BODY_BORDER_GLYPHS.right, right, edgeY, color, scale);
     }
     if (style === 'rounded') {
-      drawBorderGlyph(BODY_BORDER_GLYPHS.roundedTopLeft, x, y, color); drawBorderGlyph(BODY_BORDER_GLYPHS.roundedTopRight, right, y, color);
-      drawBorderGlyph(BODY_BORDER_GLYPHS.roundedBottomLeft, x, bottom, color); drawBorderGlyph(BODY_BORDER_GLYPHS.roundedBottomRight, right, bottom, color);
+      drawBorderGlyph(BODY_BORDER_GLYPHS.roundedTopLeft, x, y, color, scale); drawBorderGlyph(BODY_BORDER_GLYPHS.roundedTopRight, right, y, color, scale);
+      drawBorderGlyph(BODY_BORDER_GLYPHS.roundedBottomLeft, x, bottom, color, scale); drawBorderGlyph(BODY_BORDER_GLYPHS.roundedBottomRight, right, bottom, color, scale);
       return;
     }
-    drawBorderGlyph(BODY_BORDER_GLYPHS.topLeft, x, y, color); drawBorderGlyph(BODY_BORDER_GLYPHS.topRight, right, y, color);
-    drawBorderGlyph(BODY_BORDER_GLYPHS.bottomLeft, x, bottom, color); drawBorderGlyph(BODY_BORDER_GLYPHS.bottomRight, right, bottom, color);
+    drawBorderGlyph(BODY_BORDER_GLYPHS.topLeft, x, y, color, scale); drawBorderGlyph(BODY_BORDER_GLYPHS.topRight, right, y, color, scale);
+    drawBorderGlyph(BODY_BORDER_GLYPHS.bottomLeft, x, bottom, color, scale); drawBorderGlyph(BODY_BORDER_GLYPHS.bottomRight, right, bottom, color, scale);
   }
   function reflectedGlyph(glyphLayout, color, font = bodyFont, fontKey = 'body', phase = 0) {
     const glyphId = glyphLayout.type === 'legacy' ? glyphLayout.glyphData.id : glyphIndexFor(glyphLayout.character);
@@ -309,15 +311,15 @@ export function createPromoRenderer({
     const layout = textLayout(value, scale, font, fontKey, spacing); const start = Math.round(x - (align === 'center' ? layout.width / 2 : align === 'right' ? layout.width : 0));
     const underlineSegments = [];
     layout.glyphs.forEach((glyphLayout, glyphIndex) => {
-      if (glyphLayout.effects.includes('blink') && Math.floor(animationState.time * 2) % 2) return;
+      if (!textAnimationDisabled && glyphLayout.effects.includes('blink') && Math.floor(animationState.time * 2) % 2) return;
       const glyphScale = glyphLayout.scale;
       const sweepStart = (animationState.time * 72) % (layout.width + 8 * scale) - 8 * scale;
-      const isSwept = glyphLayout.effects.includes('sweep') && glyphLayout.x + glyphLayout.bounds.width * glyphScale >= sweepStart && glyphLayout.x <= sweepStart + 8 * scale;
-      const glyphColor = isSwept || glyphLayout.effects.includes('flash') && Math.floor(animationState.time * 2) % 2 ? activeHighlightColor : glyphLayout.effects.includes('highlight') ? activeHighlightColor : color;
-      const waveOffset = glyphLayout.effects.includes('wave') ? Math.round(Math.sin(animationState.time * 8 - glyphIndex * .85) * 2) * glyphScale : 0;
+      const isSwept = !textAnimationDisabled && glyphLayout.effects.includes('sweep') && glyphLayout.x + glyphLayout.bounds.width * glyphScale >= sweepStart && glyphLayout.x <= sweepStart + 8 * scale;
+      const glyphColor = isSwept || !textAnimationDisabled && glyphLayout.effects.includes('flash') && Math.floor(animationState.time * 2) % 2 ? activeHighlightColor : glyphLayout.effects.includes('highlight') ? activeHighlightColor : color;
+      const waveOffset = !textAnimationDisabled && glyphLayout.effects.includes('wave') ? Math.round(Math.sin(animationState.time * 8 - glyphIndex * .85) * 2) * glyphScale : 0;
       const glyphY = y + glyphLayout.yOffset + waveOffset;
       const spinElapsed = ((animationState.time - glyphIndex * SPIN_STAGGER) % SPIN_PERIOD + SPIN_PERIOD) % SPIN_PERIOD;
-      const isSpinning = glyphLayout.effects.includes('spin') && spinElapsed < SPIN_DURATION;
+      const isSpinning = !textAnimationDisabled && glyphLayout.effects.includes('spin') && spinElapsed < SPIN_DURATION;
       const spinAngle = isSpinning ? spinElapsed / SPIN_DURATION * Math.PI * 2 : 0;
       const spinRatio = isSpinning ? .1 + .9 * Math.abs(Math.cos(spinAngle)) : 1;
       const spinReversed = isSpinning && Math.cos(spinAngle) < 0;
@@ -329,7 +331,7 @@ export function createPromoRenderer({
         ctx.drawImage(glyphImage, 0, 0, spinWidth, 8 * glyphScale); ctx.restore();
       };
       const sourceColorFont = glyphLayout.type === 'font' && isArcadeFont(font);
-      const image = glyphLayout.effects.includes('reflect') && !sourceColorFont ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
+      const image = !textAnimationDisabled && glyphLayout.effects.includes('reflect') && !sourceColorFont ? reflectedGlyph(glyphLayout, glyphColor, font, fontKey, Math.floor(animationState.time * 4) % LOGO_REFLECTION_LEVELS.length) : glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, glyphColor) : glyph(glyphLayout.character, glyphColor, font, fontKey);
       const strokeImage = glyphLayout.effects.includes('stroke') ? glyphLayout.type === 'legacy' ? legacyGlyph(glyphLayout.glyphData, activeStrokeColor) : glyph(glyphLayout.character, activeStrokeColor, font, fontKey, 'silhouette') : null;
       if (strokeImage) {
         const strokeThickness = scale;
@@ -377,6 +379,7 @@ export function createPromoRenderer({
   function scrollingText(value, x, width, y, color, shadowColor, scale, font, fontKey, spacing, mode) {
     const line = singleLineValue(value); const lineWidth = textWidth(line, scale, font, fontKey, spacing); const clipHeight = 12 * scale;
     ctx.save(); ctx.beginPath(); ctx.rect(x, y - scale, width, clipHeight); ctx.clip();
+    if (textAnimationDisabled) { styledText('body', line, x, y, color, shadowColor, scale, 'left', font, fontKey, spacing); ctx.restore(); return; }
     if (mode === 'ticker') {
       const tickerLine = line.endsWith(' ') ? line : `${line} `; const loopWidth = textWidth(tickerLine, scale, font, fontKey, spacing); const offset = Math.floor(animationState.time * TICKER_SPEED) % loopWidth;
       for (let drawX = x - offset; drawX < x + width; drawX += loopWidth) styledText('body', tickerLine, drawX, y, color, shadowColor, scale, 'left', font, fontKey, spacing);
@@ -459,8 +462,7 @@ export function createPromoRenderer({
     const value = color.slice(1); const rgb = [Number.parseInt(value.slice(0, 2), 16), Number.parseInt(value.slice(2, 4), 16), Number.parseInt(value.slice(4, 6), 16)];
     return LOGO_REFLECTION_LEVELS.map(level => rgb.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1))));
   }
-  function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2) {
-    const image = logoImages.pixel;
+  function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2, image = logoImages.pixel) {
     if (!image.complete || !image.naturalWidth) return;
     logoPixels.width = image.naturalWidth; logoPixels.height = image.naturalHeight;
     const logoCtx = logoPixels.getContext('2d', { willReadFrequently: true }); logoCtx.drawImage(image, 0, 0);
@@ -473,7 +475,7 @@ export function createPromoRenderer({
       const pixel = index / 4; const x = pixel % logoPixels.width;
       const sourceColor = `${imageData.data[index]},${imageData.data[index + 1]},${imageData.data[index + 2]}`;
       const band = LOGO_COLOR_BANDS[sourceColor] ?? 3;
-      const color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? shadow : reflection[(band - 1 + phase) % reflection.length];
+      const color = image === logoImages.stacked && x < STACKED_LOGO_SHIP_WIDTH && band !== 0 ? [255, 255, 255] : image === logoImages.pixel && x >= 55 && x <= 63 ? reflection[3] : band === 0 ? shadow : reflection[(band - 1 + phase) % reflection.length];
       imageData.data[index] = color[0]; imageData.data[index + 1] = color[1]; imageData.data[index + 2] = color[2];
     }
     logoCtx.putImageData(imageData, 0, 0);
@@ -502,9 +504,10 @@ export function createPromoRenderer({
   function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
   let previousOverflowKey = '', previousMissingGlyphsKey = '';
-  function render(now) {
+  function render(now, { exportFrame = false, staticText = false } = {}) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
     missingArcadeGlyphs = new Map();
+    textAnimationDisabled = staticText;
     const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = palette.background; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
     const format = getOutputFormat(); const isLandscape = format.id === 'landscape'; const sectionOrder = getSectionOrder();
     ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
@@ -547,7 +550,7 @@ export function createPromoRenderer({
     const ctaFieldHeight = showCta ? Math.max(CTA_FIELD_HEIGHT, buttonHeight + CTA_VERTICAL_OFFSET * 2) : 0;
 
     const footerScale = textScale('footerScale'); const footerLineHeight = footerScale * 12; const hoursLineHeight = HOURS_SCALE * 12;
-    const hoursScrolling = scrollModes.hours !== 'off'; const footerTextWidth = isLandscape ? Math.min(600, landscapeSafeArea.width) : PORTRAIT_FOOTER_TEXT_WIDTH;
+    const hoursScrolling = scrollModes.hours !== 'off'; const footerTextWidth = isLandscape ? landscapeSafeArea.width : PORTRAIT_FOOTER_TEXT_WIDTH;
     const allHoursLines = contentVisibility.hours && controls.hours.value.trim() ? hoursScrolling ? [singleLineValue(controls.hours.value)] : wrapWithLineBreaks(controls.hours.value, footerTextWidth, HOURS_SCALE, hoursFont, 'hours', BODY_TEXT_SPACING, Number.MAX_SAFE_INTEGER) : [];
     if (!hoursScrolling && allHoursLines.length > 1) overflow.add('hours');
     const hoursLines = allHoursLines.slice(0, 1);
@@ -592,10 +595,10 @@ export function createPromoRenderer({
       };
     }
 
-    const boundaries = []; const logoCenterX = rectangles.logo.x + rectangles.logo.width / 2; const logoScale = isLandscape ? 2 : 4; const logoY = rectangles.logo.y + (isLandscape ? 10 : 0);
-    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX);
+    const boundaries = []; const logoCenterX = rectangles.logo.x + rectangles.logo.width / 2; const stackedLogo = isLandscape && controls.logo.value === 'pixel'; const logoScale = stackedLogo ? 4 : isLandscape ? 2 : 4; const logoY = rectangles.logo.y + (isLandscape ? 10 : 0);
+    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX, stackedLogo ? logoImages.stacked : logoImages.pixel);
     else drawImageCentered(logoImages[controls.logo.value], logoY, logoScale, logoCenterX);
-    if (controls.classic.checked) drawClassicArcade(rectangles.logo.y + 50, palette, 4, logoCenterX);
+    if (controls.classic.checked) drawClassicArcade(rectangles.logo.y + (stackedLogo ? 70 : isLandscape ? 54 : 50), palette, 4, logoCenterX);
 
     if (imageBitmap && rectangles.image) {
       const imageX = alignedStart(rectangles.image.x, rectangles.image.width, imageWidth, controls.imageAlign.value);
@@ -628,9 +631,10 @@ export function createPromoRenderer({
       const bodyLineStarts = bodyLineWidths.map(width => alignedStart(bodyRect.x, bodyRect.width, width, bodyAlignment));
       const contentLeft = Math.min(...bodyLineStarts), contentRight = Math.max(...bodyLineStarts.map((start, index) => start + bodyLineWidths[index]));
       const contentBottom = bodyY + (bodyLines.length - 1) * bodyLineHeight + bodyScale * 10;
-      const borderX = Math.floor((contentLeft - 16) / 8) * 8, borderY = Math.floor((bodyY - 16) / 8) * 8;
-      const borderRight = Math.ceil((contentRight + 16) / 8) * 8, borderBottom = Math.ceil((contentBottom + 16) / 8) * 8;
-      drawBodyBorder(getBodyBorderStyle(), borderX, borderY, borderRight - borderX, borderBottom - borderY, palette.accent);
+      const borderTile = 8 * bodyScale, borderPadding = borderTile;
+      const borderX = Math.floor((contentLeft - borderPadding) / borderTile) * borderTile, borderY = Math.floor((bodyY - borderPadding) / borderTile) * borderTile;
+      const borderRight = Math.ceil((contentRight + borderPadding) / borderTile) * borderTile, borderBottom = Math.ceil((contentBottom + borderPadding) / borderTile) * borderTile;
+      drawBodyBorder(getBodyBorderStyle(), borderX, borderY, borderRight - borderX, borderBottom - borderY, palette.accent, bodyScale);
     }
     bodyLines.forEach((line, index) => {
       const lineY = bodyY + index * bodyLineHeight;
@@ -657,11 +661,13 @@ export function createPromoRenderer({
       else styledText('body', line, footerTextCenter, lineY, palette.text, palette.shadow, HOURS_SCALE, 'center', hoursFont, 'hours');
     });
     footerLines.forEach((line, index) => styledText('body', line, footerTextCenter, footerY + hoursLines.length * hoursLineHeight + hoursGap + index * footerLineHeight, palette.accent, palette.shadow, footerScale, 'center', footerFont, 'footer'));
-    boundaries.push(rectangles.footer);
+    boundaries.push({ x: footerViewportX, y: rectangles.footer.y, width: footerViewportWidth, height: rectangles.footer.height });
 
-    const finalFrame = crtPipeline.render();
+    const outputWidth = exportFrame ? W * EXPORT_SCALE : W;
+    const outputHeight = exportFrame ? H * EXPORT_SCALE : H;
+    const finalFrame = crtPipeline.render({ outputWidth, outputHeight });
+    if (exportFrame) exportCtx.drawImage(finalFrame, 0, 0, outputWidth, outputHeight);
     if (finalFrame !== canvas) ctx.drawImage(finalFrame, 0, 0, W, H);
-    exportCtx.drawImage(finalFrame, 0, 0, W * EXPORT_SCALE, H * EXPORT_SCALE);
     if (controls.boundaries.checked) drawTextBoundaries(boundaries, palette);
     const overflowSections = [...overflow].sort(); const overflowKey = overflowSections.join(',');
     if (overflowKey !== previousOverflowKey) { previousOverflowKey = overflowKey; onOverflowChange?.(overflowSections); }
@@ -675,7 +681,7 @@ export function createPromoRenderer({
     canvas.width = W; canvas.height = H; ctx.imageSmoothingEnabled = false;
     exportCtx.canvas.width = format.exportWidth; exportCtx.canvas.height = format.exportHeight; exportCtx.imageSmoothingEnabled = false;
     gameBackgrounds.resize(W, H);
-    crtPipeline.resize({ sourceWidth: W, sourceHeight: H, outputWidth: format.exportWidth, outputHeight: format.exportHeight });
+    crtPipeline.resize({ sourceWidth: W, sourceHeight: H, outputWidth: W, outputHeight: H });
   }
   function clearFontCaches() { glyphCache.clear(); glyphBoundsCache.clear(); }
   function drawLegacyGlyphPreview(canvasElement, glyphData, color) {

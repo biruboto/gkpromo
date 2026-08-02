@@ -22,7 +22,7 @@
     .build-version { color: var(--muted); font-size: 9px; }
     .dock { min-width: 0; height: 100vh; padding: 24px 18px; overflow-y: auto; display: grid; align-content: start; gap: 6px; background: #05080d; }
     .left-dock { border-right: 1px solid var(--line); }
-    .right-dock { border-left: 1px solid var(--line); }
+    .right-dock { position: relative; border-left: 1px solid var(--line); }
     h1 { margin: 0; line-height: 0; } .composer-title { display: block; max-width: 100%; height: 32px; image-rendering: pixelated; } .eyebrow { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
     fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 5px; } label, legend { padding: 0; color: var(--muted); font-size: 10px; }
     input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 3px; padding: 7px 8px; background: var(--panel); color: var(--ink); font: inherit; }
@@ -30,7 +30,7 @@
     textarea { min-height: 68px; resize: vertical; } input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
     .two-up, .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; } .actions { gap: 6px; }
     .range-label { display: flex; justify-content: space-between; } .range-label output { color: var(--ink); }
-    .field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .field-heading > input { min-width: 0; } .field-heading button { min-height: 22px; padding: 2px 7px; font-size: 10px; }
+    .field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .field-heading > input { min-width: 0; } .field-heading button { min-height: 22px; padding: 1px 5px; font-size: 10px; }
     .control-section { position: relative; border-top: 1px solid var(--line); }
     .control-section summary { min-height: 31px; display: flex; align-items: center; gap: 8px; color: var(--ink); cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .04em; list-style: none; }
     .control-section summary::-webkit-details-marker { display: none; }
@@ -45,9 +45,8 @@
     .section-grip svg { width: 14px; height: 14px; }
     .sortable-section[open] .section-grip { color: var(--accent); }
     .sortable-section.is-dragging { opacity: .4; }
-    .sortable-section.drop-before::before, .sortable-section.drop-after::after { content: ''; position: absolute; z-index: 2; left: 0; right: 0; height: 2px; pointer-events: none; background: var(--accent); box-shadow: 0 0 8px #00ddffaa; }
-    .sortable-section.drop-before::before { top: -1px; }
-    .sortable-section.drop-after::after { bottom: -1px; }
+    .section-drop-line { position: absolute; z-index: 3; left: 0; right: 0; height: 2px; pointer-events: none; background: var(--accent); box-shadow: 0 0 8px #00ddffaa; }
+    .section-drop-line[hidden] { display: none; }
     .section-body { padding: 0 0 9px; display: grid; gap: 8px; }
     .text-section { gap: 6px; }
     .footer-group { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
@@ -97,7 +96,7 @@
     .font-picker-empty { display: block; padding: 10px 8px; color: var(--muted); font-size: 10px; }
     .scroll-field { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 7px; }
     .scroll-mode { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-    .scroll-mode button { min-height: 26px; padding: 0 4px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--muted); font-size: 9px; }
+    .scroll-mode button { min-height: 26px; padding: 0 3px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--muted); font-size: 9px; }
     .scroll-mode button:last-child { border-right: 0; }
     .scroll-mode button:hover { background: #102031; border-color: var(--line); }
     .scroll-mode button[aria-pressed="true"] { background: #003948; color: var(--ink); }
@@ -108,14 +107,15 @@
     .scale-toggle button:hover { background: #102031; border-color: var(--line); }
     .scale-toggle button[aria-pressed="true"] { background: #003948; color: var(--ink); }
     .format-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-    .format-toggle button { min-height: 30px; padding: 0 8px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--muted); font-size: 10px; }
+    .format-toggle button { min-height: 30px; padding: 0 6px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--muted); font-size: 10px; }
     .format-toggle button:last-child { border-right: 0; }
     .format-toggle button:hover { background: #102031; border-color: var(--line); }
     .format-toggle button[aria-pressed="true"] { background: #003948; color: var(--ink); }
     .control-toolbar { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 3px; }
     .toolbar-label { min-height: 30px; display: grid; place-items: center; color: var(--muted); }
     .toolbar-label svg { width: 14px; height: 14px; }
-    .toolbar-toggles, .character-buttons, .animation-buttons { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .toolbar-toggles, .character-buttons, .animation-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+    .toolbar-toggles[data-toolbar="body"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .border-buttons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
     .toolbar-toggle, .character-slot, .animation-slot, .border-option { min-width: 0; min-height: 30px; padding: 0; color: var(--muted); font-size: 10px; }
     .toolbar-toggle[aria-pressed="true"] { color: var(--ink); }
@@ -127,7 +127,7 @@
     .toggle-field input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
     .theme-row { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 7px; align-items: end; }
     .image-url-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; }
-    .image-url-row button { min-height: 31px; padding: 0 10px; }
+    .image-url-row button { min-height: 31px; padding: 0 7px; }
     .palette-preview { min-height: 31px; padding: 4px; display: grid; grid-template-columns: repeat(6, 9px); gap: 2px; align-items: center; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
     .palette-swatch { width: 9px; height: 17px; border: 1px solid #ffffff33; }
     .source-field { display: none; }
@@ -157,7 +157,7 @@
     .editor-effect-wave { display: inline-block; animation: editor-wave .5s steps(2, end) infinite; }
     .editor-effect-sweep { animation: editor-sweep 1s steps(1, end) infinite; }
     .editor-effect-spin { display: inline-block; transform-origin: center; animation: editor-spin 6.4s steps(4, end) infinite; }
-    button { min-height: 32px; border: 1px solid #3d5974; border-radius: 3px; background: #102031; color: var(--ink); cursor: pointer; font: inherit; }
+    button { min-height: 28px; padding: 1px 5px; border: 1px solid #3d5974; border-radius: 3px; background: #102031; color: var(--ink); cursor: pointer; font: inherit; }
     button:hover { background: #17304a; border-color: var(--accent); } button.primary, button[aria-pressed="true"] { border-color: var(--accent); background: #003948; }
     @keyframes image-clear-confirm { 50% { background: #5b430d; border-color: #ffdf4d; color: #ffdf4d; } }
     #imageClear.is-confirming { border-color: #ffdf4d; color: #ffdf4d; animation: image-clear-confirm .28s steps(2, end) 2; }
@@ -226,7 +226,7 @@
       <canvas id="preview" width="540" height="675" aria-label="Animated promotion preview"></canvas>
       <output id="status" class="status" aria-live="polite">Loading renderer...</output>
       <output id="overflowStatus" class="status status-warning" aria-live="polite"></output>
-      <small class="build-version">BUILD V264</small>
+      <small class="build-version">BUILD V265</small>
     </section>
     <aside class="dock right-dock" aria-label="Text and artwork controls">
       <details class="control-section sortable-section" data-composite-section="logo">
@@ -261,6 +261,7 @@
         <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>HEADER</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="headerFont" aria-label="Header font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="headerScale" type="hidden" value="2"><div class="scale-toggle" data-scale-toggle="headerScale" role="group" aria-label="Header text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="false">2x</button><button type="button" data-scale-value="2" aria-pressed="true">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="header"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="header"></div></div></div>
+          <div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="header"></div></div>
           <div id="headerEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Header copy"></div><textarea id="headline" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1">July [[effect:wave]]Free Play[[/effect]] Calendar</textarea>
         </div>
       </details>
@@ -268,6 +269,7 @@
         <summary draggable="true"><span class="section-grip" aria-hidden="true"><i data-lucide="grip-vertical"></i></span><span>DETAIL LINE</span></summary>
         <div class="section-body text-section">
           <div class="text-toolbar"><div class="font-scale-row"><select id="detailFont" aria-label="Detail line font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="detailScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="detailScale" role="group" aria-label="Detail text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Character controls" title="Character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="detail"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Animation controls" title="Animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="detail"></div></div></div>
+          <div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Paragraph controls" title="Paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="detail"></div></div>
           <div class="field-heading"><label class="visually-hidden" for="detailEditor">Detail line copy</label><div id="detailEditor" class="rich-editor inline-rich-editor" contenteditable="true" role="textbox" aria-label="Detail line copy"></div><input id="detail" class="source-field" maxlength="58" value="[[effect:sweep]]Unlimited[[/effect]] Credits on All Games!!"><button id="detailToggle" type="button" aria-pressed="true"></button></div>
           <fieldset class="scroll-field"><label>SCROLL</label><div class="scroll-mode" data-scroll-mode="detail" role="group" aria-label="Detail line scrolling"><button type="button" data-scroll-value="off" aria-pressed="true">OFF</button><button type="button" data-scroll-value="ticker" aria-pressed="false">TICKER</button><button type="button" data-scroll-value="reveal" aria-pressed="false">REVEAL</button></div></fieldset>
         </div>
@@ -300,6 +302,7 @@
           <section class="footer-group" aria-labelledby="address-controls-heading">
             <h2 id="address-controls-heading" class="footer-group-heading">ADDRESS</h2>
             <div class="text-toolbar"><div class="font-scale-row"><select id="footerFont" aria-label="Address font"><option value="Reactor">Reactor</option></select><div class="scale-picker"><input id="footerScale" type="hidden" value="1"><div class="scale-toggle" data-scale-toggle="footerScale" role="group" aria-label="Address text scale"><button type="button" data-scale-value="0" aria-pressed="false">1x</button><button type="button" data-scale-value="1" aria-pressed="true">2x</button><button type="button" data-scale-value="2" aria-pressed="false">4x</button></div></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Address character controls" title="Address character controls"><i data-lucide="type" aria-hidden="true"></i></span><div class="character-buttons" data-character-toolbar="footer"></div></div><div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Address animation controls" title="Address animation controls"><i data-lucide="film" aria-hidden="true"></i></span><div class="animation-buttons" data-animation-toolbar="footer"></div></div></div>
+            <div class="control-toolbar"><span class="toolbar-label" role="img" aria-label="Address paragraph controls" title="Address paragraph controls"><i data-lucide="pilcrow" aria-hidden="true"></i></span><div class="toolbar-toggles" data-toolbar="footer"></div></div>
             <div id="footerEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Address copy"></div><textarea id="footer" class="source-field" maxlength="100" aria-hidden="true" tabindex="-1">115 NW 5[[effect:superscript]]th[[/effect]] Ave Portland, OR
 www.groundkontrol.com</textarea>
           </section>
@@ -310,14 +313,14 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=264'],
-      ['fonts', './promo/fonts.js?v=264'],
-      ['output formats', './promo/formats.js?v=264'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=264'],
-      ['image block', './promo/image-block.js?v=264'],
-      ['renderer', './promo/renderer.js?v=264'],
-      ['rich text editor', './promo/rich-text-editor.js?v=264'],
-      ['templates', './promo/templates.js?v=264'],
+      ['CRT', './promo/crt.js?v=265'],
+      ['fonts', './promo/fonts.js?v=265'],
+      ['output formats', './promo/formats.js?v=265'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=265'],
+      ['image block', './promo/image-block.js?v=265'],
+      ['renderer', './promo/renderer.js?v=265'],
+      ['rich text editor', './promo/rich-text-editor.js?v=265'],
+      ['templates', './promo/templates.js?v=265'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -327,7 +330,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=264');
+      await import('./promo/app.js?v=265');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');
