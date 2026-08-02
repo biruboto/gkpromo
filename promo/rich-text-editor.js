@@ -1,6 +1,8 @@
 export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, getTextScale, getGlyphColor, drawGlyphPreview }) {
   const ATASCII_PICKER_SLOTS = new Set(['0x00', '0x1C', '0x1D', '0x1E', '0x1F', '0x60', '0x7B', '0x7D', '0x7E', '0x7F']);
   const PETSCII_PICKER_SLOTS = new Set(['0x51', '0x56', '0x57', '0x58', '0x5A']);
+  const PICKER_GLYPH_ORDER = ['atascii-00', 'atascii-7B', 'petscii-upper-58', 'petscii-upper-5a', 'atascii-1C', 'atascii-1D', 'atascii-1E', 'atascii-1F', 'atascii-7D', 'atascii-7E', 'atascii-7F', 'atascii-60', 'petscii-upper-51', 'petscii-upper-56', 'petscii-upper-57', 'emoji-smiley', 'emoji-bigsmile', 'emoji-wow', 'emoji-sad', 'emoji-cool', 'emoji-skull', 'emoji-pac', 'emoji-smalldot', 'emoji-ghost'];
+  const PICKER_GLYPH_ORDER_INDEX = new Map(PICKER_GLYPH_ORDER.map((id, index) => [id, index]));
   const LEGACY_UNICODE = {
     'atascii-00': '♥', 'atascii-14': '●', 'atascii-1C': '↑', 'atascii-1D': '↓', 'atascii-1E': '←', 'atascii-1F': '→',
     'atascii-60': '♦', 'atascii-7B': '♠', 'atascii-7D': '◢', 'atascii-7E': '◀', 'atascii-7F': '▶',
@@ -505,7 +507,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     hydrateBodyEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
     const pickerGlyphs = library.glyphs.filter(glyphData => {
       return glyphData.system === 'EMOJI' || glyphData.system === 'ATASCII' && ATASCII_PICKER_SLOTS.has(glyphData.slot) || glyphData.system === 'PETSCII' && PETSCII_PICKER_SLOTS.has(glyphData.slot);
-    });
+    }).sort((first, second) => (PICKER_GLYPH_ORDER_INDEX.get(first.id) ?? Number.MAX_SAFE_INTEGER) - (PICKER_GLYPH_ORDER_INDEX.get(second.id) ?? Number.MAX_SAFE_INTEGER));
     const section = document.createElement('section'); section.className = 'glyph-system';
     const title = document.createElement('span'); title.className = 'glyph-system-title'; title.textContent = 'SPECIAL GLYPHS';
     const grid = document.createElement('div'); grid.className = 'glyph-grid';

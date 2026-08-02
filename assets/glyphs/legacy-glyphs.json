@@ -1665,6 +1665,54 @@
         62,
         30
       ]
+    },
+    {
+      "id": "emoji-pac",
+      "system": "EMOJI",
+      "slot": "pac",
+      "image": "pac.png",
+      "bitmap": [
+        60,
+        126,
+        252,
+        240,
+        240,
+        252,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-wow",
+      "system": "EMOJI",
+      "slot": "wow",
+      "image": "wow.png",
+      "bitmap": [
+        60,
+        126,
+        255,
+        255,
+        255,
+        255,
+        126,
+        60
+      ]
+    },
+    {
+      "id": "emoji-smalldot",
+      "system": "EMOJI",
+      "slot": "smalldot",
+      "image": "smalldot.png",
+      "bitmap": [
+        0,
+        0,
+        0,
+        24,
+        24,
+        0,
+        0,
+        0
+      ]
     }
   ]
 }

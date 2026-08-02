@@ -35,7 +35,7 @@ export function calculateLandscapeLayout({ width, height, sectionOrder, detailHe
   });
   const topBottom = Math.max(marginY + logo.height, topY - gap);
   const footer = { x: safeArea.x, y: height - marginY - footerHeight, width: safeArea.width, height: footerHeight };
-  const contentY = topBottom + gap;
+  const contentY = topBottom + gap * 2;
   const contentBottom = footer.y - gap;
   const contentHeight = Math.max(96, contentBottom - contentY);
   const hasCta = ctaHeight > 0;
