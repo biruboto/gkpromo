@@ -49,7 +49,7 @@
           <fieldset><label for="stageName">LABEL</label><input id="stageName" maxlength="28"></fieldset>
           <fieldset><label for="stageDuration">DURATION (SECONDS)</label><input id="stageDuration" type="number" min="0.4" max="90" step="0.1"></fieldset>
           <fieldset><label for="stageMotion">ENTRANCE</label><select id="stageMotion"><option value="signal">Signal Lock</option><option value="assemble">Assemble</option><option value="type">Typewriter</option><option value="alert">Alert Glitch</option></select></fieldset>
-          <fieldset><label for="stageBackdrop">BACKDROP</label><select id="stageBackdrop"><option value="deep-space">Deep Space</option><option value="grid">Vector Grid</option><option value="scan">Diagnostic Scan</option><option value="cabinet">Wireframe Cabinet</option><option value="boot">Faux Boot Sequence</option><option value="hud">System HUD</option></select></fieldset>
+          <fieldset><label for="stageBackdrop">BACKDROP</label><select id="stageBackdrop"><option value="deep-space">Deep Space</option><option value="grid">Vector Grid</option><option value="scan">Diagnostic Scan</option><option value="cabinet">Wireframe Cabinet</option><option value="boot">Faux Boot Sequence</option><option value="hud">System HUD</option><option value="flight">Flight Run</option></select></fieldset>
           <div class="stage-actions"><button id="moveUp" class="icon-button" type="button" title="Move stage earlier" aria-label="Move stage earlier">&#8593;</button><button id="moveDown" class="icon-button" type="button" title="Move stage later" aria-label="Move stage later">&#8595;</button><button id="duplicateStage" type="button">DUPLICATE</button><button id="deleteStage" class="icon-button" type="button" title="Delete stage" aria-label="Delete stage">&#215;</button></div>
         </div>
       </details>
@@ -95,6 +95,6 @@
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js" } }
   </script>
-  <script type="module" src="./sequence/app.js?v=53"></script>
+  <script type="module" src="./sequence/app.js?v=86"></script>
 </body>
 </html>

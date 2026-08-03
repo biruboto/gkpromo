@@ -1,7 +1,7 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
-import { createBootStage } from './boot-stage.js?v=10';
-import { createHudStage } from './hud-stage.js?v=29';
+import { createBootStage } from './boot-stage.js?v=13';
+import { createHudStage } from './hud-stage.js?v=81';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
 const FONT_FILE = './assets/font-data-h/165.h';
@@ -15,14 +15,15 @@ const exportContext = exportCanvas.getContext('2d'); exportContext.imageSmoothin
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const stages = [
   { id: crypto.randomUUID(), name: 'BOOT SEQUENCE', duration: 14, motion: 'signal', backdrop: 'boot', headline: 'GK OS v.1.59', body: 'MEMCHK', footer: 'INTRFC INTLZ', accent: '#00ddff' },
-  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 44.4, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' }
+  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 26.05, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' },
+  { id: crypto.randomUUID(), name: 'FLIGHT RUN', duration: 29, motion: 'signal', backdrop: 'flight', headline: '', body: '', footer: '', accent: '#00ddff' }
 ];
 const stars = Array.from({ length: 96 }, (_, index) => ({ x: (Math.sin(index * 91.71) * .5 + .5) * W, y: (Math.sin(index * 47.13 + 1) * .5 + .5) * H, depth: .2 + (Math.sin(index * 17.39 + 2) * .5 + .5) }));
-let selectedId = stages[0].id, bitmapFont = null, sequenceTime = 0, lastFrame = performance.now(), playing = true, recording = false;
+let selectedId = stages[0].id, bitmapFont = null, osFont = null, copyrightFont = null, sequenceTime = 0, lastFrame = performance.now(), playing = true, recording = false;
 const crtPipeline = createCrtPipeline({ sourceCanvas, outputCanvas: crtCanvas, sourceWidth: W, sourceHeight: H, outputWidth: EXPORT_W, outputHeight: EXPORT_H, getTreatment: () => controls.crt.value, getSetting: name => Number(controls[CRT_CONTROL_IDS[name]].value) / 100, getTime: () => sequenceTime });
 const cabinetRenderer = createCabinetRenderer();
 const hudStage = createHudStage({ width: W, height: H });
-const bootStage = createBootStage({ width: W, height: H, getFont: () => bitmapFont, backgroundCanvas: hudStage.canvas });
+const bootStage = createBootStage({ width: W, height: H, getFont: () => bitmapFont, getOsFont: () => osFont, getCopyrightFont: () => copyrightFont, backgroundCanvas: hudStage.canvas });
 
 function createCabinetRenderer() {
   return createWireframeCabinet({ width: W, height: H });
@@ -107,7 +108,8 @@ function drawStage(stage, state) {
     if (transitionProgress) hudStage.renderTransition({ elapsed: sequenceTime, progress: transitionProgress }); else hudStage.renderBackground(sequenceTime);
     bootStage.render({ elapsed: state.localTime, duration: stage.duration, transitionProgress }); sourceContext.drawImage(bootStage.canvas, 0, 0); return;
   }
-  if (stage.backdrop === 'hud') { hudStage.render({ elapsed: state.localTime + hudStage.handoffElapsed, duration: stage.duration, starElapsed: sequenceTime }); sourceContext.drawImage(hudStage.canvas, 0, 0); return; }
+  if (stage.backdrop === 'hud') { hudStage.render({ elapsed: state.localTime, duration: stage.duration, starElapsed: sequenceTime }); sourceContext.drawImage(hudStage.canvas, 0, 0); return; }
+  if (stage.backdrop === 'flight') { hudStage.renderFlight({ elapsed: state.localTime, accent: stage.accent }); sourceContext.drawImage(hudStage.canvas, 0, 0); return; }
   const { progress, index, total } = state; const accent = stage.accent; drawBackdrop(stage, state);
   const motionProgress = easeOut(progress * 3.2); let alpha = 1, offsetX = 0, offsetY = 0, headlineReveal = Infinity;
   if (stage.motion === 'signal') { alpha = clamp(progress * 5); offsetX = Math.round((1 - motionProgress) * -80); sourceContext.fillStyle = `${accent}44`; sourceContext.fillRect(24, Math.round(progress * H), W - 48, 3); }
@@ -183,4 +185,4 @@ controls.record.addEventListener('click', () => {
 applyCrtLook('arcade'); syncEditor(); renderStageList();
 if (cabinetRenderer) cabinetRenderer.loadSource('./models/asteroids.3ds', { excludeMeshes: ['Mesh09'], removeDanglers: true }).then(() => { controls.status.textContent = 'Imported cabinet mesh loaded for wireframe stages.'; }).catch(error => { console.warn('Using procedural cabinet:', error); });
 hudStage.ready.catch(error => { console.warn('HUD stage assets could not be loaded:', error); });
-loadFont(FONT_FILE, 'Gemini').then(font => { bitmapFont = font; if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Gemini sequence font loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence font: ${error.message}`; });
+Promise.all([loadFont(FONT_FILE, 'Gemini'), loadFont('./assets/font-data-h/079.h', 'Computing 60s Bold'), loadFont('./assets/font-data-h/282.h', 'Pixie')]).then(([font, computing, pixie]) => { bitmapFont = font; osFont = computing; copyrightFont = pixie; if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Sequence fonts loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence fonts: ${error.message}`; });

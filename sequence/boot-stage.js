@@ -8,6 +8,7 @@ const COLORS = {
 };
 const W = 180, H = 225, SCALE = 3;
 const GLYPH_SIZE = 8, GLYPH_ADVANCE = 9, TEXT_LEADING = 4;
+const OS_COPY = 'GKOS v1.59', COPYRIGHT_COPY = '(C)1987';
 const TEXT_X = 18, OS_LINE_Y = 19, COPYRIGHT_LINE_Y = OS_LINE_Y + GLYPH_SIZE + TEXT_LEADING, UNDERLINE_Y = COPYRIGHT_LINE_Y + GLYPH_SIZE + 2, LOADING_LINE_Y = UNDERLINE_Y + GLYPH_SIZE + 4, READOUT_LINE_Y = LOADING_LINE_Y + GLYPH_SIZE + TEXT_LEADING;
 const BORDER_DURATION = .325;
 const OS_LINE_START = .45;
@@ -49,7 +50,7 @@ const HUD_FRAME = { left: 6, top: 43, right: W - 6, bottom: 171 };
 
 function clamp(value) { return Math.max(0, Math.min(1, value)); }
 
-export function createBootStage({ width, height, getFont, backgroundCanvas }) {
+export function createBootStage({ width, height, getFont, getOsFont = getFont, getCopyrightFont = getFont, backgroundCanvas }) {
   const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
   const context = canvas.getContext('2d'); context.imageSmoothingEnabled = false;
   context.scale(SCALE, SCALE);
@@ -58,8 +59,8 @@ export function createBootStage({ width, height, getFont, backgroundCanvas }) {
     const code = character.codePointAt(0);
     return code >= 0x20 && code <= 0x7e ? code - 0x20 : 0;
   }
-  function bitmapLine(value, x, y, scale, color, align = 'left', reveal = value.length) {
-    const font = getFont(); if (!font) return;
+  function bitmapLine(value, x, y, scale, color, align = 'left', reveal = value.length, font = getFont()) {
+    if (!font) return;
     const visible = [...value].slice(0, reveal); const textWidth = Math.max(0, visible.length * GLYPH_ADVANCE - 1) * scale;
     let cursor = align === 'center' ? Math.round(x - textWidth / 2) : align === 'right' ? x - textWidth : x;
     context.fillStyle = color;
@@ -97,11 +98,11 @@ export function createBootStage({ width, height, getFont, backgroundCanvas }) {
     drawFrame(elapsed, transitionProgress);
 
     const osProgress = clamp((elapsed - OS_LINE_START) / OS_LINE_DURATION);
-    if (osProgress) withAlpha(transitionAlpha(transitionProgress, 0), () => bitmapLine('GK OS v.1.59', TEXT_X, OS_LINE_Y, 1, COLORS.text, 'left', Math.ceil('GK OS v.1.59'.length * osProgress)));
-    if (osProgress) withAlpha(transitionAlpha(transitionProgress, 1), () => bitmapLine('(C)1987', TEXT_X, COPYRIGHT_LINE_Y, 1, COLORS.dim, 'left', Math.ceil('(C)1987'.length * osProgress)));
+    if (osProgress) withAlpha(transitionAlpha(transitionProgress, 0), () => bitmapLine(OS_COPY, TEXT_X, OS_LINE_Y, 1, COLORS.text, 'left', Math.ceil(OS_COPY.length * osProgress), getOsFont()));
+    if (osProgress) withAlpha(transitionAlpha(transitionProgress, 1), () => bitmapLine(COPYRIGHT_COPY, TEXT_X, COPYRIGHT_LINE_Y, 1, COLORS.dim, 'left', Math.ceil(COPYRIGHT_COPY.length * osProgress), getCopyrightFont()));
 
     const underlineProgress = clamp((elapsed - UNDERLINE_START) / UNDERLINE_DURATION);
-    if (underlineProgress) withAlpha(transitionAlpha(transitionProgress, 1), () => { context.fillStyle = COLORS.dim; context.fillRect(TEXT_X, UNDERLINE_Y, Math.round(('(C)1987'.length * GLYPH_ADVANCE - 1) * underlineProgress), 1); });
+    if (underlineProgress) withAlpha(transitionAlpha(transitionProgress, 1), () => { context.fillStyle = COLORS.dim; context.fillRect(TEXT_X, UNDERLINE_Y, Math.round((COPYRIGHT_COPY.length * GLYPH_ADVANCE - 1) * underlineProgress), 1); });
 
     const loadingProgress = clamp((elapsed - LOADING_START) / .2);
     if (loadingProgress && elapsed < INTERFACE_START) {
@@ -130,7 +131,7 @@ export function createBootStage({ width, height, getFont, backgroundCanvas }) {
       if (scanProgress) withAlpha(transitionAlpha(transitionProgress, 4), () => bitmapLine('#'.repeat(Math.ceil(MEMORY_FIELD_CHARACTERS * scanProgress)), MEMORY_FIELD_START, PERIPHERAL_LINE_Y, 1, COLORS.status));
       if (scanProgress >= 1) {
         withAlpha(transitionAlpha(transitionProgress, 5), () => {
-          bitmapLine('CAN BUS', TEXT_X, PERIPHERAL_FOUND_Y, 1, COLORS.accent);
+          bitmapLine('CAN BUS', TEXT_X, PERIPHERAL_FOUND_Y, 1, COLORS.secondary);
           const foundBlinking = elapsed < FOUND_BLINK_END;
           if (!foundBlinking || Math.floor((elapsed - FOUND_START) / FOUND_BLINK_INTERVAL) % 2 === 0) bitmapLine('FOUND', MEMORY_FIELD_RIGHT, PERIPHERAL_FOUND_Y, 1, COLORS.status, 'right');
         });
