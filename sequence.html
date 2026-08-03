@@ -47,15 +47,15 @@
         <summary>STAGE</summary>
         <div class="section-body">
           <fieldset><label for="stageName">LABEL</label><input id="stageName" maxlength="28"></fieldset>
-          <fieldset><label for="stageDuration">DURATION (SECONDS)</label><input id="stageDuration" type="number" min="0.4" max="20" step="0.1"></fieldset>
+          <fieldset><label for="stageDuration">DURATION (SECONDS)</label><input id="stageDuration" type="number" min="0.4" max="90" step="0.1"></fieldset>
           <fieldset><label for="stageMotion">ENTRANCE</label><select id="stageMotion"><option value="signal">Signal Lock</option><option value="assemble">Assemble</option><option value="type">Typewriter</option><option value="alert">Alert Glitch</option></select></fieldset>
-          <fieldset><label for="stageBackdrop">BACKDROP</label><select id="stageBackdrop"><option value="deep-space">Deep Space</option><option value="grid">Vector Grid</option><option value="scan">Diagnostic Scan</option><option value="cabinet">Wireframe Cabinet</option><option value="hud">System HUD</option></select></fieldset>
+          <fieldset><label for="stageBackdrop">BACKDROP</label><select id="stageBackdrop"><option value="deep-space">Deep Space</option><option value="grid">Vector Grid</option><option value="scan">Diagnostic Scan</option><option value="cabinet">Wireframe Cabinet</option><option value="boot">Faux Boot Sequence</option><option value="hud">System HUD</option></select></fieldset>
           <div class="stage-actions"><button id="moveUp" class="icon-button" type="button" title="Move stage earlier" aria-label="Move stage earlier">&#8593;</button><button id="moveDown" class="icon-button" type="button" title="Move stage later" aria-label="Move stage later">&#8595;</button><button id="duplicateStage" type="button">DUPLICATE</button><button id="deleteStage" class="icon-button" type="button" title="Delete stage" aria-label="Delete stage">&#215;</button></div>
         </div>
       </details>
       <details>
         <summary>EXPORT</summary>
-        <div class="section-body"><div class="actions"><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div><p class="hint">Exports use the 1080 x 1350 Instagram frame.</p></div>
+        <div class="section-body"><div class="actions"><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT FULL SEQUENCE MP4</button></div><p class="hint">Exports use the 1080 x 1350 Instagram frame.</p></div>
       </details>
     </aside>
     <section class="preview" aria-label="Sequence preview">
@@ -77,16 +77,16 @@
       <details open>
         <summary>CRT EMULATION</summary>
         <div class="section-body">
-          <fieldset><label for="crtLook">PRESET</label><select id="crtLook"><option value="custom" selected>Custom</option><option value="arcade">Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
-          <fieldset><label for="crt">MODE</label><select id="crt"><option value="off" selected>Off</option><option value="soft">CRT-Pi Soft</option><option value="strong">CRT-Pi Strong</option></select></fieldset>
-          <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve"></output></label><input id="crtCurve" type="range" min="0" max="150" value="100"></fieldset>
-          <fieldset><label class="range-label" for="crtRgb">RGB SEPARATION <output data-crt-output="rgb"></output></label><input id="crtRgb" type="range" min="0" max="100" value="45"></fieldset>
-          <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline"></output></label><input id="crtScanline" type="range" min="0" max="100" value="100"></fieldset>
-          <fieldset><label class="range-label" for="crtMask">APERTURE MASK <output data-crt-output="mask"></output></label><input id="crtMask" type="range" min="0" max="100" value="45"></fieldset>
-          <fieldset><label class="range-label" for="crtVignette">VIGNETTE <output data-crt-output="vignette"></output></label><input id="crtVignette" type="range" min="0" max="200" value="100"></fieldset>
-          <fieldset><label class="range-label" for="crtDrift">SIGNAL DRIFT <output data-crt-output="drift"></output></label><input id="crtDrift" type="range" min="0" max="100" value="0"></fieldset>
-          <fieldset><label class="range-label" for="crtBloom">BLOOM <output data-crt-output="bloom"></output></label><input id="crtBloom" type="range" min="0" max="150" value="100"></fieldset>
-          <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow"></output></label><input id="crtGlow" type="range" min="0" max="200" value="100"></fieldset>
+          <fieldset><label for="crtLook">PRESET</label><select id="crtLook"><option value="custom">Custom</option><option value="arcade" selected>Arcade Cabinet</option><option value="broadcast">Broadcast Monitor</option><option value="tube">Warm Tube</option><option value="chroma">Chroma Shift</option></select></fieldset>
+          <fieldset><label for="crt">MODE</label><select id="crt"><option value="off">Off</option><option value="soft">CRT-Pi Soft</option><option value="strong" selected>CRT-Pi Strong</option></select></fieldset>
+          <fieldset><label class="range-label" for="crtCurve">CURVATURE <output data-crt-output="curve"></output></label><input id="crtCurve" type="range" min="0" max="150" value="130"></fieldset>
+          <fieldset><label class="range-label" for="crtRgb">RGB SEPARATION <output data-crt-output="rgb"></output></label><input id="crtRgb" type="range" min="0" max="100" value="50"></fieldset>
+          <fieldset><label class="range-label" for="crtScanline">SCANLINE DEPTH <output data-crt-output="scanline"></output></label><input id="crtScanline" type="range" min="0" max="100" value="40"></fieldset>
+          <fieldset><label class="range-label" for="crtMask">APERTURE MASK <output data-crt-output="mask"></output></label><input id="crtMask" type="range" min="0" max="100" value="50"></fieldset>
+          <fieldset><label class="range-label" for="crtVignette">VIGNETTE <output data-crt-output="vignette"></output></label><input id="crtVignette" type="range" min="0" max="200" value="120"></fieldset>
+          <fieldset><label class="range-label" for="crtDrift">SIGNAL DRIFT <output data-crt-output="drift"></output></label><input id="crtDrift" type="range" min="0" max="100" value="7"></fieldset>
+          <fieldset><label class="range-label" for="crtBloom">BLOOM <output data-crt-output="bloom"></output></label><input id="crtBloom" type="range" min="0" max="150" value="120"></fieldset>
+          <fieldset><label class="range-label" for="crtGlow">PHOSPHOR GLOW <output data-crt-output="glow"></output></label><input id="crtGlow" type="range" min="0" max="200" value="170"></fieldset>
         </div>
       </details>
       <div class="preset-note">Stages loop as a single sequence. Each stage owns its copy, timing, entrance, backdrop, and accent color.</div>
@@ -95,6 +95,6 @@
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js" } }
   </script>
-  <script type="module" src="./sequence/app.js?v=25"></script>
+  <script type="module" src="./sequence/app.js?v=53"></script>
 </body>
 </html>

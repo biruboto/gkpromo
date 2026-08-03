@@ -1,9 +1,10 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
-import { createHudStage } from './hud-stage.js?v=9';
+import { createBootStage } from './boot-stage.js?v=10';
+import { createHudStage } from './hud-stage.js?v=29';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
-const FONT_FILE = './assets/font-data-h/293.h';
+const FONT_FILE = './assets/font-data-h/165.h';
 const controls = Object.fromEntries(['preview', 'stageList', 'addStage', 'stageName', 'stageDuration', 'stageMotion', 'stageBackdrop', 'moveUp', 'moveDown', 'duplicateStage', 'deleteStage', 'stageHeadline', 'stageBody', 'stageFooter', 'stageAccent', 'stageAccentText', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'scrubber', 'restart', 'playPause', 'sequenceDuration', 'stageReadout', 'timeReadout', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 const previewContext = controls.preview.getContext('2d'); previewContext.imageSmoothingEnabled = false;
 const sourceCanvas = document.createElement('canvas'); sourceCanvas.width = W; sourceCanvas.height = H;
@@ -13,6 +14,7 @@ const exportCanvas = document.createElement('canvas'); exportCanvas.width = EXPO
 const exportContext = exportCanvas.getContext('2d'); exportContext.imageSmoothingEnabled = false;
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const stages = [
+  { id: crypto.randomUUID(), name: 'BOOT SEQUENCE', duration: 14, motion: 'signal', backdrop: 'boot', headline: 'GK OS v.1.59', body: 'MEMCHK', footer: 'INTRFC INTLZ', accent: '#00ddff' },
   { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 44.4, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' }
 ];
 const stars = Array.from({ length: 96 }, (_, index) => ({ x: (Math.sin(index * 91.71) * .5 + .5) * W, y: (Math.sin(index * 47.13 + 1) * .5 + .5) * H, depth: .2 + (Math.sin(index * 17.39 + 2) * .5 + .5) }));
@@ -20,6 +22,7 @@ let selectedId = stages[0].id, bitmapFont = null, sequenceTime = 0, lastFrame = 
 const crtPipeline = createCrtPipeline({ sourceCanvas, outputCanvas: crtCanvas, sourceWidth: W, sourceHeight: H, outputWidth: EXPORT_W, outputHeight: EXPORT_H, getTreatment: () => controls.crt.value, getSetting: name => Number(controls[CRT_CONTROL_IDS[name]].value) / 100, getTime: () => sequenceTime });
 const cabinetRenderer = createCabinetRenderer();
 const hudStage = createHudStage({ width: W, height: H });
+const bootStage = createBootStage({ width: W, height: H, getFont: () => bitmapFont, backgroundCanvas: hudStage.canvas });
 
 function createCabinetRenderer() {
   return createWireframeCabinet({ width: W, height: H });
@@ -48,10 +51,10 @@ function stageState(time) {
 }
 function parseFont(source) {
   const values = source.match(/0x[0-9a-f]{2}/ig) || [];
-  if (values.length < 768) throw new Error('Precinct 90 font data is incomplete.');
+  if (values.length < 768) throw new Error('Gemini font data is incomplete.');
   return Uint8Array.from(values.slice(0, 768), value => Number.parseInt(value.slice(2), 16));
 }
-async function loadFont() { const response = await fetch(FONT_FILE); if (!response.ok) throw new Error(`font request returned ${response.status}`); bitmapFont = parseFont(await response.text()); }
+async function loadFont(file, label) { const response = await fetch(file); if (!response.ok) throw new Error(`${label} font request returned ${response.status}`); return parseFont(await response.text()); }
 function glyphIndex(character) { const code = character.codePointAt(0); return code >= 0x20 && code <= 0x7e ? code - 0x20 : 0; }
 function bitmapLine(text, x, y, scale, color, align = 'left', reveal = text.length) {
   const visible = [...text].slice(0, reveal); const width = Math.max(0, visible.length * 9 - 1) * scale;
@@ -99,7 +102,12 @@ function drawBackdrop(stage, state) {
 }
 function drawStage(stage, state) {
   if (!bitmapFont) return;
-  if (stage.backdrop === 'hud') { hudStage.render({ elapsed: state.localTime }); sourceContext.drawImage(hudStage.canvas, 0, 0); return; }
+  if (stage.backdrop === 'boot') {
+    const transitionProgress = bootStage.transitionProgress(state.localTime);
+    if (transitionProgress) hudStage.renderTransition({ elapsed: sequenceTime, progress: transitionProgress }); else hudStage.renderBackground(sequenceTime);
+    bootStage.render({ elapsed: state.localTime, duration: stage.duration, transitionProgress }); sourceContext.drawImage(bootStage.canvas, 0, 0); return;
+  }
+  if (stage.backdrop === 'hud') { hudStage.render({ elapsed: state.localTime + hudStage.handoffElapsed, duration: stage.duration, starElapsed: sequenceTime }); sourceContext.drawImage(hudStage.canvas, 0, 0); return; }
   const { progress, index, total } = state; const accent = stage.accent; drawBackdrop(stage, state);
   const motionProgress = easeOut(progress * 3.2); let alpha = 1, offsetX = 0, offsetY = 0, headlineReveal = Infinity;
   if (stage.motion === 'signal') { alpha = clamp(progress * 5); offsetX = Math.round((1 - motionProgress) * -80); sourceContext.fillStyle = `${accent}44`; sourceContext.fillRect(24, Math.round(progress * H), W - 48, 3); }
@@ -116,6 +124,7 @@ function drawStage(stage, state) {
   bitmapLine(`SEQUENCE ${total.toFixed(1)} SEC`, 34, 646, 1, '#7d91aa'); bitmapLine(stage.name.toUpperCase(), W - 34, 646, 1, '#7d91aa', 'right'); sourceContext.restore();
 }
 function render() {
+  sourceContext.globalCompositeOperation = 'source-over'; sourceContext.globalAlpha = 1; sourceContext.clearRect(0, 0, W, H);
   const state = stageState(sequenceTime); drawStage(state.stage, state);
   const processedCanvas = crtPipeline.render(); exportContext.clearRect(0, 0, EXPORT_W, EXPORT_H); exportContext.drawImage(processedCanvas, 0, 0, EXPORT_W, EXPORT_H);
   previewContext.clearRect(0, 0, W, H); previewContext.drawImage(exportCanvas, 0, 0, W, H);
@@ -145,7 +154,7 @@ function addStage(stage = null) { const next = stage || { id: crypto.randomUUID(
 function download(blob, name) { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
 ['stageName', 'stageMotion', 'stageBackdrop', 'stageHeadline', 'stageBody', 'stageFooter'].forEach(controlName => controls[controlName].addEventListener('input', () => updateSelected({ stageName: 'name', stageMotion: 'motion', stageBackdrop: 'backdrop', stageHeadline: 'headline', stageBody: 'body', stageFooter: 'footer' }[controlName], controls[controlName].value)));
-controls.stageDuration.addEventListener('input', () => { const duration = Number(controls.stageDuration.value); if (Number.isFinite(duration)) updateSelected('duration', Math.max(.4, Math.min(20, duration))); });
+controls.stageDuration.addEventListener('input', () => { const duration = Number(controls.stageDuration.value); if (Number.isFinite(duration)) updateSelected('duration', Math.max(.4, Math.min(90, duration))); });
 controls.stageAccent.addEventListener('input', () => { updateSelected('accent', controls.stageAccent.value); controls.stageAccentText.value = controls.stageAccent.value; });
 controls.stageAccentText.addEventListener('change', () => { const color = normalizedColor(controls.stageAccentText.value); if (!color) { controls.stageAccentText.value = selectedStage().accent; return; } updateSelected('accent', color); controls.stageAccent.value = color; controls.stageAccentText.value = color; });
 controls.addStage.addEventListener('click', () => addStage());
@@ -158,9 +167,20 @@ controls.playPause.addEventListener('click', () => { playing = !playing; control
 controls.scrubber.addEventListener('input', () => { playing = false; controls.playPause.textContent = '>'; sequenceTime = Number(controls.scrubber.value); });
 controls.crtLook.addEventListener('change', () => applyCrtLook(controls.crtLook.value)); controls.crt.addEventListener('change', () => { controls.crtLook.value = 'custom'; }); Object.values(CRT_CONTROL_IDS).forEach(controlName => controls[controlName].addEventListener('input', () => { controls.crtLook.value = 'custom'; syncCrtControls(); }));
 controls.png.addEventListener('click', () => exportCanvas.toBlob(blob => { download(blob, 'gk-sequence-1080x1350.png'); controls.status.textContent = 'PNG exported at 1080 x 1350.'; }, 'image/png'));
-controls.record.addEventListener('click', () => { if (recording || !window.MediaRecorder) return; const mimeType = MP4_MIME_TYPES.find(type => MediaRecorder.isTypeSupported(type)); if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4.'; return; } const stream = exportCanvas.captureStream(30); const chunks = []; let recorder; try { recorder = new MediaRecorder(stream, { mimeType }); } catch (error) { controls.status.textContent = `Could not start MP4 recording: ${error.message}`; return; } recording = true; controls.record.textContent = 'RECORDING...'; recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); }; recorder.onstop = () => { download(new Blob(chunks, { type: recorder.mimeType || mimeType }), 'gk-sequence-1080x1350.mp4'); stream.getTracks().forEach(track => track.stop()); recording = false; controls.record.textContent = 'EXPORT 15 SEC MP4'; }; recorder.start(); setTimeout(() => recorder.stop(), 15000); });
+controls.record.addEventListener('click', () => {
+  if (recording || !window.MediaRecorder) return;
+  const mimeType = MP4_MIME_TYPES.find(type => MediaRecorder.isTypeSupported(type));
+  if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4.'; return; }
+  const exportDuration = totalDuration(); const wasPlaying = playing; sequenceTime = 0; playing = true;
+  const stream = exportCanvas.captureStream(30); const chunks = []; let recorder;
+  try { recorder = new MediaRecorder(stream, { mimeType }); } catch (error) { playing = wasPlaying; controls.status.textContent = `Could not start MP4 recording: ${error.message}`; return; }
+  recording = true; controls.record.textContent = 'RECORDING FULL SEQUENCE...'; controls.status.textContent = `Recording full sequence (${exportDuration.toFixed(1)} seconds).`;
+  recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+  recorder.onstop = () => { download(new Blob(chunks, { type: recorder.mimeType || mimeType }), 'gk-sequence-1080x1350.mp4'); stream.getTracks().forEach(track => track.stop()); recording = false; playing = wasPlaying; controls.record.textContent = 'EXPORT FULL SEQUENCE MP4'; };
+  recorder.start(); setTimeout(() => recorder.stop(), exportDuration * 1000);
+});
 
-syncCrtControls(); syncEditor(); renderStageList();
+applyCrtLook('arcade'); syncEditor(); renderStageList();
 if (cabinetRenderer) cabinetRenderer.loadSource('./models/asteroids.3ds', { excludeMeshes: ['Mesh09'], removeDanglers: true }).then(() => { controls.status.textContent = 'Imported cabinet mesh loaded for wireframe stages.'; }).catch(error => { console.warn('Using procedural cabinet:', error); });
 hudStage.ready.catch(error => { console.warn('HUD stage assets could not be loaded:', error); });
-loadFont().then(() => { if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Precinct 90 sequence font loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence font: ${error.message}`; });
+loadFont(FONT_FILE, 'Gemini').then(font => { bitmapFont = font; if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Gemini sequence font loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence font: ${error.message}`; });

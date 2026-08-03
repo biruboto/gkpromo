@@ -5,10 +5,14 @@ const SHIP_VIEWPORT = { x: 6, y: 43, width: 168, height: 128 };
 const SHIP_CONTENT_VIEWPORT = { x: 9, y: 46, width: 162, height: 122 };
 const TECH_SOURCE_GLYPH_SIZE = 4, TECH_GLYPH_SIZE = 4, TECH_GLYPH_GAP = 1;
 const COMPUTER_GLYPH_SIZE = 4, COMPUTER_GLYPH_GAP = 1;
+const SYSTEM_STATUS_RIGHT = 104, SYSTEM_BAR_X = 116, SYSTEM_BAR_WIDTH = 50;
 const HUD_TILES = { topLeft: 0x51, horizontal: 0x52, topRight: 0x45, leftVertical: 0x7c, rightVertical: 0x7c, bottomLeft: 0x5a, bottomRight: 0x43 };
-const COLORS = { space: '#0c0a20', shadow: '#020208', wire: '#00ddff', frame: '#4848d0', primary: '#ccccff', secondary: '#88ffee', status: '#ffdd44', dim: '#ff4488', fill: '#00ddff', outline: '#7070ff', callout: '#ff4488' };
+const COLORS = { space: '#0c0a20', shadow: '#020208', wire: '#00ddff', frame: '#4848d0', primary: '#ccccff', secondary: '#88ffee', status: '#ffdd44', dim: '#ff4488', idle: '#707080', fill: '#00ddff', outline: '#7070ff', callout: '#ff4488' };
+const SPINNER_FRAMES = ['|', '/', '-', '\\'];
 const BOOT_STAGES = [{ name: 'void', duration: 1.4 }, { name: 'signal', duration: 2.4 }, { name: 'acquire', duration: 2.1 }, { name: 'systems', duration: 8 * 4 }, { name: 'ready', duration: 6.5 }];
 const BOOT_DURATION = BOOT_STAGES.reduce((total, stage) => total + stage.duration, 0);
+const HUD_HANDOFF_ELAPSED = BOOT_STAGES.slice(0, 3).reduce((total, stage) => total + stage.duration, 0) - .05;
+const HUD_REVEAL_DURATION = .72;
 const SYSTEM_LOADS = [
   { label: 'CORE', amount: 1, point: [0, 0, 0], distance: 3.6, radius: 12, callout: [17, 98], calloutSide: 'right' },
   { label: 'DRIVE', amount: 1, point: [0, -2.1, .15], distance: 3.1, radius: 10, callout: [17, 145], calloutSide: 'right' },
@@ -16,7 +20,8 @@ const SYSTEM_LOADS = [
   { label: 'LINK', amount: 1, point: [0, 1.26, .1], distance: 3.4, radius: 10, callout: [17, 138], calloutSide: 'right', lineOrigin: 'lowerLeft' }
 ];
 const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
-const LOGO_REFLECTION_LEVELS = [.7, 1, 1.32, 1.6];
+const LOGO_SHADOW_COLOR = [55, 43, 92];
+const LOGO_REFLECTION_LEVELS = [.78, 1, 1.2, 1.4];
 
 function clamp(value) { return Math.max(0, Math.min(1, value)); }
 function parseHeaderFont(source) {
@@ -67,7 +72,7 @@ export function createHudStage({ width, height }) {
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(lines, 3)); root.add(new THREE.LineSegments(geometry, shipMaterial));
   }
   function glyphImage(code, color, data = fontData, key = 'main') { const cacheKey = `${key}:${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = 8; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const offset = code * 8; for (let row = 0; row < 8; row += 1) for (let column = 0; column < 8; column += 1) if ((data?.[offset + row] || 0) & (128 >> column)) glyphContext.fillRect(column, row, 1, 1); glyphCache.set(cacheKey, glyph); return glyph; }
-  function glyphCode(character) { const code = character.codePointAt(0); return code >= 32 && code <= 126 ? code - 32 : 31; }
+  function glyphCode(character) { if (character === '|') return 0x7c; const code = character.codePointAt(0); return code >= 32 && code <= 126 ? code - 32 : 31; }
   function measure(value, scale = 1) { return Math.max(0, [...value].length * 9 - 1) * scale; }
   function text(value, x, y, color, scale = 1, align = 'left') { let pen = Math.round(x - (align === 'center' ? measure(value, scale) / 2 : align === 'right' ? measure(value, scale) : 0)); for (const character of value) { context.drawImage(glyphImage(glyphCode(character), color), pen, y, 8 * scale, 8 * scale); pen += 9 * scale; } }
   function computerGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `computer-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = COMPUTER_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < COMPUTER_GLYPH_SIZE; row += 1) for (let column = 0; column < COMPUTER_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (computerFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
@@ -76,6 +81,7 @@ export function createHudStage({ width, height }) {
   function picomagGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `picomag-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = COMPUTER_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < COMPUTER_GLYPH_SIZE; row += 1) for (let column = 0; column < COMPUTER_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (picomagFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
   function terminalText(value, x, y, color) { let pen = Math.round(x); for (const character of value) { context.drawImage(picomagGlyphImage(character, color), pen, y, COMPUTER_GLYPH_SIZE, COMPUTER_GLYPH_SIZE); pen += COMPUTER_GLYPH_SIZE + COMPUTER_GLYPH_GAP; } }
   function rawGlyph(code, x, y, color) { context.drawImage(glyphImage(code, color), x, y); }
+  function thinBorder(frame) { context.save(); context.strokeStyle = COLORS.frame; context.lineWidth = 1; context.strokeRect(frame.x, frame.y, frame.width, frame.height); context.restore(); }
   function tiledBorder(frame) { const right = frame.x + frame.width - 8, bottom = frame.y + frame.height - 8; rawGlyph(HUD_TILES.topLeft, frame.x, frame.y, COLORS.frame); rawGlyph(HUD_TILES.topRight, right, frame.y, COLORS.frame); rawGlyph(HUD_TILES.bottomLeft, frame.x, bottom, COLORS.frame); rawGlyph(HUD_TILES.bottomRight, right, bottom, COLORS.frame); for (let x = frame.x + 8; x < right; x += 8) { rawGlyph(HUD_TILES.horizontal, x, frame.y, COLORS.frame); rawGlyph(HUD_TILES.horizontal, x, bottom, COLORS.frame); } for (let y = frame.y + 8; y < bottom; y += 8) { rawGlyph(HUD_TILES.leftVertical, frame.x, y, COLORS.frame); rawGlyph(HUD_TILES.rightVertical, right, y, COLORS.frame); } }
   function technicalGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `tech-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = TECH_SOURCE_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < TECH_SOURCE_GLYPH_SIZE; row += 1) for (let column = 0; column < TECH_SOURCE_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (technicalFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
   function technicalText(value, x, y, color) { let pen = x; for (const character of value) { context.drawImage(technicalGlyphImage(character, color), pen, y, TECH_GLYPH_SIZE, TECH_GLYPH_SIZE); pen += TECH_GLYPH_SIZE + TECH_GLYPH_GAP; } }
@@ -164,10 +170,10 @@ export function createHudStage({ width, height }) {
     const scrollAt = durations[eventIndex] - .18;
     const stepped = eventTime >= scrollAt ? advances[eventIndex] : 0;
     const width = computerMeasure('XXXXXXXXXXXX');
-    const terminalRight = SHIP_VIEWPORT.x + SHIP_VIEWPORT.width - 8 - 7;
+    const terminalRight = SHIP_VIEWPORT.x + SHIP_VIEWPORT.width - 7;
     const x = terminalRight - width;
-    const y = SHIP_VIEWPORT.y + SHIP_VIEWPORT.height - 8 - 2 - lineHeight * 3;
     const height = lineHeight * 3;
+    const y = SHIP_VIEWPORT.y + SHIP_VIEWPORT.height - 8 - height;
     context.save();
     context.beginPath(); context.rect(x, y, width, height); context.clip();
     let lineIndex = eventIndex, lineY = y + (2 - stepped) * lineHeight, isCurrent = true;
@@ -190,13 +196,26 @@ export function createHudStage({ width, height }) {
   function systemLoadState(sequence) { const progress = sequence.name === 'systems' ? sequence.local : sequence.name === 'ready' ? 1 : 0; return { progress, loads: SYSTEM_LOADS.map((system, index) => ({ ...system, phase: clamp(progress * SYSTEM_LOADS.length - index) })) }; }
   function subsystemFocus(sequence) { if (sequence.name !== 'systems') return null; const { progress, loads } = systemLoadState(sequence), raw = progress * loads.length, index = Math.min(loads.length - 1, Math.floor(raw)); return { index, current: loads[index], previous: index ? loads[index - 1] : null, blend: clamp(raw - index) }; }
   function setCameraShot(shot, aim, position) { if (!shot) { aim.set(0, 0, 0); root.localToWorld(aim); position.copy(aim); position.y += .15; position.z += 9; return; } aim.set(...shot.point); root.localToWorld(aim); position.copy(aim); position.y += .1; position.z += shot.distance; }
-  function updateThree(sequence) {
-    const signalProgress = sequence.index > 1 ? 1 : sequence.name === 'signal' ? sequence.local : 0; staticStars.forEach(field => { field.material.opacity = sequence.name === 'void' ? .16 : .68; });
-    driftingStars.forEach(layer => { layer.material.opacity = signalProgress * .9; for (let index = 0; index < layer.seeds.length / 3; index += 1) { const position = index * 3, speed = .55 + layer.seeds[position + 2] * .95, travel = (sequence.elapsed * speed + layer.seeds[position + 2] * 19) % 19; layer.positions[position] = (layer.seeds[position] - .5) * 13; layer.positions[position + 1] = (layer.seeds[position + 1] - .5) * 8; layer.positions[position + 2] = -12 + travel; } layer.attribute.needsUpdate = true; });
-    for (let index = 0; index < twinklePhases.length; index += 1) { const intensity = (.14 + Math.max(0, Math.sin(sequence.elapsed * 2.1 + twinklePhases[index]) - .77) * 3.75) * signalProgress, color = twinkleBaseColors[index % twinkleBaseColors.length], position = index * 3; twinkleColors[position] = color.r * intensity; twinkleColors[position + 1] = color.g * intensity; twinkleColors[position + 2] = color.b * intensity; } twinkleAttribute.needsUpdate = true;
-    const acquisition = sequence.index > 2 ? 1 : sequence.name === 'acquire' ? clamp(sequence.local * 1.35) : 0, eased = acquisition * acquisition * (3 - 2 * acquisition); shipMaterial.opacity = eased; root.visible = acquisition > 0; root.scale.setScalar(.45 + eased * .37); root.rotation.y = sequence.elapsed * .65 * eased; root.rotation.x = Math.sin(sequence.elapsed * .8) * .08 * eased; root.position.y = Math.sin(sequence.elapsed * 1.5) * .12 - .2 + (1 - eased) * .7;
+  function updateStarfield(elapsed, signalProgress = 1, staticOpacity = .68) {
+    staticStars.forEach(field => { field.material.opacity = staticOpacity; });
+    driftingStars.forEach(layer => { layer.material.opacity = signalProgress * .9; for (let index = 0; index < layer.seeds.length / 3; index += 1) { const position = index * 3, speed = .55 + layer.seeds[position + 2] * .95, travel = (elapsed * speed + layer.seeds[position + 2] * 19) % 19; layer.positions[position] = (layer.seeds[position] - .5) * 13; layer.positions[position + 1] = (layer.seeds[position + 1] - .5) * 8; layer.positions[position + 2] = -12 + travel; } layer.attribute.needsUpdate = true; });
+    for (let index = 0; index < twinklePhases.length; index += 1) { const intensity = (.14 + Math.max(0, Math.sin(elapsed * 2.1 + twinklePhases[index]) - .77) * 3.75) * signalProgress, color = twinkleBaseColors[index % twinkleBaseColors.length], position = index * 3; twinkleColors[position] = color.r * intensity; twinkleColors[position + 1] = color.g * intensity; twinkleColors[position + 2] = color.b * intensity; } twinkleAttribute.needsUpdate = true;
+  }
+  function renderBackground(elapsed) {
+    updateStarfield(elapsed, 1, .68);
+    renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera);
+    context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height);
+  }
+  function updateThree(sequence, starElapsed = sequence.elapsed, shipViewport = SHIP_CONTENT_VIEWPORT, motionElapsed = starElapsed) {
+    updateStarfield(starElapsed, 1, .68);
+    const acquisition = sequence.index > 2 ? 1 : sequence.name === 'acquire' ? clamp(sequence.local * 1.35) : 0, eased = acquisition * acquisition * (3 - 2 * acquisition); shipMaterial.opacity = eased; root.visible = acquisition > 0; root.scale.setScalar(.45 + eased * .37); root.rotation.y = motionElapsed * .65 * eased; root.rotation.x = Math.sin(motionElapsed * .8) * .08 * eased; root.position.y = Math.sin(motionElapsed * 1.5) * .12 - .2 + (1 - eased) * .7;
     root.updateMatrixWorld(true); const focus = subsystemFocus(sequence); if (sequence.name === 'ready') { setCameraShot(SYSTEM_LOADS.at(-1), cameraFromAim, cameraFromPosition); setCameraShot(null, cameraToAim, cameraToPosition); const blend = clamp(sequence.local / .28) ** 2 * (3 - 2 * clamp(sequence.local / .28)); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } else if (!focus) setCameraShot(null, cameraAim, cameraPosition); else { setCameraShot(focus.previous, cameraFromAim, cameraFromPosition); setCameraShot(focus.current, cameraToAim, cameraToPosition); const transition = clamp(focus.blend * 8), blend = transition * transition * (3 - 2 * transition); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } camera.position.copy(cameraPosition); camera.lookAt(cameraAim);
-    renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera); renderer.clearDepth(); renderer.setScissor(SHIP_CONTENT_VIEWPORT.x, H - SHIP_CONTENT_VIEWPORT.y - SHIP_CONTENT_VIEWPORT.height, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height); renderer.setScissorTest(true); renderer.render(shipScene, camera); renderer.setScissorTest(false);
+    renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera); renderer.clearDepth(); renderer.setScissor(shipViewport.x, H - shipViewport.y - shipViewport.height, shipViewport.width, shipViewport.height); renderer.setScissorTest(true); renderer.render(shipScene, camera); renderer.setScissorTest(false);
+  }
+  function renderTransition({ elapsed, progress }) {
+    const transition = clamp(progress), viewport = { x: SHIP_CONTENT_VIEWPORT.x, y: Math.round(9 + (SHIP_CONTENT_VIEWPORT.y - 9) * transition), width: SHIP_CONTENT_VIEWPORT.width, height: Math.round(207 + (SHIP_CONTENT_VIEWPORT.height - 207) * transition) };
+    updateThree({ name: 'acquire', index: 2, elapsed, local: transition }, elapsed, viewport);
+    context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height);
   }
   function drawFocusOverlay(sequence) {
     const focus = subsystemFocus(sequence);
@@ -239,26 +258,28 @@ export function createHudStage({ width, height }) {
     drawTechnicalBlock(focus, blockX, blockY, clamp((focus.blend - .225) / .3));
     context.restore();
   }
-  function quantizeLogo(time) { if (!logoPixels || !logoSource) return; const logoContext = logoPixels.getContext('2d'); logoContext.clearRect(0, 0, logoPixels.width, logoPixels.height); logoContext.drawImage(logoSource, 0, 0); const image = logoContext.getImageData(0, 0, logoPixels.width, logoPixels.height), phase = Math.floor(time * 4) % LOGO_REFLECTION_LEVELS.length, base = [72, 72, 208], reflection = LOGO_REFLECTION_LEVELS.map(level => base.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1)))); for (let index = 0; index < image.data.length; index += 4) { if (!image.data[index + 3]) continue; const pixel = index / 4, x = pixel % logoPixels.width, band = LOGO_COLOR_BANDS[`${image.data[index]},${image.data[index + 1]},${image.data[index + 2]}`] ?? 3, color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? [2, 2, 8] : reflection[(band - 1 + phase) % reflection.length]; image.data[index] = color[0]; image.data[index + 1] = color[1]; image.data[index + 2] = color[2]; } logoContext.putImageData(image, 0, 0); }
-  function drawOverlay(sequence) {
+  function quantizeLogo(time) { if (!logoPixels || !logoSource) return; const logoContext = logoPixels.getContext('2d'); logoContext.clearRect(0, 0, logoPixels.width, logoPixels.height); logoContext.drawImage(logoSource, 0, 0); const image = logoContext.getImageData(0, 0, logoPixels.width, logoPixels.height), phase = Math.floor(time * 4) % LOGO_REFLECTION_LEVELS.length, base = [112, 108, 188], reflection = LOGO_REFLECTION_LEVELS.map(level => base.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1)))); for (let index = 0; index < image.data.length; index += 4) { if (!image.data[index + 3]) continue; const pixel = index / 4, x = pixel % logoPixels.width, band = LOGO_COLOR_BANDS[`${image.data[index]},${image.data[index + 1]},${image.data[index + 2]}`] ?? 3, color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? LOGO_SHADOW_COLOR : reflection[(band - 1 + phase) % reflection.length]; image.data[index] = color[0]; image.data[index + 1] = color[1]; image.data[index + 2] = color[2]; } logoContext.putImageData(image, 0, 0); }
+  function drawOverlay(sequence, revealProgress = 1) {
     context.clearRect(0, 0, width, height); context.globalCompositeOperation = 'source-over'; context.drawImage(renderer.domElement, 0, 0, width, height);
     if (!fontData || sequence.name === 'void') return;
     const signalProgress = sequence.name === 'signal' ? sequence.local : 1;
-    context.save(); context.scale(SCALE, SCALE); context.globalAlpha = signalProgress;
+    context.save(); context.scale(SCALE, SCALE); context.globalAlpha = signalProgress * revealProgress;
     const { loads } = systemLoadState(sequence), complete = loads.at(-1).phase >= 1;
-    text(complete ? 'ALL SYSTEMS GO' : 'SYSTEMS CHECK', W / 2, 25, complete ? COLORS.callout : COLORS.secondary, 1, 'center');
+    const systemsLabel = complete ? 'ALL SYSTEMS GO' : `SYSTEMS CHECK ${SPINNER_FRAMES[Math.floor(sequence.elapsed * 8) % SPINNER_FRAMES.length]}`;
+    text(systemsLabel, W / 2, 25, complete ? COLORS.callout : COLORS.secondary, 1, 'center');
     if (logoPixels) { quantizeLogo(sequence.elapsed); context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(logoPixels, 14, 24, 512, 36); context.restore(); }
     if (sequence.name === 'signal') { context.restore(); return; }
-    const acquireProgress = sequence.name === 'acquire' ? sequence.local : 1; context.globalAlpha = acquireProgress;
-    tiledBorder(SHIP_VIEWPORT); text('GK-99', 13, 51, COLORS.status); text('"WARDEN"', 13, 61, COLORS.primary); scrollingCoordinates(sequence); scrollingOperations(sequence);
+    const acquireProgress = sequence.name === 'acquire' ? sequence.local : 1;
+    context.globalAlpha = 1; thinBorder(SHIP_VIEWPORT);
+    context.globalAlpha = acquireProgress * revealProgress; text('GK-99', 13, 51, COLORS.status); text('"WARDEN"', 13, 61, COLORS.primary); scrollingCoordinates(sequence); scrollingOperations(sequence);
     if (sequence.name === 'acquire') { context.restore(); return; }
-    context.globalAlpha = 1;
+    context.globalAlpha = revealProgress;
     const aggregate = loads.reduce((total, item) => total + item.phase, 0) / loads.length, rows = [['SYS', aggregate, `${String(Math.round(aggregate * 100)).padStart(3, '0')}%`], ...loads.map(item => [item.label, item.phase, item.phase >= 1 ? 'OK' : item.phase > 0 ? 'CHK' : 'IDLE'])];
-    rows.forEach(([label, phase, status], index) => { const y = 178 + index * 8, active = index === 0 || phase > 0; text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.dim); text(status, 60, y, active ? COLORS.secondary : COLORS.dim); bar(98, y, 68, phase, active); });
+    rows.forEach(([label, phase, status], index) => { const y = 178 + index * 8, active = index === 0 || phase > 0, statusVisible = status !== 'CHK' || Math.floor(sequence.elapsed * 8) % 2 === 0; text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.idle); if (statusVisible) text(status, SYSTEM_STATUS_RIGHT, y, active ? COLORS.secondary : COLORS.idle, 1, 'right'); bar(SYSTEM_BAR_X, y, SYSTEM_BAR_WIDTH, phase, active); });
     drawFocusOverlay(sequence); context.restore();
   }
   const ready = Promise.all([fetch('./assets/font-data-h/330.h').then(response => { if (!response.ok) throw new Error('Could not load Reactor.'); return response.text(); }), fetch('./assets/font-data-h/031.h').then(response => { if (!response.ok) throw new Error('Could not load Bitty.'); return response.text(); }), fetch('./assets/font-data-h/078.h').then(response => { if (!response.ok) throw new Error('Could not load Computer.'); return response.text(); }), fetch('./assets/font-data-h/270.h').then(response => { if (!response.ok) throw new Error('Could not load PicoMag.'); return response.text(); }), fetch('./assets/glyphs/legacy-glyphs.json').then(response => { if (!response.ok) throw new Error('Could not load ATASCII glyphs.'); return response.json(); })]).then(([reactor, bitty, computer, picomag, glyphSource]) => { fontData = new Uint8Array(128 * 8); fontData.set(parseHeaderFont(reactor)); technicalFontData = parseHeaderFont(bitty); computerFontData = parseHeaderFont(computer); picomagFontData = parseHeaderFont(picomag); glyphSource.glyphs.forEach(glyph => { if (glyph.system === 'ATASCII' && glyph.internalSlot) fontData.set(glyph.bitmap, Number.parseInt(glyph.internalSlot, 16) * 8); }); glyphCache.clear(); });
   const logo = new Image(); logo.onload = () => { logoSource = document.createElement('canvas'); logoSource.width = logo.naturalWidth; logoSource.height = logo.naturalHeight; logoSource.getContext('2d').drawImage(logo, 0, 0); logoPixels = document.createElement('canvas'); logoPixels.width = logo.naturalWidth; logoPixels.height = logo.naturalHeight; }; logo.src = './assets/images/gklogo.png';
   const ship = new Image(); ship.onload = () => createShipGeometry(ship); ship.src = './assets/images/ship.png';
-  return { canvas, ready, render: ({ elapsed }) => { const sequence = sequenceFor(elapsed); updateThree(sequence); drawOverlay(sequence); } };
+  return { canvas, ready, handoffElapsed: HUD_HANDOFF_ELAPSED, renderBackground, renderTransition, render: ({ elapsed, duration = BOOT_DURATION, starElapsed = elapsed }) => { const sequence = sequenceFor(elapsed * BOOT_DURATION / Math.max(.1, duration)); updateThree(sequence, starElapsed); drawOverlay(sequence, clamp((elapsed - HUD_HANDOFF_ELAPSED) / HUD_REVEAL_DURATION)); } };
 }
