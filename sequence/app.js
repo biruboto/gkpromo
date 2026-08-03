@@ -1,6 +1,6 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
-import { createHudStage } from './hud-stage.js?v=8';
+import { createHudStage } from './hud-stage.js?v=9';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
 const FONT_FILE = './assets/font-data-h/293.h';
@@ -13,10 +13,7 @@ const exportCanvas = document.createElement('canvas'); exportCanvas.width = EXPO
 const exportContext = exportCanvas.getContext('2d'); exportContext.imageSmoothingEnabled = false;
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const stages = [
-  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 44.4, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' },
-  { id: crypto.randomUUID(), name: 'SIGNAL', duration: 1.8, motion: 'signal', backdrop: 'deep-space', headline: 'INCOMING\nTRANSMISSION', body: 'THE ARCADE NETWORK IS LIVE.\nSTANDBY FOR COORDINATES.', footer: 'CHANNEL 05 // LOCKED', accent: '#00ddff' },
-  { id: crypto.randomUUID(), name: 'ACQUIRE', duration: 2.4, motion: 'assemble', backdrop: 'cabinet', headline: 'GROUND\nKONTROL', body: 'PORTLAND // OREGON\nARCADE SYSTEMS ONLINE', footer: 'TARGET ACQUIRED', accent: '#ffdd44' },
-  { id: crypto.randomUUID(), name: 'EVENT', duration: 3.2, motion: 'type', backdrop: 'scan', headline: 'FREE PLAY\nTHURSDAY', body: 'UNLIMITED CREDITS.\nNOON TO MIDNIGHT.', footer: 'INSERT TOKEN // START', accent: '#ff5f9e' }
+  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 44.4, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' }
 ];
 const stars = Array.from({ length: 96 }, (_, index) => ({ x: (Math.sin(index * 91.71) * .5 + .5) * W, y: (Math.sin(index * 47.13 + 1) * .5 + .5) * H, depth: .2 + (Math.sin(index * 17.39 + 2) * .5 + .5) }));
 let selectedId = stages[0].id, bitmapFont = null, sequenceTime = 0, lastFrame = performance.now(), playing = true, recording = false;

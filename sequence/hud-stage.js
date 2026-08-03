@@ -3,15 +3,17 @@ import * as THREE from 'three';
 const W = 180, H = 225, SCALE = 3;
 const SHIP_VIEWPORT = { x: 6, y: 43, width: 168, height: 128 };
 const SHIP_CONTENT_VIEWPORT = { x: 9, y: 46, width: 162, height: 122 };
+const TECH_SOURCE_GLYPH_SIZE = 4, TECH_GLYPH_SIZE = 4, TECH_GLYPH_GAP = 1;
+const COMPUTER_GLYPH_SIZE = 4, COMPUTER_GLYPH_GAP = 1;
 const HUD_TILES = { topLeft: 0x51, horizontal: 0x52, topRight: 0x45, leftVertical: 0x7c, rightVertical: 0x7c, bottomLeft: 0x5a, bottomRight: 0x43 };
-const COLORS = { space: '#0c0a20', shadow: '#020208', wire: '#00ddff', frame: '#4848d0', primary: '#ccccff', secondary: '#88ffee', status: '#ffdd44', dim: '#ff4488', fill: '#00ddff', outline: '#7070ff', callout: '#ffdd44' };
+const COLORS = { space: '#0c0a20', shadow: '#020208', wire: '#00ddff', frame: '#4848d0', primary: '#ccccff', secondary: '#88ffee', status: '#ffdd44', dim: '#ff4488', fill: '#00ddff', outline: '#7070ff', callout: '#ff4488' };
 const BOOT_STAGES = [{ name: 'void', duration: 1.4 }, { name: 'signal', duration: 2.4 }, { name: 'acquire', duration: 2.1 }, { name: 'systems', duration: 8 * 4 }, { name: 'ready', duration: 6.5 }];
 const BOOT_DURATION = BOOT_STAGES.reduce((total, stage) => total + stage.duration, 0);
 const SYSTEM_LOADS = [
-  { label: 'CORE', amount: 1, point: [0, 0, 0], distance: 3.6, radius: 6, callout: [17, 98], calloutSide: 'right' },
-  { label: 'DRIVE', amount: 1, point: [0, -2.1, .15], distance: 3.1, radius: 5, callout: [119, 145], calloutSide: 'left' },
-  { label: 'WPN', amount: 1, point: [-1.68, -.84, .1], distance: 3.3, radius: 5, callout: [14, 135], calloutSide: 'right' },
-  { label: 'LINK', amount: 1, point: [0, 1.26, .1], distance: 3.4, radius: 5, callout: [117, 102], calloutSide: 'left', lineOrigin: 'lowerLeft' }
+  { label: 'CORE', amount: 1, point: [0, 0, 0], distance: 3.6, radius: 12, callout: [17, 98], calloutSide: 'right' },
+  { label: 'DRIVE', amount: 1, point: [0, -2.1, .15], distance: 3.1, radius: 10, callout: [17, 145], calloutSide: 'right' },
+  { label: 'WPN', amount: 1, point: [-1.68, -.84, .1], distance: 3.3, radius: 10, callout: [117, 102], calloutSide: 'left' },
+  { label: 'LINK', amount: 1, point: [0, 1.26, .1], distance: 3.4, radius: 10, callout: [17, 138], calloutSide: 'right', lineOrigin: 'lowerLeft' }
 ];
 const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4 };
 const LOGO_REFLECTION_LEVELS = [.7, 1, 1.32, 1.6];
@@ -36,7 +38,7 @@ export function createHudStage({ width, height }) {
   const cameraAim = new THREE.Vector3(), cameraPosition = new THREE.Vector3(), cameraFromAim = new THREE.Vector3(), cameraFromPosition = new THREE.Vector3(), cameraToAim = new THREE.Vector3(), cameraToPosition = new THREE.Vector3();
   const root = new THREE.Group(); root.position.x = -1.35; root.scale.setScalar(.82); shipScene.add(root);
   const shipMaterial = new THREE.LineBasicMaterial({ color: COLORS.wire, transparent: true, opacity: 0 });
-  const glyphCache = new Map(); let fontData = null, technicalFontData = null, logoPixels = null, logoSource = null;
+  const glyphCache = new Map(); let fontData = null, computerFontData = null, picomagFontData = null, technicalFontData = null, logoPixels = null, logoSource = null, focusOverlayGeometry = null;
 
   function seeded(value) { const sample = Math.sin(value * 12.9898 + 78.233) * 43758.5453; return sample - Math.floor(sample); }
   const starColors = [0xddeeff, 0x8dd8ff, 0xffb1da], staticStars = [], driftingStars = [], twinklePhases = [];
@@ -68,16 +70,126 @@ export function createHudStage({ width, height }) {
   function glyphCode(character) { const code = character.codePointAt(0); return code >= 32 && code <= 126 ? code - 32 : 31; }
   function measure(value, scale = 1) { return Math.max(0, [...value].length * 9 - 1) * scale; }
   function text(value, x, y, color, scale = 1, align = 'left') { let pen = Math.round(x - (align === 'center' ? measure(value, scale) / 2 : align === 'right' ? measure(value, scale) : 0)); for (const character of value) { context.drawImage(glyphImage(glyphCode(character), color), pen, y, 8 * scale, 8 * scale); pen += 9 * scale; } }
+  function computerGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `computer-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = COMPUTER_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < COMPUTER_GLYPH_SIZE; row += 1) for (let column = 0; column < COMPUTER_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (computerFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
+  function computerText(value, x, y, color) { let pen = Math.round(x); for (const character of value) { context.drawImage(computerGlyphImage(character, color), pen, y, COMPUTER_GLYPH_SIZE, COMPUTER_GLYPH_SIZE); pen += COMPUTER_GLYPH_SIZE + COMPUTER_GLYPH_GAP; } }
+  function computerMeasure(value) { return Math.max(0, [...value].length * (COMPUTER_GLYPH_SIZE + COMPUTER_GLYPH_GAP) - COMPUTER_GLYPH_GAP); }
+  function picomagGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `picomag-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = COMPUTER_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < COMPUTER_GLYPH_SIZE; row += 1) for (let column = 0; column < COMPUTER_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (picomagFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
+  function terminalText(value, x, y, color) { let pen = Math.round(x); for (const character of value) { context.drawImage(picomagGlyphImage(character, color), pen, y, COMPUTER_GLYPH_SIZE, COMPUTER_GLYPH_SIZE); pen += COMPUTER_GLYPH_SIZE + COMPUTER_GLYPH_GAP; } }
   function rawGlyph(code, x, y, color) { context.drawImage(glyphImage(code, color), x, y); }
   function tiledBorder(frame) { const right = frame.x + frame.width - 8, bottom = frame.y + frame.height - 8; rawGlyph(HUD_TILES.topLeft, frame.x, frame.y, COLORS.frame); rawGlyph(HUD_TILES.topRight, right, frame.y, COLORS.frame); rawGlyph(HUD_TILES.bottomLeft, frame.x, bottom, COLORS.frame); rawGlyph(HUD_TILES.bottomRight, right, bottom, COLORS.frame); for (let x = frame.x + 8; x < right; x += 8) { rawGlyph(HUD_TILES.horizontal, x, frame.y, COLORS.frame); rawGlyph(HUD_TILES.horizontal, x, bottom, COLORS.frame); } for (let y = frame.y + 8; y < bottom; y += 8) { rawGlyph(HUD_TILES.leftVertical, frame.x, y, COLORS.frame); rawGlyph(HUD_TILES.rightVertical, right, y, COLORS.frame); } }
-  function technicalText(value, x, y, color) { let pen = x; for (const character of value) { const source = glyphImage(glyphCode(character), color, technicalFontData, 'tech'); context.drawImage(source, pen, y, 4, 4); pen += 5; } }
-  function technicalMeasure(value) { return Math.max(0, [...value].length * 5 - 1); }
+  function technicalGlyphImage(character, color) { const code = glyphCode(character), cacheKey = `tech-${code}:${color}`; if (glyphCache.has(cacheKey)) return glyphCache.get(cacheKey); const glyph = document.createElement('canvas'); glyph.width = glyph.height = TECH_SOURCE_GLYPH_SIZE; const glyphContext = glyph.getContext('2d'); glyphContext.fillStyle = color; const glyphOffset = code * 8; for (let row = 0; row < TECH_SOURCE_GLYPH_SIZE; row += 1) for (let column = 0; column < TECH_SOURCE_GLYPH_SIZE; column += 1) { let filled = false; for (let sourceRow = row * 2; sourceRow < row * 2 + 2; sourceRow += 1) for (let sourceColumn = column * 2; sourceColumn < column * 2 + 2; sourceColumn += 1) if (technicalFontData?.[glyphOffset + sourceRow] & (1 << (7 - sourceColumn))) filled = true; if (filled) glyphContext.fillRect(column, row, 1, 1); } glyphCache.set(cacheKey, glyph); return glyph; }
+  function technicalText(value, x, y, color) { let pen = x; for (const character of value) { context.drawImage(technicalGlyphImage(character, color), pen, y, TECH_GLYPH_SIZE, TECH_GLYPH_SIZE); pen += TECH_GLYPH_SIZE + TECH_GLYPH_GAP; } }
+  function technicalMeasure(value) { return Math.max(0, [...value].length * (TECH_GLYPH_SIZE + TECH_GLYPH_GAP) - TECH_GLYPH_GAP); }
+  function drawTechnicalBlock(focus, x, y, typingProgress) {
+    const tick = focus.index + 1;
+    const hex = value => value.toString(16).toUpperCase().padStart(2, '0');
+    const header = `${focus.current.label}/SYS`;
+    const lineOne = `#${hex((tick * 19 + focus.current.radius) % 256)}/${hex((tick * 7 + 31) % 256)}`;
+    const lineTwo = `+${hex((tick * 11 + 89) % 256)}-${hex((tick * 5 + 173) % 256)}`;
+    let remainingCharacters = Math.floor((header.length + lineOne.length + lineTwo.length) * typingProgress);
+    const typed = value => { const visible = value.slice(0, Math.max(0, Math.min(value.length, remainingCharacters))); remainingCharacters -= visible.length; return visible; };
+    const visibleHeader = typed(header);
+    const visibleLineOne = typed(lineOne);
+    const visibleLineTwo = typed(lineTwo);
+    context.globalAlpha = .65;
+    technicalText(visibleHeader, x, y, COLORS.callout);
+    if (visibleHeader.length === header.length) pixelLine(x, y + TECH_GLYPH_SIZE, x + technicalMeasure(header) - 1, y + TECH_GLYPH_SIZE, COLORS.callout);
+    context.globalAlpha = 1;
+    technicalText(visibleLineOne, x, y + 6, COLORS.primary);
+    technicalText(visibleLineTwo, x, y + 12, COLORS.primary);
+  }
   function pixelLine(x1, y1, x2, y2, color) { let x = Math.round(x1), y = Math.round(y1); const targetX = Math.round(x2), targetY = Math.round(y2), stepX = x < targetX ? 1 : -1, stepY = y < targetY ? 1 : -1, deltaX = Math.abs(targetX - x), deltaY = -Math.abs(targetY - y); let error = deltaX + deltaY; context.fillStyle = color; while (true) { context.fillRect(x, y, 1, 1); if (x === targetX && y === targetY) break; const doubled = error * 2; if (doubled >= deltaY) { error += deltaY; x += stepX; } if (doubled <= deltaX) { error += deltaX; y += stepY; } } }
-  function bar(x, y, barWidth, level, active) { context.strokeStyle = COLORS.outline; context.strokeRect(x + .5, y + .5, barWidth, 6); if (active) { context.fillStyle = COLORS.fill; context.fillRect(x + 2, y + 2, Math.floor((barWidth - 3) * level), 3); } }
+  function bar(x, y, barWidth, level, active) { context.strokeStyle = COLORS.outline; context.strokeRect(x + .5, y + .5, barWidth, 7); if (active) { context.fillStyle = COLORS.fill; context.fillRect(x + 2, y + 2, Math.floor((barWidth - 3) * level), 4); } }
+  function scrollingCoordinates(sequence) {
+    const focus = subsystemFocus(sequence);
+    const byte = value => ((Math.round(value) % 256) + 256) % 256;
+    const hex = value => byte(value).toString(16).toUpperCase().padStart(2, '0');
+    const drift = Math.floor(sequence.elapsed * 3);
+    const yaw = root.rotation.y / (Math.PI * 2) * 256;
+    const pitch = root.rotation.x / (Math.PI * 2) * 256;
+    const altitude = (root.position.y + 1) * 32;
+    const range = camera.position.length() * 16;
+    const target = focus?.current.label || 'SYNC';
+    const system = (focus?.index ?? 4) * 17;
+    const feeds = [
+      [`X${hex(yaw + drift)} Y${hex(pitch + system)} Z${hex(altitude + range)} ${target}   `, 9],
+      [`R${hex(yaw - drift)} P${hex(pitch + drift)} D${hex(range - altitude)} F${hex(sequence.elapsed * 12)}   `, 7]
+    ];
+    context.save();
+    context.beginPath(); context.rect(13, 70, measure('"WARDEN"'), 10); context.clip();
+    feeds.forEach(([feed, speed], index) => {
+      const y = 70 + index * 6;
+      const feedWidth = computerMeasure(feed);
+      const offset = Math.floor((sequence.elapsed * speed) % (feedWidth + 12));
+      computerText(feed, 13 - offset, y, COLORS.secondary);
+      computerText(feed, 13 - offset + feedWidth + 12, y, COLORS.secondary);
+    });
+    context.restore();
+  }
+  function scrollingOperations(sequence) {
+    const focus = subsystemFocus(sequence);
+    const { loads } = systemLoadState(sequence);
+    const aggregate = loads.reduce((total, item) => total + item.phase, 0) / loads.length;
+    const byte = value => ((Math.round(value) % 256) + 256) % 256;
+    const hex = value => byte(value).toString(16).toUpperCase().padStart(2, '0');
+    const phase = sequence.name.slice(0, 4).toUpperCase().padEnd(4, '-');
+    const target = (focus?.current.label || 'SYNC').padEnd(4, '-').slice(0, 4);
+    const yaw = root.rotation.y / (Math.PI * 2) * 256;
+    const range = camera.position.length() * 16;
+    const commands = [
+      `CMD ${phase} OK`,
+      `BUS ${target} LK`,
+      `LOAD ${hex(aggregate * 255)} %`,
+      `CHK ${hex((aggregate + (focus?.index ?? 0)) * 127)} OK`,
+      `NAV ${hex(yaw)} SET`,
+      `MEM ${hex(range)} RD`,
+      `IO RDY ${hex(sequence.elapsed * 3)}`,
+      `FETCH ${hex(sequence.elapsed * 11)}`,
+      `CRC ${hex(yaw + range)} OK`,
+      `MAP ${hex(range - root.position.y * 16)} IN`,
+      `TX ${hex(sequence.elapsed * 17)} ACK`,
+      `SYNC ${hex(sequence.elapsed * 5)} OK`
+    ];
+    const advances = [1, 1, 2, 1, 3, 1, 2, 1, 2, 3, 1, 2];
+    const durations = [1.2, 1.05, 1.35, 1.1, 1.5, 1.0, 1.25, 1.1, 1.4, 1.15, 1.3, 1.05];
+    const lineHeight = COMPUTER_GLYPH_SIZE + 2;
+    const typingInterval = .04;
+    let terminalTime = sequence.elapsed;
+    let eventIndex = 0;
+    while (terminalTime >= durations[eventIndex]) {
+      terminalTime -= durations[eventIndex];
+      eventIndex = (eventIndex + 1) % commands.length;
+    }
+    const eventTime = terminalTime;
+    const scrollAt = durations[eventIndex] - .18;
+    const stepped = eventTime >= scrollAt ? advances[eventIndex] : 0;
+    const width = computerMeasure('XXXXXXXXXXXX');
+    const terminalRight = SHIP_VIEWPORT.x + SHIP_VIEWPORT.width - 8 - 7;
+    const x = terminalRight - width;
+    const y = SHIP_VIEWPORT.y + SHIP_VIEWPORT.height - 8 - 2 - lineHeight * 3;
+    const height = lineHeight * 3;
+    context.save();
+    context.beginPath(); context.rect(x, y, width, height); context.clip();
+    let lineIndex = eventIndex, lineY = y + (2 - stepped) * lineHeight, isCurrent = true;
+    for (let lineCount = 0; lineCount < commands.length && lineY > y - lineHeight; lineCount += 1) {
+      if (lineY + COMPUTER_GLYPH_SIZE >= y && lineY <= y + height) {
+        const command = commands[lineIndex];
+        const typedCharacters = isCurrent && !stepped ? Math.min(command.length, Math.floor(eventTime / typingInterval)) : command.length;
+        const visible = command.slice(0, typedCharacters);
+        terminalText(visible, x, lineY, COLORS.secondary);
+        if (isCurrent && !stepped && typedCharacters < command.length && Math.floor(sequence.elapsed * 8) % 2 === 0) terminalText('_', x + computerMeasure(visible), lineY, COLORS.secondary);
+      }
+      const previousIndex = (lineIndex - 1 + commands.length) % commands.length;
+      lineY -= advances[previousIndex] * lineHeight;
+      lineIndex = previousIndex;
+      isCurrent = false;
+    }
+    context.restore();
+  }
   function sequenceFor(elapsed) { const boundedElapsed = clamp(elapsed / BOOT_DURATION) * BOOT_DURATION; let cursor = 0; for (let index = 0; index < BOOT_STAGES.length; index += 1) { const stage = BOOT_STAGES[index]; if (boundedElapsed < cursor + stage.duration || index === BOOT_STAGES.length - 1) return { ...stage, index, elapsed: boundedElapsed, local: clamp((boundedElapsed - cursor) / stage.duration) }; cursor += stage.duration; } }
   function systemLoadState(sequence) { const progress = sequence.name === 'systems' ? sequence.local : sequence.name === 'ready' ? 1 : 0; return { progress, loads: SYSTEM_LOADS.map((system, index) => ({ ...system, phase: clamp(progress * SYSTEM_LOADS.length - index) })) }; }
   function subsystemFocus(sequence) { if (sequence.name !== 'systems') return null; const { progress, loads } = systemLoadState(sequence), raw = progress * loads.length, index = Math.min(loads.length - 1, Math.floor(raw)); return { index, current: loads[index], previous: index ? loads[index - 1] : null, blend: clamp(raw - index) }; }
-  function setCameraShot(shot, aim, position) { if (!shot) { aim.set(0, 0, 0); position.set(0, .15, 9); return; } aim.set(...shot.point); root.localToWorld(aim); position.copy(aim); position.y += .1; position.z += shot.distance; }
+  function setCameraShot(shot, aim, position) { if (!shot) { aim.set(0, 0, 0); root.localToWorld(aim); position.copy(aim); position.y += .15; position.z += 9; return; } aim.set(...shot.point); root.localToWorld(aim); position.copy(aim); position.y += .1; position.z += shot.distance; }
   function updateThree(sequence) {
     const signalProgress = sequence.index > 1 ? 1 : sequence.name === 'signal' ? sequence.local : 0; staticStars.forEach(field => { field.material.opacity = sequence.name === 'void' ? .16 : .68; });
     driftingStars.forEach(layer => { layer.material.opacity = signalProgress * .9; for (let index = 0; index < layer.seeds.length / 3; index += 1) { const position = index * 3, speed = .55 + layer.seeds[position + 2] * .95, travel = (sequence.elapsed * speed + layer.seeds[position + 2] * 19) % 19; layer.positions[position] = (layer.seeds[position] - .5) * 13; layer.positions[position + 1] = (layer.seeds[position + 1] - .5) * 8; layer.positions[position + 2] = -12 + travel; } layer.attribute.needsUpdate = true; });
@@ -86,10 +198,50 @@ export function createHudStage({ width, height }) {
     root.updateMatrixWorld(true); const focus = subsystemFocus(sequence); if (sequence.name === 'ready') { setCameraShot(SYSTEM_LOADS.at(-1), cameraFromAim, cameraFromPosition); setCameraShot(null, cameraToAim, cameraToPosition); const blend = clamp(sequence.local / .28) ** 2 * (3 - 2 * clamp(sequence.local / .28)); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } else if (!focus) setCameraShot(null, cameraAim, cameraPosition); else { setCameraShot(focus.previous, cameraFromAim, cameraFromPosition); setCameraShot(focus.current, cameraToAim, cameraToPosition); const transition = clamp(focus.blend * 8), blend = transition * transition * (3 - 2 * transition); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } camera.position.copy(cameraPosition); camera.lookAt(cameraAim);
     renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera); renderer.clearDepth(); renderer.setScissor(SHIP_CONTENT_VIEWPORT.x, H - SHIP_CONTENT_VIEWPORT.y - SHIP_CONTENT_VIEWPORT.height, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height); renderer.setScissorTest(true); renderer.render(shipScene, camera); renderer.setScissorTest(false);
   }
-  function drawFocusOverlay(sequence) { const focus = subsystemFocus(sequence); if (!focus || focus.blend < .125) return; context.save(); context.beginPath(); context.rect(SHIP_CONTENT_VIEWPORT.x, SHIP_CONTENT_VIEWPORT.y, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height); context.clip(); const point = root.localToWorld(new THREE.Vector3(...focus.current.point)).project(camera), highlightX = Math.round((point.x * .5 + .5) * W), highlightY = Math.round((-point.y * .5 + .5) * H); if (focus.blend >= .225 || Math.floor(sequence.elapsed * 10) % 2) { context.globalAlpha = .55; context.fillStyle = COLORS.fill; for (let angle = 0; angle < 360; angle += 20) { const radians = angle * Math.PI / 180; context.fillRect(Math.round(highlightX + Math.cos(radians) * focus.current.radius), Math.round(highlightY + Math.sin(radians) * focus.current.radius), 1, 1); } } if (focus.blend < .225) { context.restore(); return; } const [blockX, blockY] = focus.current.callout, header = `${focus.current.label}/SYS`, lineEndX = focus.current.calloutSide === 'right' ? blockX + technicalMeasure(header) + 2 : blockX - 2, lineEndY = blockY + 3, distance = Math.max(1, Math.hypot(lineEndX - highlightX, lineEndY - highlightY)), startX = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightX - focus.current.radius * .7) : Math.round(highlightX + (lineEndX - highlightX) / distance * focus.current.radius), startY = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightY + focus.current.radius * .7) : Math.round(highlightY + (lineEndY - highlightY) / distance * focus.current.radius); context.globalAlpha = 1; pixelLine(startX, startY, lineEndX, lineEndY, COLORS.status); const typing = clamp((focus.blend - .225) / .3), payload = `#${String((focus.index + 1) * 39).padStart(2, '0')}/${String((focus.index + 1) * 17).padStart(2, '0')}`; technicalText(header.slice(0, Math.ceil(header.length * typing)), blockX, blockY, COLORS.callout); technicalText(payload.slice(0, Math.ceil(payload.length * typing)), blockX, blockY + 6, COLORS.primary); context.restore(); }
+  function drawFocusOverlay(sequence) {
+    const focus = subsystemFocus(sequence);
+    if (!focus || focus.blend < .125) { focusOverlayGeometry = null; return; }
+    if (!focusOverlayGeometry || focusOverlayGeometry.index !== focus.index) {
+      const projectedHighlights = (focus.current.highlights || [focus.current.point]).map(coordinates => {
+        const point = root.localToWorld(new THREE.Vector3(...coordinates)).project(camera);
+        return [Math.round((point.x * .5 + .5) * W), Math.round((-point.y * .5 + .5) * H)];
+      });
+      const [blockX, blockY] = focus.current.callout;
+      const header = `${focus.current.label}/SYS`;
+      const lineEndX = focus.current.calloutSide === 'right' ? blockX + technicalMeasure(header) + 3 : blockX - 3;
+      const lineEndY = blockY + 5;
+      const [highlightX, highlightY] = projectedHighlights.reduce((nearest, point) => {
+        const nearestDistance = (nearest[0] - lineEndX) ** 2 + (nearest[1] - lineEndY) ** 2;
+        const pointDistance = (point[0] - lineEndX) ** 2 + (point[1] - lineEndY) ** 2;
+        return pointDistance < nearestDistance ? point : nearest;
+      });
+      const distance = Math.max(1, Math.hypot(lineEndX - highlightX, lineEndY - highlightY));
+      const startX = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightX - focus.current.radius * .7) : Math.round(highlightX + (lineEndX - highlightX) / distance * focus.current.radius);
+      const startY = focus.current.lineOrigin === 'lowerLeft' ? Math.round(highlightY + focus.current.radius * .7) : Math.round(highlightY + (lineEndY - highlightY) / distance * focus.current.radius);
+      focusOverlayGeometry = { index: focus.index, projectedHighlights, line: [startX, startY, lineEndX, lineEndY] };
+    }
+    context.save();
+    context.beginPath(); context.rect(SHIP_CONTENT_VIEWPORT.x, SHIP_CONTENT_VIEWPORT.y, SHIP_CONTENT_VIEWPORT.width, SHIP_CONTENT_VIEWPORT.height); context.clip();
+    const { projectedHighlights, line } = focusOverlayGeometry;
+    const blinkComplete = focus.blend >= .225;
+    if (blinkComplete || Math.floor(sequence.elapsed * 10) % 2) {
+      context.globalAlpha = .55; context.fillStyle = COLORS.fill;
+      projectedHighlights.forEach(([highlightX, highlightY]) => {
+        for (let angle = 0; angle < 360; angle += 20) {
+          const radians = angle * Math.PI / 180;
+          context.fillRect(Math.round(highlightX + Math.cos(radians) * focus.current.radius), Math.round(highlightY + Math.sin(radians) * focus.current.radius), 1, 1);
+        }
+      });
+    }
+    if (!blinkComplete) { context.restore(); return; }
+    const [blockX, blockY] = focus.current.callout;
+    context.globalAlpha = 1; pixelLine(line[0], line[1], line[2], line[3], COLORS.status);
+    drawTechnicalBlock(focus, blockX, blockY, clamp((focus.blend - .225) / .3));
+    context.restore();
+  }
   function quantizeLogo(time) { if (!logoPixels || !logoSource) return; const logoContext = logoPixels.getContext('2d'); logoContext.clearRect(0, 0, logoPixels.width, logoPixels.height); logoContext.drawImage(logoSource, 0, 0); const image = logoContext.getImageData(0, 0, logoPixels.width, logoPixels.height), phase = Math.floor(time * 4) % LOGO_REFLECTION_LEVELS.length, base = [72, 72, 208], reflection = LOGO_REFLECTION_LEVELS.map(level => base.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1)))); for (let index = 0; index < image.data.length; index += 4) { if (!image.data[index + 3]) continue; const pixel = index / 4, x = pixel % logoPixels.width, band = LOGO_COLOR_BANDS[`${image.data[index]},${image.data[index + 1]},${image.data[index + 2]}`] ?? 3, color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? [2, 2, 8] : reflection[(band - 1 + phase) % reflection.length]; image.data[index] = color[0]; image.data[index + 1] = color[1]; image.data[index + 2] = color[2]; } logoContext.putImageData(image, 0, 0); }
   function drawOverlay(sequence) {
-    context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height);
+    context.clearRect(0, 0, width, height); context.globalCompositeOperation = 'source-over'; context.drawImage(renderer.domElement, 0, 0, width, height);
     if (!fontData || sequence.name === 'void') return;
     const signalProgress = sequence.name === 'signal' ? sequence.local : 1;
     context.save(); context.scale(SCALE, SCALE); context.globalAlpha = signalProgress;
@@ -98,14 +250,14 @@ export function createHudStage({ width, height }) {
     if (logoPixels) { quantizeLogo(sequence.elapsed); context.save(); context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(logoPixels, 14, 24, 512, 36); context.restore(); }
     if (sequence.name === 'signal') { context.restore(); return; }
     const acquireProgress = sequence.name === 'acquire' ? sequence.local : 1; context.globalAlpha = acquireProgress;
-    tiledBorder(SHIP_VIEWPORT); text('GK-99', 13, 51, COLORS.status); text('"WARDEN"', 13, 61, COLORS.primary); text('ROM', 136, 159, COLORS.secondary); text(complete ? 'PASS' : 'CHK', 156, 159, COLORS.secondary, 1, 'right');
+    tiledBorder(SHIP_VIEWPORT); text('GK-99', 13, 51, COLORS.status); text('"WARDEN"', 13, 61, COLORS.primary); scrollingCoordinates(sequence); scrollingOperations(sequence);
     if (sequence.name === 'acquire') { context.restore(); return; }
     context.globalAlpha = 1;
     const aggregate = loads.reduce((total, item) => total + item.phase, 0) / loads.length, rows = [['SYS', aggregate, `${String(Math.round(aggregate * 100)).padStart(3, '0')}%`], ...loads.map(item => [item.label, item.phase, item.phase >= 1 ? 'OK' : item.phase > 0 ? 'CHK' : 'IDLE'])];
-    rows.forEach(([label, phase, status], index) => { const y = 178 + index * 8, active = index === 0 || phase > 0; text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.dim); text(status, 55, y, active ? COLORS.secondary : COLORS.dim); bar(89, y + 1, 77, phase, active); });
+    rows.forEach(([label, phase, status], index) => { const y = 178 + index * 8, active = index === 0 || phase > 0; text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.dim); text(status, 60, y, active ? COLORS.secondary : COLORS.dim); bar(98, y, 68, phase, active); });
     drawFocusOverlay(sequence); context.restore();
   }
-  const ready = Promise.all([fetch('./assets/font-data-h/330.h').then(response => { if (!response.ok) throw new Error('Could not load Reactor.'); return response.text(); }), fetch('./assets/font-data-h/031.h').then(response => { if (!response.ok) throw new Error('Could not load Bitty.'); return response.text(); }), fetch('./assets/glyphs/legacy-glyphs.json').then(response => { if (!response.ok) throw new Error('Could not load ATASCII glyphs.'); return response.json(); })]).then(([reactor, bitty, glyphSource]) => { fontData = new Uint8Array(128 * 8); fontData.set(parseHeaderFont(reactor)); technicalFontData = parseHeaderFont(bitty); glyphSource.glyphs.forEach(glyph => { if (glyph.system === 'ATASCII' && glyph.internalSlot) fontData.set(glyph.bitmap, Number.parseInt(glyph.internalSlot, 16) * 8); }); glyphCache.clear(); });
+  const ready = Promise.all([fetch('./assets/font-data-h/330.h').then(response => { if (!response.ok) throw new Error('Could not load Reactor.'); return response.text(); }), fetch('./assets/font-data-h/031.h').then(response => { if (!response.ok) throw new Error('Could not load Bitty.'); return response.text(); }), fetch('./assets/font-data-h/078.h').then(response => { if (!response.ok) throw new Error('Could not load Computer.'); return response.text(); }), fetch('./assets/font-data-h/270.h').then(response => { if (!response.ok) throw new Error('Could not load PicoMag.'); return response.text(); }), fetch('./assets/glyphs/legacy-glyphs.json').then(response => { if (!response.ok) throw new Error('Could not load ATASCII glyphs.'); return response.json(); })]).then(([reactor, bitty, computer, picomag, glyphSource]) => { fontData = new Uint8Array(128 * 8); fontData.set(parseHeaderFont(reactor)); technicalFontData = parseHeaderFont(bitty); computerFontData = parseHeaderFont(computer); picomagFontData = parseHeaderFont(picomag); glyphSource.glyphs.forEach(glyph => { if (glyph.system === 'ATASCII' && glyph.internalSlot) fontData.set(glyph.bitmap, Number.parseInt(glyph.internalSlot, 16) * 8); }); glyphCache.clear(); });
   const logo = new Image(); logo.onload = () => { logoSource = document.createElement('canvas'); logoSource.width = logo.naturalWidth; logoSource.height = logo.naturalHeight; logoSource.getContext('2d').drawImage(logo, 0, 0); logoPixels = document.createElement('canvas'); logoPixels.width = logo.naturalWidth; logoPixels.height = logo.naturalHeight; }; logo.src = './assets/images/gklogo.png';
   const ship = new Image(); ship.onload = () => createShipGeometry(ship); ship.src = './assets/images/ship.png';
   return { canvas, ready, render: ({ elapsed }) => { const sequence = sequenceFor(elapsed); updateThree(sequence); drawOverlay(sequence); } };
