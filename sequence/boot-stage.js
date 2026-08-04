@@ -140,7 +140,7 @@ export function createBootStage({ width, height, getFont, getOsFont = getFont, g
     const shipProgress = clamp((elapsed - SHIP_START) / .2);
     if (shipProgress) {
       withAlpha(transitionAlpha(transitionProgress, 6), () => {
-        bitmapLine('SHIP CNCTN', TEXT_X, SHIP_LINE_Y, 1, COLORS.secondary, 'left', Math.ceil('SHIP CNCTN'.length * shipProgress));
+        bitmapLine('SHIP CONN', TEXT_X, SHIP_LINE_Y, 1, COLORS.secondary, 'left', Math.ceil('SHIP CONN'.length * shipProgress));
         const scanProgress = clamp((elapsed - SHIP_SCAN_START) / SHIP_SCAN_DURATION);
         if (scanProgress) bitmapLine('#'.repeat(Math.ceil(MEMORY_FIELD_CHARACTERS * scanProgress)), MEMORY_FIELD_START, SHIP_LINE_Y, 1, COLORS.status);
       });
