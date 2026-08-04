@@ -1,10 +1,10 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
 import { createBootStage } from './boot-stage.js?v=13';
-import { createHudStage } from './hud-stage.js?v=82';
+import { createHudStage } from './hud-stage.js?v=105';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
-const FONT_FILE = './assets/font-data-h/165.h';
+const FONT_FILE = './assets/font-data-h/229.h';
 const controls = Object.fromEntries(['preview', 'stageList', 'addStage', 'stageName', 'stageDuration', 'stageMotion', 'stageBackdrop', 'moveUp', 'moveDown', 'duplicateStage', 'deleteStage', 'stageHeadline', 'stageBody', 'stageFooter', 'stageAccent', 'stageAccentText', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'scrubber', 'restart', 'playPause', 'sequenceDuration', 'stageReadout', 'timeReadout', 'png', 'record', 'status'].map(id => [id, document.querySelector(`#${id}`)]));
 const previewContext = controls.preview.getContext('2d'); previewContext.imageSmoothingEnabled = false;
 const sourceCanvas = document.createElement('canvas'); sourceCanvas.width = W; sourceCanvas.height = H;
@@ -185,4 +185,4 @@ controls.record.addEventListener('click', () => {
 applyCrtLook('arcade'); syncEditor(); renderStageList();
 if (cabinetRenderer) cabinetRenderer.loadSource('./models/asteroids.3ds', { excludeMeshes: ['Mesh09'], removeDanglers: true }).then(() => { controls.status.textContent = 'Imported cabinet mesh loaded for wireframe stages.'; }).catch(error => { console.warn('Using procedural cabinet:', error); });
 hudStage.ready.catch(error => { console.warn('HUD stage assets could not be loaded:', error); });
-Promise.all([loadFont(FONT_FILE, 'Gemini'), loadFont('./assets/font-data-h/079.h', 'Computing 60s Bold'), loadFont('./assets/font-data-h/282.h', 'Pixie')]).then(([font, computing, pixie]) => { bitmapFont = font; osFont = computing; copyrightFont = pixie; if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Sequence fonts loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence fonts: ${error.message}`; });
+Promise.all([loadFont(FONT_FILE, 'Magnetic'), loadFont('./assets/font-data-h/079.h', 'Computing 60s Bold'), loadFont('./assets/font-data-h/282.h', 'Pixie')]).then(([font, computing, pixie]) => { bitmapFont = font; osFont = computing; copyrightFont = pixie; if (!controls.status.textContent.startsWith('Imported cabinet')) controls.status.textContent = 'Sequence fonts loaded.'; requestAnimationFrame(frame); }).catch(error => { controls.status.textContent = `Could not load sequence fonts: ${error.message}`; });
