@@ -1,7 +1,7 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
 import { createBootStage } from './boot-stage.js?v=13';
-import { createHudStage } from './hud-stage.js?v=81';
+import { createHudStage } from './hud-stage.js?v=82';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
 const FONT_FILE = './assets/font-data-h/165.h';
