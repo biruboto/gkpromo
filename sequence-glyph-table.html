@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sequence Glyph Table</title>
+  <style>
+    :root { color-scheme: dark; --ink: #eaf9ff; --muted: #88a0b6; --panel: #0a101a; --line: #26384c; --accent: #00ddff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: #05080d; color: var(--ink); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { width: min(1500px, 100%); margin: 0 auto; padding: 24px; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 18px; }
+    h2 { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+    .note { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 5px; }
+    .glyph { min-width: 0; padding: 7px 6px 6px; border: 1px solid var(--line); background: var(--panel); }
+    .glyph canvas { width: 64px; height: 64px; display: block; margin: 0 auto 6px; image-rendering: pixelated; image-rendering: crisp-edges; background: #020208; }
+    .slot, .mapping { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .slot { color: var(--accent); font-size: 10px; }
+    .mapping { min-height: 18px; color: var(--muted); font-size: 10px; }
+    .error { color: #ff7799; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SEQUENCE GLYPH TABLE</h1>
+    <p class="note">Glyphs are shown in raw slot order, 0x00 through 0x7F. Each bitmap is enlarged without smoothing.</p>
+
+    <section>
+      <h2>HUD FONT: REACTOR ASCII</h2>
+      <p class="note">Spinner mapping: <code>|</code> = slot 0x5C, <code>/</code> = slot 0x0F, <code>-</code> = slot 0x0D, <code>\\</code> = slot 0x3C.</p>
+      <div id="hud" class="grid" aria-label="HUD font glyphs"></div>
+    </section>
+
+    <section>
+      <h2>HUD BORDER TILES: ATASCII</h2>
+      <p class="note">These raw slots are used only for the tiled HUD borders.</p>
+      <div id="atascii" class="grid" aria-label="ATASCII glyphs"></div>
+    </section>
+
+    <section>
+      <h2>BOOT FONT: MAGNETIC</h2>
+      <p class="note">Boot text uses printable ASCII slots: character code minus 0x20.</p>
+      <div id="boot" class="grid" aria-label="Boot font glyphs"></div>
+    </section>
+  </main>
+
+  <script>
+    const SLOT_COUNT = 128;
+    const GLYPH_SIZE = 8;
+    const GLYPH_SCALE = 8;
+    const hudElement = document.querySelector('#hud');
+    const atasciiElement = document.querySelector('#atascii');
+    const bootElement = document.querySelector('#boot');
+
+    function parseFont(source) {
+      const values = source.match(/0x[0-9a-f]{2}/ig) || [];
+      if (values.length < 768) throw new Error('Font data is incomplete.');
+      return Uint8Array.from(values.slice(0, 768), value => Number.parseInt(value.slice(2), 16));
+    }
+
+    function atasciiFont(glyphSource) {
+      const font = new Uint8Array(SLOT_COUNT * GLYPH_SIZE);
+      glyphSource.glyphs.forEach(glyph => {
+        if (glyph.system !== 'ATASCII' || !glyph.internalSlot) return;
+        font.set(glyph.bitmap, Number.parseInt(glyph.internalSlot, 16) * GLYPH_SIZE);
+      });
+      return font;
+    }
+
+    function printableCharacter(slot) {
+      const code = slot + 0x20;
+      return code >= 0x20 && code <= 0x7e ? String.fromCodePoint(code) : null;
+    }
+
+    function mappingLabel(slot, kind) {
+      if (kind === 'hud' && slot === 0x7c) return 'HUD PIPE |';
+      const character = printableCharacter(slot);
+      if (!character) return 'UNMAPPED';
+      if (character === ' ') return 'ASCII SPACE';
+      return `ASCII ${character}`;
+    }
+
+    function drawGlyph(canvas, font, slot) {
+      canvas.width = canvas.height = GLYPH_SIZE * GLYPH_SCALE;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#eaf9ff';
+      const offset = slot * GLYPH_SIZE;
+      for (let row = 0; row < GLYPH_SIZE; row += 1) {
+        for (let column = 0; column < GLYPH_SIZE; column += 1) {
+          if (font[offset + row] & (128 >> column)) context.fillRect(column * GLYPH_SCALE, row * GLYPH_SCALE, GLYPH_SCALE, GLYPH_SCALE);
+        }
+      }
+    }
+
+    function renderTable(element, font, kind) {
+      const fragment = document.createDocumentFragment();
+      for (let slot = 0; slot < SLOT_COUNT; slot += 1) {
+        const cell = document.createElement('div');
+        cell.className = 'glyph';
+        const canvas = document.createElement('canvas');
+        const slotLabel = document.createElement('span');
+        const mapping = document.createElement('span');
+        slotLabel.className = 'slot';
+        mapping.className = 'mapping';
+        slotLabel.textContent = `SLOT 0x${slot.toString(16).toUpperCase().padStart(2, '0')}`;
+        mapping.textContent = mappingLabel(slot, kind);
+        cell.append(canvas, slotLabel, mapping);
+        drawGlyph(canvas, font, slot);
+        fragment.append(cell);
+      }
+      element.replaceChildren(fragment);
+    }
+
+    async function loadText(path) {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.text();
+    }
+
+    Promise.all([
+      loadText('./assets/font-data-h/330.h'),
+      loadText('./assets/font-data-h/229.h'),
+      loadText('./assets/glyphs/legacy-glyphs.json')
+    ]).then(([reactorSource, magneticSource, glyphSource]) => {
+      const parsedGlyphSource = JSON.parse(glyphSource);
+      renderTable(hudElement, parseFont(reactorSource), 'hud');
+      renderTable(atasciiElement, atasciiFont(parsedGlyphSource), 'atascii');
+      renderTable(bootElement, parseFont(magneticSource), 'boot');
+    }).catch(error => {
+      hudElement.innerHTML = `<p class="error">${error.message}</p>`;
+      atasciiElement.replaceChildren();
+      bootElement.replaceChildren();
+    });
+  </script>
+</body>
+</html>

@@ -462,13 +462,13 @@ export function createPromoRenderer({
     const value = color.slice(1); const rgb = [Number.parseInt(value.slice(0, 2), 16), Number.parseInt(value.slice(2, 4), 16), Number.parseInt(value.slice(4, 6), 16)];
     return LOGO_REFLECTION_LEVELS.map(level => rgb.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1))));
   }
-  function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2, image = logoImages.pixel) {
+  function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2, image = logoImages.pixel, staticLogo = false) {
     if (!image.complete || !image.naturalWidth) return;
     logoPixels.width = image.naturalWidth; logoPixels.height = image.naturalHeight;
     const logoCtx = logoPixels.getContext('2d', { willReadFrequently: true }); logoCtx.drawImage(image, 0, 0);
     const imageData = logoCtx.getImageData(0, 0, logoPixels.width, logoPixels.height);
     const reflection = logoReflectionColors(palette.accent);
-    const phase = Math.floor(time * 4) % reflection.length;
+    const phase = staticLogo ? 0 : Math.floor(time * 4) % reflection.length;
     const shadow = palette.shadow.match(/\w\w/g).map(value => Number.parseInt(value, 16));
     for (let index = 0; index < imageData.data.length; index += 4) {
       if (!imageData.data[index + 3]) continue;
@@ -596,7 +596,7 @@ export function createPromoRenderer({
     }
 
     const boundaries = []; const logoCenterX = rectangles.logo.x + rectangles.logo.width / 2; const stackedLogo = isLandscape && controls.logo.value === 'pixel'; const logoScale = stackedLogo ? 4 : isLandscape ? 2 : 4; const logoY = rectangles.logo.y + (isLandscape ? 10 : 0);
-    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX, stackedLogo ? logoImages.stacked : logoImages.pixel);
+    if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX, stackedLogo ? logoImages.stacked : logoImages.pixel, staticText);
     else drawImageCentered(logoImages[controls.logo.value], logoY, logoScale, logoCenterX);
     if (controls.classic.checked) drawClassicArcade(rectangles.logo.y + (stackedLogo ? 70 : isLandscape ? 54 : 50), palette, 4, logoCenterX);
 
