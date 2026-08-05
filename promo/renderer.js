@@ -683,7 +683,11 @@ export function createPromoRenderer({
     gameBackgrounds.resize(W, H);
     crtPipeline.resize({ sourceWidth: W, sourceHeight: H, outputWidth: W, outputHeight: H });
   }
-  function clearFontCaches() { glyphCache.clear(); glyphBoundsCache.clear(); }
+  function clearFontCaches() {
+    glyphCache.clear();
+    glyphBoundsCache.clear();
+    reflectedGlyphCache.clear();
+  }
   function drawLegacyGlyphPreview(canvasElement, glyphData, color) {
     const tileCtx = canvasElement.getContext('2d'); tileCtx.clearRect(0, 0, 16, 16); tileCtx.imageSmoothingEnabled = false;
     tileCtx.drawImage(legacyGlyph(glyphData, color), 0, 0, 16, 16);
