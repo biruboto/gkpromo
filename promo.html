@@ -313,14 +313,14 @@ www.groundkontrol.com</textarea>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
     const modules = [
-      ['CRT', './promo/crt.js?v=265'],
-      ['fonts', './promo/fonts.js?v=265'],
-      ['output formats', './promo/formats.js?v=265'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=265'],
-      ['image block', './promo/image-block.js?v=265'],
-      ['renderer', './promo/renderer.js?v=265'],
-      ['rich text editor', './promo/rich-text-editor.js?v=265'],
-      ['templates', './promo/templates.js?v=265'],
+      ['CRT', './promo/crt.js?v=266'],
+      ['fonts', './promo/fonts.js?v=266'],
+      ['output formats', './promo/formats.js?v=266'],
+      ['game backgrounds', './promo/game-backgrounds.js?v=266'],
+      ['image block', './promo/image-block.js?v=266'],
+      ['renderer', './promo/renderer.js?v=266'],
+      ['rich text editor', './promo/rich-text-editor.js?v=266'],
+      ['templates', './promo/templates.js?v=266'],
     ];
     (async () => {
       for (const [name, source] of modules) {
@@ -330,7 +330,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=265');
+      await import('./promo/app.js?v=266');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

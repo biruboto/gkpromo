@@ -1,7 +1,7 @@
 const CRT_STRENGTHS = { soft: .58, strong: 1 };
 export const CRT_CONTROL_IDS = { curve: 'crtCurve', rgb: 'crtRgb', scanline: 'crtScanline', mask: 'crtMask', vignette: 'crtVignette', drift: 'crtDrift', bloom: 'crtBloom', glow: 'crtGlow' };
 export const CRT_LOOKS = {
-  arcade: { treatment: 'strong', controls: { curve: '130', rgb: '50', scanline: '40', mask: '50', vignette: '120', drift: '7', bloom: '120', glow: '170' } },
+  arcade: { treatment: 'strong', controls: { curve: '150', rgb: '50', scanline: '30', mask: '50', vignette: '120', drift: '6', bloom: '120', glow: '90' } },
   broadcast: { treatment: 'soft', controls: { curve: '10', rgb: '20', scanline: '30', mask: '45', vignette: '100', drift: '0', bloom: '65', glow: '65' } },
   tube: { treatment: 'strong', controls: { curve: '88', rgb: '30', scanline: '58', mask: '45', vignette: '100', drift: '0', bloom: '135', glow: '180' } },
   chroma: { treatment: 'soft', controls: { curve: '35', rgb: '88', scanline: '44', mask: '45', vignette: '100', drift: '0', bloom: '85', glow: '95' } }
