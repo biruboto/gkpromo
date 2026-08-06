@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Happy Hour Animation</title>
+  <style>
+    :root { color-scheme: dark; --bg: #06050b; --panel: #0c0b14; --line: #322641; --ink: #eee5ff; --muted: #a999bb; --accent: #ff73d1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--bg); color: var(--ink); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { width: min(1280px, 100%); min-height: 100vh; margin: 0 auto; padding: 28px 18px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 14px; align-content: start; }
+    header { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+    h1 { margin: 0; font-size: 18px; } header span, .status { color: var(--muted); font-size: 11px; }
+    .stage-wrap { grid-column: 1; width: min(960px, 100%); aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #030207; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--line), 0 18px 60px #0009; }
+    #scene, #preview { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+    #scene canvas { display: block; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+    #preview { z-index: 1; }
+    .controls, .crt-controls { grid-column: 1; width: min(960px, 100%); display: grid; gap: 8px; align-items: center; padding: 10px; border: 1px solid var(--line); background: var(--panel); }
+    .controls { grid-template-columns: auto auto minmax(160px, 1fr) auto auto auto; }
+    .crt-controls { grid-template-columns: 130px 130px repeat(4, minmax(100px, 1fr)); }
+    .crt-controls label { display: grid; gap: 4px; color: var(--muted); font-size: 10px; }
+    .crt-controls select { width: 100%; min-height: 30px; border: 1px solid #59416b; border-radius: 3px; background: #171021; color: var(--ink); font: inherit; }
+    .crt-controls input[type="range"] { width: 100%; accent-color: var(--accent); }
+    button { min-height: 32px; border: 1px solid #59416b; border-radius: 3px; background: #171021; color: var(--ink); cursor: pointer; font: inherit; }
+    button:hover { border-color: var(--accent); background: #24132d; } input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .time { color: var(--muted); text-align: right; white-space: nowrap; }
+    .status { min-height: 18px; }
+    .font-dock { grid-column: 2; grid-row: 2 / span 3; width: 100%; display: grid; gap: 8px; align-self: start; padding: 10px; border: 1px solid var(--line); background: var(--panel); }
+    .font-dock h2 { margin: 0; color: var(--ink); font-size: 11px; }
+    .font-pickers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .font-pickers label { display: grid; gap: 4px; color: var(--muted); font-size: 10px; }
+    .font-picker-native { display: none; }
+    .font-picker { position: relative; min-width: 0; }
+    .font-picker-trigger { width: 100%; min-height: 31px; display: grid; grid-template-columns: minmax(0, 1fr) 14px; align-items: center; gap: 7px; padding: 6px 8px; border: 1px solid #59416b; border-radius: 3px; background: #171021; color: var(--ink); text-align: left; font: inherit; }
+    .font-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .font-picker-menu { position: absolute; z-index: 20; top: calc(100% + 3px); left: 0; width: min(300px, calc(100vw - 48px)); overflow: hidden; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); box-shadow: 0 8px 20px #0008; }
+    .font-picker-tools { display: grid; gap: 6px; padding: 6px; border-bottom: 1px solid var(--line); }
+    .font-library-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .font-library-toggle button { min-height: 26px; padding: 3px 6px; font-size: 10px; }
+    .font-library-toggle button[aria-pressed="true"] { border-color: var(--accent); background: #24132d; }
+    .font-picker-search { width: 100%; min-height: 28px; border: 1px solid var(--line); background: #08070d; color: var(--ink); font: inherit; }
+    .font-picker-list { max-height: 250px; overflow-y: auto; }
+    .font-picker-group { padding: 4px 0; border-top: 1px solid var(--line); }
+    .font-picker-group:first-child { border-top: 0; }
+    .font-picker-label { display: block; padding: 4px 8px 3px; color: var(--muted); font-size: 9px; }
+    .font-picker-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; }
+    .font-picker-choice, .font-favorite { min-width: 0; min-height: 28px; border: 0; border-radius: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; }
+    .font-picker-choice { padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .font-picker-choice:hover, .font-picker-choice[aria-selected="true"], .font-favorite:hover { background: #102031; }
+    .font-favorite { padding: 0; text-align: center; }
+    .font-favorite::after { content: '♡'; color: var(--muted); font-size: 16px; }
+    .font-favorite.is-favorite::after { content: '♥'; color: var(--accent); }
+    .font-variant-control { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 4px; align-items: center; }
+    .font-variant-control button { min-height: 26px; padding: 0; }
+    .font-variant-control span { color: var(--muted); font-size: 9px; text-align: center; }
+    @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } .font-dock { grid-column: 1; grid-row: auto; } }
+    @media (max-width: 760px) { .crt-controls { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { main { padding: 18px 12px; } header { display: block; } header span { display: block; margin-top: 4px; } .controls { grid-template-columns: 1fr 1fr; } .controls input { grid-column: 1 / -1; order: 3; } .time { text-align: left; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>HAPPY HOUR</h1><span>ONE-OFF ANIMATION / 960 X 540 / 2X EXPORT 1920 X 1080</span></header>
+    <section class="stage-wrap" aria-label="Happy Hour animation preview"><div id="scene"></div><canvas id="preview" width="960" height="540"></canvas></section>
+    <section class="controls" aria-label="Animation controls">
+      <button id="playPause" type="button">PAUSE</button>
+      <button id="restart" type="button">RESTART</button>
+      <input id="scrubber" type="range" min="0" max="15" step="0.01" value="0" aria-label="Animation position">
+      <span id="time" class="time">00.0 SEC / 15.0 SEC</span>
+      <button id="png" type="button">EXPORT PNG</button>
+      <button id="record" type="button">EXPORT MP4</button>
+    </section>
+    <section class="crt-controls" aria-label="CRT emulation controls">
+      <label>LOOK<select id="crtLook"><option value="arcade">ARCADE CABINET</option><option value="broadcast">BROADCAST MONITOR</option><option value="tube">WARM TUBE</option><option value="chroma">CHROMA SHIFT</option><option value="custom" selected>CUSTOM</option></select></label>
+      <label>MODE<select id="crt"><option value="off">OFF</option><option value="soft">CRT-PI SOFT</option><option value="strong" selected>CRT-PI STRONG</option></select></label>
+      <label>CURVE<input id="crtCurve" type="range" min="0" max="150" value="0"></label>
+      <label>RGB<input id="crtRgb" type="range" min="0" max="100" value="50"></label>
+      <label>SCANLINES<input id="crtScanline" type="range" min="0" max="100" value="30"></label>
+      <label>MASK<input id="crtMask" type="range" min="0" max="100" value="50"></label>
+      <label>VIGNETTE<input id="crtVignette" type="range" min="0" max="200" value="120"></label>
+      <label>DRIFT<input id="crtDrift" type="range" min="0" max="100" value="6"></label>
+      <label>BLOOM<input id="crtBloom" type="range" min="0" max="150" value="120"></label>
+      <label>GLOW<input id="crtGlow" type="range" min="0" max="200" value="90"></label>
+    </section>
+    <section class="font-dock" aria-label="Bitmap font controls">
+      <h2>BITMAP FONTS</h2>
+      <div class="font-pickers">
+        <label>TITLE FONT<select id="headerFont" aria-label="Title font"><option value="Reactor">Reactor</option></select></label>
+        <label>FOOTER FONT<select id="footerFont" aria-label="Footer font"><option value="Cinema Bold">Cinema Bold</option></select></label>
+      </div>
+      <div hidden>
+        <select id="font" aria-label="Body font"></select>
+        <select id="detailFont" aria-label="Detail font"></select>
+        <select id="ctaFont" aria-label="CTA font"></select>
+      </div>
+    </section>
+    <div id="status" class="status" aria-live="polite">Loading Happy Hour assets...</div>
+  </main>
+  <script>
+    window.addEventListener('error', event => {
+      const status = document.querySelector('#status');
+      const location = event.filename ? ' (' + event.filename + ':' + (event.lineno || 0) + ':' + (event.colno || 0) + ')' : '';
+      if (status) status.textContent = 'Startup error: ' + (event.message || 'Unknown error.') + location;
+    });
+    window.addEventListener('unhandledrejection', event => {
+      const status = document.querySelector('#status');
+      if (status) status.textContent = 'Startup error: ' + ((event.reason && event.reason.message) || event.reason || 'Unhandled promise rejection.');
+    });
+  </script>
+  <script type="module">
+    Promise.all([import('./lab/runtime.js'), import('./animations/happy-hour.js'), import('./promo/fonts.js')]).then(([runtimeModule, animationModule, fontsModule]) => {
+      const controls = {
+        font: document.querySelector('#font'),
+        headerFont: document.querySelector('#headerFont'),
+        detailFont: document.querySelector('#detailFont'),
+        ctaFont: document.querySelector('#ctaFont'),
+        footerFont: document.querySelector('#footerFont'),
+        status: document.querySelector('#status')
+      };
+      const fonts = { title: null, footer: null };
+      let animationRuntime = null;
+      const fontManager = fontsModule.createFontManager({
+        controls,
+        onFontChange: () => animationRuntime?.renderAt(0),
+        onFontLoaded: (target, font) => {
+          if (target === 'header') fonts.title = font;
+          if (target === 'footer') fonts.footer = font;
+          animationRuntime?.renderAt(0);
+        }
+      });
+      animationRuntime = runtimeModule.createAnimationRuntime({
+        preview: document.querySelector('#preview'),
+        stageHost: document.querySelector('#scene'),
+        width: 960,
+        height: 540,
+        duration: 15,
+        exportWidth: 1920,
+        exportHeight: 1080,
+        create: options => animationModule.createHappyHour({ ...options, fonts }),
+        downloadName: 'happy-hour-frame.png',
+        controls: {
+          playPause: document.querySelector('#playPause'),
+          restart: document.querySelector('#restart'),
+          scrubber: document.querySelector('#scrubber'),
+          time: document.querySelector('#time'),
+          png: document.querySelector('#png'),
+          record: document.querySelector('#record'),
+          crtLook: document.querySelector('#crtLook'),
+          crt: document.querySelector('#crt'),
+          crtCurve: document.querySelector('#crtCurve'),
+          crtRgb: document.querySelector('#crtRgb'),
+          crtScanline: document.querySelector('#crtScanline'),
+          crtMask: document.querySelector('#crtMask'),
+          crtVignette: document.querySelector('#crtVignette'),
+          crtDrift: document.querySelector('#crtDrift'),
+          crtBloom: document.querySelector('#crtBloom'),
+          crtGlow: document.querySelector('#crtGlow'),
+          status: document.querySelector('#status')
+        }
+      });
+      fontManager.populateFonts().then(() => fontManager.ensureGamesLibrary()).then(() => {
+        fontManager.selectFontSettings({ headerFont: 'games:kof2k@0' });
+        fontManager.renderFontPickers();
+        return Promise.all([
+          fontManager.loadSelectedFont('headerFont', 'header', false),
+          fontManager.loadSelectedFont('footerFont', 'footer', false)
+        ]);
+      }).catch(error => {
+        console.error(error);
+        if (controls.status && !controls.status.textContent.startsWith('Could not load animation')) controls.status.textContent = 'Bitmap font picker unavailable: ' + error.message;
+      });
+    }).catch(error => {
+      document.querySelector('#status').textContent = 'Startup error: ' + error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>
