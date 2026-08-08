@@ -85,8 +85,8 @@
     <section class="font-dock" aria-label="Bitmap font controls">
       <h2>BITMAP FONTS</h2>
       <div class="font-pickers">
-        <label>TITLE FONT<select id="headerFont" aria-label="Title font"><option value="Reactor">Reactor</option></select></label>
-        <label>FOOTER FONT<select id="footerFont" aria-label="Footer font"><option value="Cinema Bold">Cinema Bold</option></select></label>
+        <label>TITLE FONT<select id="headerFont" aria-label="Title font"><option value="Clipper">Clipper</option></select></label>
+        <label>FOOTER FONT<select id="footerFont" aria-label="Footer font"><option value="Calstone Heavy">Calstone Heavy</option></select></label>
       </div>
       <div hidden>
         <select id="font" aria-label="Body font"></select>
@@ -121,11 +121,10 @@
       let animationRuntime = null;
       const fontManager = fontsModule.createFontManager({
         controls,
-        onFontChange: () => animationRuntime?.renderAt(0),
+        onFontChange: () => animationRuntime?.renderAt(animationRuntime.getTime()),
         onFontLoaded: (target, font) => {
           if (target === 'header') fonts.title = font;
           if (target === 'footer') fonts.footer = font;
-          animationRuntime?.renderAt(0);
         }
       });
       animationRuntime = runtimeModule.createAnimationRuntime({
@@ -159,7 +158,7 @@
         }
       });
       fontManager.populateFonts().then(() => fontManager.ensureGamesLibrary()).then(() => {
-        fontManager.selectFontSettings({ headerFont: 'games:kof2k@0' });
+        fontManager.selectFontSettings({ headerFont: 'Clipper', footerFont: 'Calstone Heavy' });
         fontManager.renderFontPickers();
         return Promise.all([
           fontManager.loadSelectedFont('headerFont', 'header', false),

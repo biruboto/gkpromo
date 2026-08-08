@@ -43,9 +43,17 @@ export function createBitmapFontRenderer({ context, font }) {
     }
   }
 
-  function drawText(value, x, y, { scale = 1, color = '#ffffff', align = 'left', gap = 1, shadow = null, shadowOffset = scale } = {}) {
+  function drawText(value, x, y, { scale = 1, color = '#ffffff', align = 'left', gap = 1, shadow = null, shadowOffset = scale, stroke = null, strokeWidth = 1 } = {}) {
     const width = measureText(value, scale, gap);
     let cursor = align === 'center' ? Math.round(x - width / 2) : align === 'right' ? Math.round(x - width) : Math.round(x);
+    if (stroke && strokeWidth > 0) {
+      const offsets = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+      for (const character of value) {
+        offsets.forEach(([offsetX, offsetY]) => drawGlyph(character, cursor + offsetX * strokeWidth * scale, y + offsetY * strokeWidth * scale, scale, stroke));
+        cursor += (character === ' ' ? 6 : 8) * scale + gap * scale;
+      }
+      cursor = align === 'center' ? Math.round(x - width / 2) : align === 'right' ? Math.round(x - width) : Math.round(x);
+    }
     if (shadow && font?.kind !== 'arcade') {
       for (const character of value) {
         drawGlyph(character, cursor + shadowOffset, y + shadowOffset, scale, shadow);

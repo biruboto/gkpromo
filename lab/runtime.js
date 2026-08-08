@@ -121,10 +121,13 @@ export function createAnimationRuntime({ preview, stageHost, stageFactory = null
     recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
     const stopped = new Promise(resolve => { recorder.onstop = resolve; });
     recorder.start();
-    const frameCount = Math.ceil(duration * 30);
-    for (let frame = 0; frame <= frameCount; frame += 1) {
+    const frameInterval = 1000 / 30;
+    const frameCount = Math.round(duration * 30);
+    for (let frame = 0; frame < frameCount; frame += 1) {
+      const frameStart = performance.now();
       renderAt(frame / 30);
-      await new Promise(resolve => setTimeout(resolve, 1000 / 30));
+      const remaining = frameInterval - (performance.now() - frameStart);
+      if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
     }
     recorder.stop();
     await stopped;
@@ -198,5 +201,5 @@ export function createAnimationRuntime({ preview, stageHost, stageFactory = null
   }, { once: true });
 
   updateReadout();
-  return { ready, renderAt, setPlaying };
+  return { ready, renderAt, setPlaying, getTime: () => currentTime };
 }
