@@ -6,23 +6,30 @@ const SHIP_CONTENT_VIEWPORT = { x: 9, y: 46, width: 162, height: 122 };
 const FLIGHT_VIEWPORT = { x: 7, y: 28, width: 166, height: 82 };
 const PILOT_PANEL = { x: 7, y: 111, width: 166, height: 68 };
 const FLIGHT_TITLE_CARDS = [["PORTLAND'S PREMIER", 'RETRO ARCADE!!'], ['80+ VIDEO GAMES &', '40+ PINBALL TABLES!'], ['TWO FULL BARS WITH', '20 TAPS & FOOD'], ['EVENTS &', 'TOURNAMENTS']];
-const FLIGHT_TITLE_LINE_GAP = 5, FLIGHT_TITLE_WAVE_AMPLITUDE = 2, FLIGHT_TITLE_START_X = W + 1, FLIGHT_TITLE_EXIT_X = -9, FLIGHT_TITLE_ENTRANCE_DELAY = .3, FLIGHT_TITLE_EXIT_START = 4.1, FLIGHT_TITLE_EXIT_DURATION = .64, FLIGHT_TITLE_EXIT_STAGGER = .018;
-const FLIGHT_TITLE_EXIT_WINDOW = FLIGHT_TITLE_EXIT_DURATION + (Math.max(...FLIGHT_TITLE_CARDS.slice(0, 2).flatMap(card => card.map(line => [...line].length))) - 1) * FLIGHT_TITLE_EXIT_STAGGER;
-const FLIGHT_TITLE_CARD_WINDOW = FLIGHT_TITLE_EXIT_START + FLIGHT_TITLE_EXIT_WINDOW;
-const FLIGHT_OUTRO_START = FLIGHT_TITLE_CARD_WINDOW * FLIGHT_TITLE_CARDS.length, FLIGHT_SHIP_EXIT_DURATION = 1.05, FLIGHT_SHIP_EXIT_DISTANCE = 18, FLIGHT_REST_FADE_DURATION = .72;
-const FLIGHT_SITE_COPY = 'groundkontrol.com', FLIGHT_SITE_FINAL_Y = Math.round(H / 2 - 4), FLIGHT_SITE_HORIZON_Y = FLIGHT_SITE_FINAL_Y + 11, FLIGHT_SITE_START = FLIGHT_OUTRO_START + FLIGHT_SHIP_EXIT_DURATION + FLIGHT_REST_FADE_DURATION, FLIGHT_SITE_LETTER_STAGGER = .04, FLIGHT_SITE_JUMP_DURATION = .48, FLIGHT_SITE_HOLD_DURATION = 5, FLIGHT_FINAL_FADE_DURATION = .8;
+const FLIGHT_TITLE_LINE_GAP = 5, FLIGHT_TITLE_WAVE_AMPLITUDE = 2, FLIGHT_TITLE_START_X = W + 1, FLIGHT_TITLE_EXIT_X = -9, FLIGHT_TITLE_ENTRANCE_DELAY = .3, FLIGHT_TITLE_EXIT_START = 3, FLIGHT_TITLE_EXIT_DURATION = .64, FLIGHT_TITLE_EXIT_STAGGER = .018;
+const FLIGHT_TITLE_EXIT_CLEAR_PROGRESS = .67;
+const flightTitleExitWindow = card => Math.max(...card.map((line, index) => index * .1 + ([...line].length - 1) * FLIGHT_TITLE_EXIT_STAGGER + FLIGHT_TITLE_EXIT_DURATION));
+const flightTitleClearWindow = card => Math.max(...card.map((line, index) => index * .1 + ([...line].length - 1) * FLIGHT_TITLE_EXIT_STAGGER + FLIGHT_TITLE_EXIT_DURATION * FLIGHT_TITLE_EXIT_CLEAR_PROGRESS));
+const FLIGHT_TITLE_CARD_ADVANCES = FLIGHT_TITLE_CARDS.map(card => FLIGHT_TITLE_EXIT_START + flightTitleClearWindow(card) - FLIGHT_TITLE_ENTRANCE_DELAY);
+const FLIGHT_TITLE_CARD_STARTS = FLIGHT_TITLE_CARD_ADVANCES.reduce((starts, advance) => [...starts, starts.at(-1) + advance], [0]).slice(0, -1);
+const FLIGHT_OUTRO_START = FLIGHT_TITLE_CARD_STARTS.at(-1) + FLIGHT_TITLE_EXIT_START + flightTitleClearWindow(FLIGHT_TITLE_CARDS.at(-1)), FLIGHT_SHIP_ENTRY_DURATION = .42, FLIGHT_SHIP_ENTRY_DISTANCE = 18, FLIGHT_SHIP_EXIT_DURATION = 1.05, FLIGHT_SHIP_EXIT_DISTANCE = 18, FLIGHT_REST_FADE_DURATION = .72;
+const FLIGHT_SITE_COPY = 'groundkontrol.com', FLIGHT_SITE_FINAL_Y = Math.round(H / 2 - 4), FLIGHT_SITE_HORIZON_Y = FLIGHT_SITE_FINAL_Y + 11, FLIGHT_SITE_START = FLIGHT_OUTRO_START + FLIGHT_SHIP_EXIT_DURATION + FLIGHT_REST_FADE_DURATION, FLIGHT_SITE_LETTER_STAGGER = .04, FLIGHT_SITE_JUMP_DURATION = .48, FLIGHT_SITE_HOLD_DURATION = 3, FLIGHT_FINAL_FADE_DURATION = .8, FLIGHT_FINAL_BLACK_HOLD = .5;
 const FLIGHT_SITE_FADE_START = FLIGHT_SITE_START + (FLIGHT_SITE_COPY.length - 1) * FLIGHT_SITE_LETTER_STAGGER + FLIGHT_SITE_JUMP_DURATION + FLIGHT_SITE_HOLD_DURATION;
 const FLIGHT_TITLE_Y = PILOT_PANEL.y + PILOT_PANEL.height + Math.round((H - PILOT_PANEL.y - PILOT_PANEL.height - (8 * FLIGHT_TITLE_CARDS[0].length + FLIGHT_TITLE_LINE_GAP)) / 2);
 const TECH_SOURCE_GLYPH_SIZE = 4, TECH_GLYPH_SIZE = 4, TECH_GLYPH_GAP = 1;
 const COMPUTER_GLYPH_SIZE = 4, COMPUTER_GLYPH_GAP = 1;
-const SYSTEM_STATUS_RIGHT = 104, SYSTEM_BAR_X = 116, SYSTEM_BAR_WIDTH = 50;
+const SYSTEM_STATUS_RIGHT = 104, SYSTEM_BAR_X = 116, SYSTEM_BAR_WIDTH = 50, SYSTEM_ROWS_Y = 178;
+const READY_SPIN_DURATION = 1, READY_ZOOM_DURATION = .55, READY_SPIN_TURNS = 3;
 const HUD_TILES = { topLeft: 0x51, horizontal: 0x52, topRight: 0x45, leftVertical: 0x7c, rightVertical: 0x7c, bottomLeft: 0x5a, bottomRight: 0x43 };
 const COLORS = { space: '#0c0a20', shadow: '#020208', wire: '#00ddff', frame: '#4848d0', primary: '#ccccff', secondary: '#88ffee', status: '#ffdd44', dim: '#ff4488', idle: '#707080', fill: '#00ddff', outline: '#7070ff', callout: '#ff4488' };
 const SPINNER_FRAMES = ['|', '/', '-', '\\'];
-const BOOT_STAGES = [{ name: 'void', duration: 1.4 }, { name: 'signal', duration: 2.4 }, { name: 'acquire', duration: 2.1 }, { name: 'systems', duration: 5 * 4 }, { name: 'ready', duration: 6 }];
+const BOOT_STAGES = [{ name: 'void', duration: 1.4 }, { name: 'signal', duration: 2.4 }, { name: 'acquire', duration: 2.1 }, { name: 'systems', duration: 4 * 4 }, { name: 'ready', duration: 4 }];
 const BOOT_DURATION = BOOT_STAGES.reduce((total, stage) => total + stage.duration, 0);
 const HUD_HANDOFF_ELAPSED = BOOT_STAGES.slice(0, 3).reduce((total, stage) => total + stage.duration, 0) - .05;
-const HUD_REVEAL_DURATION = .72;
+const HUD_STAGE_START_ELAPSED = HUD_HANDOFF_ELAPSED + .05;
+const HANDOFF_REVEAL_STAGGER = .08, HANDOFF_REVEAL_DURATION = .2, HANDOFF_ROW_REVEAL_DURATION = .12, HANDOFF_ROW_TRAIL_DELAY = .08, HANDOFF_REVEAL_ORDER_COUNT = 10;
+const HANDOFF_SHIP_HOLD_START = .48, HANDOFF_SHIP_SETTLE_DURATION = .18;
+const HANDOFF_VIEWPORT_TEXT_START = HANDOFF_SHIP_HOLD_START + HANDOFF_SHIP_SETTLE_DURATION, HANDOFF_VIEWPORT_TEXT_DURATION = .06, HANDOFF_VIEWPORT_TEXT_GAP = .02;
 const SYSTEM_LOADS = [
   { label: 'CORE', amount: 1, point: [0, 0, 0], distance: 3.6, radius: 12, callout: [17, 98], calloutSide: 'right' },
   { label: 'DRIVE', amount: 1, point: [0, -2.1, .15], distance: 3.1, radius: 10, callout: [17, 145], calloutSide: 'right' },
@@ -90,13 +97,13 @@ export function createHudStage({ width, height }) {
   function measure(value, scale = 1) { return Math.max(0, [...value].length * 9 - 1) * scale; }
   function text(value, x, y, color, scale = 1, align = 'left') { let pen = Math.round(x - (align === 'center' ? measure(value, scale) / 2 : align === 'right' ? measure(value, scale) : 0)); for (const character of value) { context.drawImage(glyphImage(glyphCode(character), color), pen, y, 8 * scale, 8 * scale); pen += 9 * scale; } }
   function titleEase(progress) { if (progress <= 0) return 0; if (progress >= 1) return 1; return progress < .5 ? Math.pow(2, 20 * progress - 10) / 2 : (2 - Math.pow(2, -20 * progress + 10)) / 2; }
-  function waveText(value, centerX, y, color, elapsed, phase = 0, lineIndex = 0, mode = 'enter') {
-    const startX = Math.round(centerX - measure(value) / 2), lineDelay = mode === 'enter' ? FLIGHT_TITLE_ENTRANCE_DELAY + lineIndex * .1 : lineIndex * .1;
+  function waveText(value, centerX, y, color, elapsed, phase = 0, lineIndex = 0, mode = 'enter', waveElapsed = elapsed) {
+    const startX = Math.round(centerX - measure(value) / 2), exitX = FLIGHT_TITLE_EXIT_X - measure(value), lineDelay = mode === 'enter' ? FLIGHT_TITLE_ENTRANCE_DELAY + lineIndex * .1 : lineIndex * .1;
     if (mode === 'enter' && elapsed <= lineDelay) return;
     [...value].forEach((character, index) => {
       const letterDelay = lineDelay + index * (mode === 'enter' ? .02 : FLIGHT_TITLE_EXIT_STAGGER), letterProgress = clamp((elapsed - letterDelay) / (mode === 'enter' ? .36 : FLIGHT_TITLE_EXIT_DURATION));
       if (mode === 'enter' && !letterProgress || mode === 'exit' && letterProgress >= 1) return;
-      const eased = titleEase(letterProgress), targetX = startX + index * 9, fromX = mode === 'enter' ? FLIGHT_TITLE_START_X : targetX, toX = mode === 'enter' ? targetX : FLIGHT_TITLE_EXIT_X, letterX = Math.round(fromX + (toX - fromX) * eased), waveY = y + Math.round(Math.sin(elapsed * 7.5 - index * .8 + phase) * FLIGHT_TITLE_WAVE_AMPLITUDE);
+      const eased = titleEase(letterProgress), targetX = startX + index * 9, fromX = mode === 'enter' ? FLIGHT_TITLE_START_X : targetX, toX = mode === 'enter' ? targetX : exitX + index * 9, letterX = Math.round(fromX + (toX - fromX) * eased), waveY = y + Math.round(Math.sin(waveElapsed * 7.5 - index * .8 + phase) * FLIGHT_TITLE_WAVE_AMPLITUDE);
       context.drawImage(glyphImage(glyphCode(character), color, flightTitleFontData, 'flight-title'), letterX, waveY, 8, 8);
     });
   }
@@ -221,6 +228,11 @@ export function createHudStage({ width, height }) {
   function systemLoadState(sequence) { const progress = sequence.name === 'systems' ? sequence.local : sequence.name === 'ready' ? 1 : 0; return { progress, loads: SYSTEM_LOADS.map((system, index) => ({ ...system, phase: clamp(progress * SYSTEM_LOADS.length - index) })) }; }
   function subsystemFocus(sequence) { if (sequence.name !== 'systems') return null; const { progress, loads } = systemLoadState(sequence), raw = progress * loads.length, index = Math.min(loads.length - 1, Math.floor(raw)); return { index, current: loads[index], previous: index ? loads[index - 1] : null, blend: clamp(raw - index) }; }
   function setCameraShot(shot, aim, position) { if (!shot) { aim.set(0, 0, 0); root.localToWorld(aim); position.copy(aim); position.y += .15; position.z += 9; return; } aim.set(...shot.point); root.localToWorld(aim); position.copy(aim); position.y += .1; position.z += shot.distance; }
+  function setLockedCameraShot(shot, rotationY, aim, position) {
+    const scale = root.scale.x, [sourceX, sourceY, sourceZ] = shot.point, cosine = Math.cos(rotationY), sine = Math.sin(rotationY), pointX = sourceX * scale, pointY = sourceY * scale, pointZ = sourceZ * scale;
+    aim.set(root.position.x + pointX * cosine + pointZ * sine, root.position.y + pointY, root.position.z - pointX * sine + pointZ * cosine);
+    position.copy(aim); position.y += .1; position.z += shot.distance;
+  }
   function updateStarfield(elapsed, signalProgress = 1, staticOpacity = .68, speedMultiplier = 1, motionAxis = 'depth', streakProgress = signalProgress) {
     staticStars.forEach(field => { field.material.opacity = staticOpacity; });
     driftingStars.forEach(layer => {
@@ -247,17 +259,18 @@ export function createHudStage({ width, height }) {
     renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera);
     context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height);
   }
-  function updateThree(sequence, starElapsed = sequence.elapsed, shipViewport = SHIP_CONTENT_VIEWPORT, motionElapsed = starElapsed) {
+  function updateThree(sequence, starElapsed = sequence.elapsed, shipViewport = SHIP_CONTENT_VIEWPORT, motionElapsed = starElapsed, handoffFaceOn = 0) {
     camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setViewport(0, 0, W, H); root.position.x = -1.35; root.position.z = 0; root.rotation.set(0, 0, 0); shipMaterial.color.set(COLORS.wire); thrustMaterial.opacity = 0;
     updateStarfield(starElapsed, 1, .68);
-    const acquisition = sequence.index > 2 ? 1 : sequence.name === 'acquire' ? clamp(sequence.local * 1.35) : 0, eased = acquisition * acquisition * (3 - 2 * acquisition); shipMaterial.opacity = eased; root.visible = acquisition > 0; root.scale.setScalar(.45 + eased * .37); root.rotation.y = motionElapsed * .65 * eased; root.rotation.x = Math.sin(motionElapsed * .8) * .08 * eased; root.position.y = Math.sin(motionElapsed * 1.5) * .12 - .2 + (1 - eased) * .7;
-    root.updateMatrixWorld(true); const focus = subsystemFocus(sequence); if (sequence.name === 'ready') { setCameraShot(SYSTEM_LOADS.at(-1), cameraFromAim, cameraFromPosition); setCameraShot(null, cameraToAim, cameraToPosition); const blend = clamp(sequence.local / .28) ** 2 * (3 - 2 * clamp(sequence.local / .28)); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } else if (!focus) setCameraShot(null, cameraAim, cameraPosition); else { setCameraShot(focus.previous, cameraFromAim, cameraFromPosition); setCameraShot(focus.current, cameraToAim, cameraToPosition); const transition = clamp(focus.blend * 8), blend = transition * transition * (3 - 2 * transition); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } camera.position.copy(cameraPosition); camera.lookAt(cameraAim);
+    const phaseMotionElapsed = sequence.index >= 3 ? sequence.elapsed - HUD_STAGE_START_ELAPSED : motionElapsed, acquisition = sequence.index > 2 ? 1 : sequence.name === 'acquire' ? clamp(sequence.local * 1.35) : 0, eased = acquisition * acquisition * (3 - 2 * acquisition), baseRotation = phaseMotionElapsed * .65, readySpinProgress = sequence.name === 'ready' ? clamp(sequence.local / READY_SPIN_DURATION) : 0, readySpinEase = 1 - (1 - readySpinProgress) ** 3, readyStartRotation = sequence.name === 'ready' ? (sequence.elapsed - sequence.local * sequence.duration - HUD_STAGE_START_ELAPSED) * .65 : 0, neutralRotation = (Math.floor(readyStartRotation / (Math.PI * 2)) + READY_SPIN_TURNS + 1) * Math.PI * 2, settledEased = eased + (1 - eased) * handoffFaceOn, normalRotation = sequence.name === 'ready' ? baseRotation + (neutralRotation - baseRotation) * readySpinEase : baseRotation * eased, normalTilt = sequence.name === 'ready' ? 0 : Math.sin(phaseMotionElapsed * .8) * .08 * eased, normalY = sequence.name === 'ready' ? -.2 : Math.sin(phaseMotionElapsed * 1.5) * .12 - .2 + (1 - eased) * .7;
+    shipMaterial.opacity = settledEased; root.visible = acquisition > 0; root.scale.setScalar(.45 + settledEased * .37); root.rotation.y = normalRotation + (Math.PI * 2 - normalRotation) * handoffFaceOn; root.rotation.x = normalTilt * (1 - handoffFaceOn); root.position.y = normalY + (-.2 - normalY) * handoffFaceOn;
+    root.updateMatrixWorld(true); const focus = subsystemFocus(sequence); if (sequence.name === 'ready') { setLockedCameraShot(SYSTEM_LOADS.at(-1), readyStartRotation, cameraFromAim, cameraFromPosition); setCameraShot(null, cameraToAim, cameraToPosition); const zoomProgress = clamp(sequence.local / READY_ZOOM_DURATION), blend = zoomProgress * zoomProgress * (3 - 2 * zoomProgress); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } else if (!focus) setCameraShot(null, cameraAim, cameraPosition); else { setCameraShot(focus.previous, cameraFromAim, cameraFromPosition); setCameraShot(focus.current, cameraToAim, cameraToPosition); const transition = clamp(focus.blend * 8), blend = transition * transition * (3 - 2 * transition); cameraAim.copy(cameraFromAim).lerp(cameraToAim, blend); cameraPosition.copy(cameraFromPosition).lerp(cameraToPosition, blend); } camera.position.copy(cameraPosition); camera.lookAt(cameraAim);
     renderer.setScissorTest(false); renderer.clear(); renderer.render(scene, backgroundCamera); renderer.clearDepth(); renderer.setScissor(shipViewport.x, H - shipViewport.y - shipViewport.height, shipViewport.width, shipViewport.height); renderer.setScissorTest(true); renderer.render(shipScene, camera); renderer.setScissorTest(false);
   }
   function renderFlight({ elapsed, accent = COLORS.wire }) {
-    const viewport = FLIGHT_VIEWPORT, bob = Math.sin(elapsed * 3.1) * .11 + Math.sin(elapsed * 7.4) * .018, outroElapsed = Math.max(0, elapsed - FLIGHT_OUTRO_START), shipExitProgress = clamp(outroElapsed / FLIGHT_SHIP_EXIT_DURATION), shipExit = shipExitProgress ** 2, restFade = 1 - clamp((outroElapsed - FLIGHT_SHIP_EXIT_DURATION) / FLIGHT_REST_FADE_DURATION), siteElapsed = Math.max(0, elapsed - FLIGHT_SITE_START), finalFade = clamp((elapsed - FLIGHT_SITE_FADE_START) / FLIGHT_FINAL_FADE_DURATION), streakProgress = outroElapsed < FLIGHT_SHIP_EXIT_DURATION - .08 ? 1 : 0;
+    const viewport = FLIGHT_VIEWPORT, entryProgress = clamp(elapsed / FLIGHT_SHIP_ENTRY_DURATION), shipEntry = 1 - (1 - entryProgress) ** 3, bob = Math.sin(elapsed * 3.1) * .11 + Math.sin(elapsed * 7.4) * .018, outroElapsed = Math.max(0, elapsed - FLIGHT_OUTRO_START), shipExitProgress = clamp(outroElapsed / FLIGHT_SHIP_EXIT_DURATION), shipExit = shipExitProgress ** 2, restFade = 1 - clamp((outroElapsed - FLIGHT_SHIP_EXIT_DURATION) / FLIGHT_REST_FADE_DURATION), siteElapsed = Math.max(0, elapsed - FLIGHT_SITE_START), finalFade = clamp((elapsed - FLIGHT_SITE_FADE_START) / FLIGHT_FINAL_FADE_DURATION), streakProgress = outroElapsed < FLIGHT_SHIP_EXIT_DURATION - .08 ? 1 : 0;
     updateStarfield(elapsed, 1, .32, 44, 'horizontal', streakProgress);
-    shipMaterial.color.set(accent); shipMaterial.opacity = .96; root.visible = shipExitProgress < 1; root.position.x = shipExit * FLIGHT_SHIP_EXIT_DISTANCE; root.position.y = bob; root.position.z = 0; root.scale.setScalar(1.35 + Math.sin(elapsed * 2.2) * .035); updateThrust(elapsed, .62 + shipExitProgress * .38);
+    shipMaterial.color.set(accent); shipMaterial.opacity = .96; root.visible = shipExitProgress < 1; root.position.x = -FLIGHT_SHIP_ENTRY_DISTANCE * (1 - shipEntry) + shipExit * FLIGHT_SHIP_EXIT_DISTANCE; root.position.y = bob; root.position.z = 0; root.scale.setScalar(.68 + shipEntry * .67 + Math.sin(elapsed * 2.2) * .035 * shipEntry); updateThrust(elapsed, .62 + shipExitProgress * .38);
     root.rotation.set(0, 0, -Math.PI / 2); root.rotateY(Math.sin(elapsed * 1.4) * .27 + shipExitProgress ** 1.4 * Math.PI * 2);
     root.updateMatrixWorld(true);
     cameraAim.set(0, bob, 0);
@@ -335,9 +348,13 @@ export function createHudStage({ width, height }) {
   }
   function drawFlightTitle(elapsed, accent) {
     if (!flightTitleFontData) return;
-    const cardIndex = Math.min(FLIGHT_TITLE_CARDS.length - 1, Math.floor(elapsed / FLIGHT_TITLE_CARD_WINDOW)), cardStart = cardIndex * FLIGHT_TITLE_CARD_WINDOW, cardElapsed = elapsed - cardStart, mode = cardElapsed >= FLIGHT_TITLE_EXIT_START ? 'exit' : 'enter', animationElapsed = mode === 'exit' ? cardElapsed - FLIGHT_TITLE_EXIT_START : cardElapsed, card = FLIGHT_TITLE_CARDS[cardIndex];
     context.save(); context.scale(SCALE, SCALE);
-    card.forEach((line, index) => waveText(line, Math.round(W / 2), FLIGHT_TITLE_Y + index * (8 + FLIGHT_TITLE_LINE_GAP), '#f1f8ff', animationElapsed, index * Math.PI, index, mode));
+    FLIGHT_TITLE_CARDS.forEach((card, cardIndex) => {
+      const cardElapsed = elapsed - FLIGHT_TITLE_CARD_STARTS[cardIndex];
+      if (cardElapsed < 0 || cardElapsed >= FLIGHT_TITLE_EXIT_START + flightTitleExitWindow(card)) return;
+      const mode = cardElapsed >= FLIGHT_TITLE_EXIT_START ? 'exit' : 'enter', animationElapsed = mode === 'exit' ? cardElapsed - FLIGHT_TITLE_EXIT_START : cardElapsed;
+      card.forEach((line, index) => waveText(line, Math.round(W / 2), FLIGHT_TITLE_Y + index * (8 + FLIGHT_TITLE_LINE_GAP), '#f1f8ff', animationElapsed, index * Math.PI, index, mode, cardElapsed));
+    });
     context.restore();
   }
   function drawFlightWebsite(elapsed) {
@@ -353,9 +370,9 @@ export function createHudStage({ width, height }) {
     context.restore();
   }
   function renderTransition({ elapsed, progress }) {
-    const transition = clamp(progress), viewport = { x: SHIP_CONTENT_VIEWPORT.x, y: Math.round(9 + (SHIP_CONTENT_VIEWPORT.y - 9) * transition), width: SHIP_CONTENT_VIEWPORT.width, height: Math.round(207 + (SHIP_CONTENT_VIEWPORT.height - 207) * transition) };
-    updateThree({ name: 'acquire', index: 2, elapsed, local: transition }, elapsed, viewport);
-    context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height);
+    const transition = clamp(progress), viewport = { x: SHIP_CONTENT_VIEWPORT.x, y: Math.round(9 + (SHIP_CONTENT_VIEWPORT.y - 9) * transition), width: SHIP_CONTENT_VIEWPORT.width, height: Math.round(207 + (SHIP_CONTENT_VIEWPORT.height - 207) * transition) }, settleProgress = clamp((transition - HANDOFF_SHIP_HOLD_START) / HANDOFF_SHIP_SETTLE_DURATION), handoffFaceOn = settleProgress * settleProgress * (3 - 2 * settleProgress);
+    updateThree({ name: 'acquire', index: 2, elapsed, local: transition }, elapsed, viewport, elapsed, handoffFaceOn);
+    context.clearRect(0, 0, width, height); context.drawImage(renderer.domElement, 0, 0, width, height); drawOverlay({ ...sequenceFor(HUD_STAGE_START_ELAPSED), elapsed }, transition, true);
   }
   function drawFocusOverlay(sequence) {
     const focus = subsystemFocus(sequence);
@@ -399,11 +416,14 @@ export function createHudStage({ width, height }) {
     context.restore();
   }
   function quantizeLogo(time) { if (!logoPixels || !logoSource) return; const logoContext = logoPixels.getContext('2d'); logoContext.clearRect(0, 0, logoPixels.width, logoPixels.height); logoContext.drawImage(logoSource, 0, 0); const image = logoContext.getImageData(0, 0, logoPixels.width, logoPixels.height), phase = Math.floor(time * 4) % LOGO_REFLECTION_LEVELS.length, base = [112, 108, 188], reflection = LOGO_REFLECTION_LEVELS.map(level => base.map(channel => level <= 1 ? Math.round(channel * level) : Math.round(channel + (255 - channel) * (level - 1)))); for (let index = 0; index < image.data.length; index += 4) { if (!image.data[index + 3]) continue; const pixel = index / 4, x = pixel % logoPixels.width, band = LOGO_COLOR_BANDS[`${image.data[index]},${image.data[index + 1]},${image.data[index + 2]}`] ?? 3, color = x >= 55 && x <= 63 ? reflection[3] : band === 0 ? LOGO_SHADOW_COLOR : reflection[(band - 1 + phase) % reflection.length]; image.data[index] = color[0]; image.data[index + 1] = color[1]; image.data[index + 2] = color[2]; } logoContext.putImageData(image, 0, 0); }
-  function drawOverlay(sequence, revealProgress = 1) {
+  function drawOverlay(sequence, revealProgress = 1, inverseReveal = false) {
     context.clearRect(0, 0, width, height); context.globalCompositeOperation = 'source-over'; context.drawImage(renderer.domElement, 0, 0, width, height);
     if (!fontData || sequence.name === 'void') return;
+    const revealAlpha = order => inverseReveal ? clamp((revealProgress - (HANDOFF_REVEAL_ORDER_COUNT - 1 - order) * HANDOFF_REVEAL_STAGGER) / HANDOFF_REVEAL_DURATION) : revealProgress;
+    const viewportTextRevealAlpha = index => inverseReveal ? clamp((revealProgress - (HANDOFF_VIEWPORT_TEXT_START + index * (HANDOFF_VIEWPORT_TEXT_DURATION + HANDOFF_VIEWPORT_TEXT_GAP))) / HANDOFF_VIEWPORT_TEXT_DURATION) : revealProgress;
+    const viewportBorderAlpha = inverseReveal ? Number(revealProgress >= 1) : revealProgress;
     const signalProgress = sequence.name === 'signal' ? sequence.local : 1;
-    context.save(); context.scale(SCALE, SCALE); context.globalAlpha = signalProgress * revealProgress;
+    context.save(); context.scale(SCALE, SCALE); context.globalAlpha = signalProgress * revealAlpha(0);
     const { loads } = systemLoadState(sequence), complete = loads.at(-1).phase >= 1;
     const systemsLabel = complete ? 'ALL SYSTEMS GO' : `SYSTEMS CHECK ${SPINNER_FRAMES[Math.floor(sequence.elapsed * 8) % SPINNER_FRAMES.length]}`;
     if (complete) radialText('<<ALL SYSTEMS GO>>', W / 2, 31, COLORS.callout, 1, sequence.elapsed); else text(systemsLabel, W / 2, 31, COLORS.secondary, 1, 'center');
@@ -411,13 +431,20 @@ export function createHudStage({ width, height }) {
     drawClassicArcade(66);
     if (sequence.name === 'signal') { context.restore(); return; }
     const acquireProgress = sequence.name === 'acquire' ? sequence.local : 1;
-    context.globalAlpha = 1; thinBorder(SHIP_VIEWPORT);
-    context.globalAlpha = acquireProgress * revealProgress; text('GK-99', 13, 51, COLORS.status); text('"WARDEN"', 13, 61, COLORS.primary); scrollingCoordinates(sequence); scrollingOperations(sequence);
+    context.globalAlpha = viewportBorderAlpha; thinBorder(SHIP_VIEWPORT);
+    context.globalAlpha = acquireProgress * viewportTextRevealAlpha(0); text('GK-99', 13, 51, COLORS.status);
+    context.globalAlpha = acquireProgress * viewportTextRevealAlpha(1); text('"WARDEN"', 13, 61, COLORS.primary);
+    context.globalAlpha = acquireProgress * viewportTextRevealAlpha(2); scrollingCoordinates(sequence);
+    context.globalAlpha = acquireProgress * viewportTextRevealAlpha(3); scrollingOperations(sequence);
     if (sequence.name === 'acquire') { context.restore(); return; }
-    context.globalAlpha = revealProgress;
     const aggregate = loads.reduce((total, item) => total + item.phase, 0) / loads.length, rows = [['SYS', aggregate, `${String(Math.round(aggregate * 100)).padStart(3, '0')}%`], ...loads.map(item => [item.label, item.phase, item.phase >= 1 ? 'OK' : item.phase > 0 ? 'CHK' : 'IDLE'])];
-    rows.forEach(([label, phase, status], index) => { const y = 178 + index * 8, active = index === 0 || phase > 0, statusVisible = status !== 'CHK' || Math.floor(sequence.elapsed * 8) % 2 === 0; text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.idle); if (statusVisible) text(status, SYSTEM_STATUS_RIGHT, y, active ? COLORS.secondary : COLORS.idle, 1, 'right'); bar(SYSTEM_BAR_X, y, SYSTEM_BAR_WIDTH, phase, active); });
-    drawFocusOverlay(sequence); context.restore();
+    rows.forEach(([label, phase, status], index) => {
+      const y = SYSTEM_ROWS_Y + index * 8, active = index === 0 || phase > 0, statusVisible = status !== 'CHK' || Math.floor(sequence.elapsed * 8) % 2 === 0;
+      const rowReveal = inverseReveal ? clamp((revealProgress - clamp((H - 6 - (y + 8)) / (H - 6 - SHIP_VIEWPORT.y - SHIP_VIEWPORT.height)) - HANDOFF_ROW_TRAIL_DELAY) / HANDOFF_ROW_REVEAL_DURATION) : revealProgress;
+      context.globalAlpha = rowReveal;
+      text(label, 14, y, index === 0 ? COLORS.status : active ? COLORS.primary : COLORS.idle); if (statusVisible) text(status, SYSTEM_STATUS_RIGHT, y, active ? COLORS.secondary : COLORS.idle, 1, 'right'); bar(SYSTEM_BAR_X, y, SYSTEM_BAR_WIDTH, phase, active);
+    });
+    context.globalAlpha = revealAlpha(8); drawFocusOverlay(sequence); context.restore();
   }
   const ready = Promise.all([fetch('./assets/font-data-h/330.h').then(response => { if (!response.ok) throw new Error('Could not load Reactor.'); return response.text(); }), fetch('./assets/font-data-h/031.h').then(response => { if (!response.ok) throw new Error('Could not load Bitty.'); return response.text(); }), fetch('./assets/font-data-h/078.h').then(response => { if (!response.ok) throw new Error('Could not load Computer.'); return response.text(); }), fetch('./assets/font-data-h/270.h').then(response => { if (!response.ok) throw new Error('Could not load PicoMag.'); return response.text(); }), fetch('./assets/font-data-h/129.h').then(response => { if (!response.ok) throw new Error('Could not load Emmaline.'); return response.text(); }), fetch('./assets/font-data-h/456.h').then(response => { if (!response.ok) throw new Error('Could not load ZX Eurostile.'); return response.text(); }), fetch('./assets/glyphs/legacy-glyphs.json').then(response => { if (!response.ok) throw new Error('Could not load ATASCII glyphs.'); return response.json(); })]).then(([reactor, bitty, computer, picomag, emmaline, eurostile, glyphSource]) => { fontData = parseHeaderFont(reactor); atasciiData = new Uint8Array(128 * 8); flightTitleFontData = parseHeaderFont(emmaline); flightSiteFontData = parseHeaderFont(eurostile); technicalFontData = parseHeaderFont(bitty); computerFontData = parseHeaderFont(computer); picomagFontData = parseHeaderFont(picomag); glyphSource.glyphs.forEach(glyph => { if (glyph.system === 'ATASCII' && glyph.internalSlot) atasciiData.set(glyph.bitmap, Number.parseInt(glyph.internalSlot, 16) * 8); }); glyphCache.clear(); });
   const logo = new Image(); logo.onload = () => { logoSource = document.createElement('canvas'); logoSource.width = logo.naturalWidth; logoSource.height = logo.naturalHeight; logoSource.getContext('2d').drawImage(logo, 0, 0); logoPixels = document.createElement('canvas'); logoPixels.width = logo.naturalWidth; logoPixels.height = logo.naturalHeight; }; logo.src = './assets/images/gklogo.png';
@@ -425,5 +452,5 @@ export function createHudStage({ width, height }) {
   const pilots = new Image(); pilots.onload = () => { const prepared = preparePilots(pilots); pilotsSource = prepared.source; pilotsHighlightMask = prepared.highlights; pilotsTint = document.createElement('canvas'); pilotsTint.width = pilots.naturalWidth; pilotsTint.height = pilots.naturalHeight; }; pilots.src = './assets/images/pilots.png';
   const pilotsGuides = new Image(); pilotsGuides.onload = () => { pilotsSweepPaths = prepareSweepPaths(pilotsGuides); }; pilotsGuides.src = './assets/images/pilots-guides.png';
   const ship = new Image(); ship.onload = () => createShipGeometry(ship); ship.src = './assets/images/ship.png';
-  return { canvas, ready, handoffElapsed: HUD_HANDOFF_ELAPSED, renderBackground, renderTransition, renderFlight, render: ({ elapsed, duration = BOOT_DURATION - HUD_HANDOFF_ELAPSED, starElapsed = elapsed }) => { const postHandoffDuration = BOOT_DURATION - HUD_HANDOFF_ELAPSED, sequenceElapsed = HUD_HANDOFF_ELAPSED + clamp(elapsed / Math.max(.1, duration)) * postHandoffDuration, sequence = sequenceFor(sequenceElapsed); updateThree(sequence, starElapsed); drawOverlay(sequence, clamp(elapsed / HUD_REVEAL_DURATION)); } };
+  return { canvas, ready, handoffElapsed: HUD_HANDOFF_ELAPSED, renderBackground, renderTransition, renderFlight, render: ({ elapsed, duration = BOOT_DURATION - HUD_HANDOFF_ELAPSED, starElapsed = elapsed }) => { const postHandoffDuration = BOOT_DURATION - HUD_STAGE_START_ELAPSED, sequenceElapsed = HUD_STAGE_START_ELAPSED + clamp(elapsed / Math.max(.1, duration)) * postHandoffDuration, sequence = sequenceFor(sequenceElapsed); updateThree(sequence, starElapsed); drawOverlay(sequence); } };
 }

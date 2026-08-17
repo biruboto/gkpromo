@@ -1,7 +1,7 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from '../promo/crt.js?v=228';
 import { createWireframeCabinet } from './cabinet-wireframe.js?v=29';
-import { createBootStage } from './boot-stage.js?v=13';
-import { createHudStage } from './hud-stage.js?v=105';
+import { createBootStage } from './boot-stage.js?v=29';
+import { createHudStage } from './hud-stage.js?v=131';
 
 const W = 540, H = 675, EXPORT_W = 1080, EXPORT_H = 1350;
 const FONT_FILE = './assets/font-data-h/229.h';
@@ -14,9 +14,9 @@ const exportCanvas = document.createElement('canvas'); exportCanvas.width = EXPO
 const exportContext = exportCanvas.getContext('2d'); exportContext.imageSmoothingEnabled = false;
 const MP4_MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
 const stages = [
-  { id: crypto.randomUUID(), name: 'BOOT SEQUENCE', duration: 14, motion: 'signal', backdrop: 'boot', headline: 'GK OS v.1.59', body: 'MEMCHK', footer: 'INTRFC INTLZ', accent: '#00ddff' },
-  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 26.05, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' },
-  { id: crypto.randomUUID(), name: 'FLIGHT RUN', duration: 29, motion: 'signal', backdrop: 'flight', headline: '', body: '', footer: '', accent: '#00ddff' }
+  { id: crypto.randomUUID(), name: 'BOOT SEQUENCE', duration: 10.62, motion: 'signal', backdrop: 'boot', headline: 'GK OS v.1.59', body: 'MEMCHK', footer: 'INTRFC INTLZ', accent: '#00ddff' },
+  { id: crypto.randomUUID(), name: 'SYSTEM HUD', duration: 21.38, motion: 'signal', backdrop: 'hud', headline: 'ALL SYSTEMS\nGO', body: 'GK-99 // WARDEN\nARCADE NETWORK ONLINE', footer: 'GROUND KONTROL // PORTLAND', accent: '#00ddff' },
+  { id: crypto.randomUUID(), name: 'FLIGHT RUN', duration: 21.38, motion: 'signal', backdrop: 'flight', headline: '', body: '', footer: '', accent: '#00ddff' }
 ];
 const stars = Array.from({ length: 96 }, (_, index) => ({ x: (Math.sin(index * 91.71) * .5 + .5) * W, y: (Math.sin(index * 47.13 + 1) * .5 + .5) * H, depth: .2 + (Math.sin(index * 17.39 + 2) * .5 + .5) }));
 let selectedId = stages[0].id, bitmapFont = null, osFont = null, copyrightFont = null, sequenceTime = 0, lastFrame = performance.now(), playing = true, recording = false;
@@ -133,7 +133,7 @@ function render() {
   controls.scrubber.max = String(state.total); controls.scrubber.value = String(sequenceTime % state.total); controls.sequenceDuration.textContent = `${state.total.toFixed(1)} SEC`;
   controls.stageReadout.textContent = `STAGE ${String(state.index + 1).padStart(2, '0')} // ${state.stage.name.toUpperCase()}`; controls.timeReadout.textContent = `${state.elapsed.toFixed(1)} / ${state.total.toFixed(1)}`;
 }
-function frame(now) { const delta = Math.min(.1, (now - lastFrame) / 1000); lastFrame = now; if (playing) sequenceTime = (sequenceTime + delta) % totalDuration(); render(); requestAnimationFrame(frame); }
+function frame(now) { const delta = Math.min(.1, (now - lastFrame) / 1000), duration = totalDuration(); lastFrame = now; if (playing) sequenceTime = recording ? Math.min(sequenceTime + delta, Math.max(0, duration - 1 / 30)) : (sequenceTime + delta) % duration; render(); requestAnimationFrame(frame); }
 function syncCrtControls() { Object.entries(CRT_CONTROL_IDS).forEach(([name, controlName]) => { document.querySelector(`[data-crt-output="${name}"]`).textContent = `${controls[controlName].value}%`; }); }
 function applyCrtLook(name) { const look = CRT_LOOKS[name]; if (!look) return; controls.crt.value = look.treatment; Object.entries(look.controls).forEach(([controlName, value]) => { controls[CRT_CONTROL_IDS[controlName]].value = value; }); syncCrtControls(); }
 function renderStageList() {
