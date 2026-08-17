@@ -188,6 +188,8 @@
         <summary>FILE</summary>
         <div class="section-body">
           <div class="actions"><button id="projectSave" type="button">SAVE PROJECT</button><button id="projectLoad" type="button">LOAD PROJECT</button><button id="png" class="primary" type="button">EXPORT PNG</button><button id="record" type="button">EXPORT 15 SEC MP4</button></div>
+          <fieldset><label for="printBackground">PRINT BACKGROUND</label><select id="printBackground"><option value="background">THEME BACKGROUND</option><option value="shadow">THEME SHADOW</option><option value="muted" selected>THEME MUTED</option></select></fieldset>
+          <button id="print" type="button">EXPORT 8.5 X 11 PNG</button>
           <input id="projectFile" type="file" accept=".gkp,application/json" hidden>
         </div>
       </details>
@@ -318,7 +320,7 @@ www.groundkontrol.com</textarea>
       ['output formats', './promo/formats.js?v=266'],
       ['game backgrounds', './promo/game-backgrounds.js?v=266'],
       ['image block', './promo/image-block.js?v=266'],
-      ['renderer', './promo/renderer.js?v=266'],
+      ['renderer', './promo/renderer.js?v=267'],
       ['rich text editor', './promo/rich-text-editor.js?v=266'],
       ['templates', './promo/templates.js?v=266'],
     ];
@@ -330,7 +332,7 @@ www.groundkontrol.com</textarea>
           throw new Error(`${name} module: ${error.message}`, { cause: error });
         }
       }
-      await import('./promo/app.js?v=266');
+      await import('./promo/app.js?v=267');
     })().catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');

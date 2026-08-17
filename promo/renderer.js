@@ -504,14 +504,14 @@ export function createPromoRenderer({
   function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
   let previousOverflowKey = '', previousMissingGlyphsKey = '';
-  function render(now, { exportFrame = false, staticText = false } = {}) {
+  function render(now, { exportFrame = false, staticText = false, backgroundColor = null } = {}) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
     missingArcadeGlyphs = new Map();
     textAnimationDisabled = staticText;
-    const palette = colors[controls.theme.value]; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = palette.background; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
+    const palette = colors[controls.theme.value]; const resolvedBackground = backgroundColor || palette.background; activeHighlightColor = palette.highlight; activeStrokeColor = palette.shadow; activeShadowColor = palette.shadow; activeBackgroundColor = resolvedBackground; const time = now / 1000 * MOTION_SPEED; animationState.time = time;
     const format = getOutputFormat(); const isLandscape = format.id === 'landscape'; const sectionOrder = getSectionOrder();
-    ctx.fillStyle = palette.background; ctx.fillRect(0, 0, W, H);
-    gameBackgrounds.draw(palette, time);
+    ctx.fillStyle = resolvedBackground; ctx.fillRect(0, 0, W, H);
+    if (!backgroundColor) gameBackgrounds.draw(palette, time);
 
     const imageBitmap = imageBlock.getBitmap(palette[controls.imageColor.value]);
     const portraitTextWidth = W - 48;
