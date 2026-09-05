@@ -10,6 +10,7 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
   const selectedVariants = new Map(FONT_CONTROL_NAMES.map(controlName => [controlName, 0]));
   const arcadeImageCache = new Map();
   const arcadeFontCache = new Map();
+  const headerFontCache = new Map();
   let defaultFonts = [];
   let gamesFonts = null;
   let gamesRequest = null;
@@ -35,9 +36,13 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
 
   async function loadFont(file, name, target, announce = true) {
     const version = beginLoad(target);
-    const response = await fetch(`./assets/font-data-h/${file}`);
-    if (!response.ok) throw new Error(`font request returned ${response.status}`);
-    const nextFont = parseHeaderFont(await response.text());
+    if (!headerFontCache.has(file)) {
+      headerFontCache.set(file, fetch(`./assets/font-data-h/${file}`).then(async response => {
+        if (!response.ok) throw new Error(`font request returned ${response.status}`);
+        return parseHeaderFont(await response.text());
+      }).catch(error => { headerFontCache.delete(file); throw error; }));
+    }
+    const nextFont = await headerFontCache.get(file);
     if (!finishLoad(target, version, nextFont)) return;
     if (announce) controls.status.textContent = `${name} loaded as ${target} font.`;
   }
@@ -210,12 +215,19 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
 
   function reopenFontPicker(controlName) {
     const picker = controls[controlName].nextElementSibling;
+    const query = picker?.querySelector('.font-picker-search')?.value || '';
+    const scrollTop = picker?.querySelector('.font-picker-list')?.scrollTop || 0;
+    renderFontPicker(controlName, true);
     const menu = picker?.querySelector('.font-picker-menu'); const trigger = picker?.querySelector('.font-picker-trigger');
     if (!menu || !trigger) return;
     closeFontPickers(menu); menu.hidden = false; trigger.setAttribute('aria-expanded', 'true');
+    const search = menu.querySelector('.font-picker-search');
+    search.value = query; search.dispatchEvent(new Event('input'));
+    menu.querySelector('.font-picker-list').scrollTop = scrollTop;
+    window.lucide?.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 } });
   }
 
-  function renderFontPicker(controlName) {
+  function renderFontPicker(controlName, buildMenu = false) {
     const select = controls[controlName]; if (!select) return;
     let picker = select.nextElementSibling;
     if (!picker?.classList.contains('font-picker')) {
@@ -225,6 +237,13 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
     const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'font-picker-trigger'; trigger.setAttribute('aria-haspopup', 'dialog'); trigger.setAttribute('aria-expanded', 'false');
     const label = document.createElement('span'); label.textContent = selectedLabel(controlName); const chevron = document.createElement('i'); chevron.dataset.lucide = 'chevron-down'; chevron.setAttribute('aria-hidden', 'true'); trigger.append(label, chevron);
     const menu = document.createElement('div'); menu.className = 'font-picker-menu'; menu.setAttribute('role', 'dialog'); menu.setAttribute('aria-label', `${select.getAttribute('aria-label') || 'Font'} options`); menu.hidden = true;
+    trigger.addEventListener('click', () => { if (menu.hidden) reopenFontPicker(controlName); else closeFontPickers(); });
+    trigger.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      event.preventDefault(); stepFontPicker(controlName, event.key === 'ArrowDown' ? 1 : -1);
+    });
+    picker.replaceChildren(trigger, menu);
+    if (!buildMenu) return;
 
     const tools = document.createElement('div'); tools.className = 'font-picker-tools';
     const libraryControl = document.createElement('div'); libraryControl.className = 'font-library-toggle'; libraryControl.setAttribute('role', 'group'); libraryControl.setAttribute('aria-label', 'Font library');
@@ -236,7 +255,7 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
           button.textContent = 'LOADING';
           try { await ensureGamesLibrary(); } catch (error) { controls.status.textContent = `Could not load Games fonts: ${error.message}`; return; }
         }
-        renderFontPickers(); reopenFontPicker(controlName);
+        reopenFontPicker(controlName);
       });
       libraryControl.append(button);
     });
@@ -255,7 +274,7 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
       const changeVariant = direction => {
         selectedVariants.set(controlName, Math.min(game.variants.length - 1, Math.max(0, variant + direction)));
         loadSelectedFont(controlName, FONT_TARGETS[controlName]).catch(error => { controls.status.textContent = `Could not load ${game.name}: ${error.message}`; });
-        renderFontPickers(); reopenFontPicker(controlName);
+        reopenFontPicker(controlName);
       };
       previous.addEventListener('click', () => changeVariant(-1)); next.addEventListener('click', () => changeVariant(1));
       variantControl.append(previous, variantLabel, next); tools.append(variantControl);
@@ -276,13 +295,13 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
         choice.addEventListener('click', () => {
           select.value = option.value; selectedVariants.set(controlName, 0); activeLibraries.set(controlName, option.dataset.fontLibrary); syncFontPickerSelection(controlName);
           loadSelectedFont(controlName, FONT_TARGETS[controlName]).catch(error => { controls.status.textContent = `Could not load ${option.textContent}: ${error.message}`; });
-          closeFontPickers(); renderFontPickers();
+          closeFontPickers();
         });
         const favorite = document.createElement('button'); favorite.type = 'button'; favorite.className = 'font-favorite'; const favoriteId = option.dataset.fontId; const selected = fontFavorites.has(favoriteId); favorite.classList.toggle('is-favorite', selected); favorite.title = selected ? `Remove ${option.textContent} from favorites` : `Add ${option.textContent} to favorites`; favorite.setAttribute('aria-label', favorite.title); favorite.setAttribute('aria-pressed', String(selected));
         const heart = document.createElement('i'); heart.dataset.lucide = 'heart'; heart.setAttribute('aria-hidden', 'true'); favorite.append(heart);
         favorite.addEventListener('click', () => {
           if (fontFavorites.has(favoriteId)) fontFavorites.delete(favoriteId); else fontFavorites.add(favoriteId);
-          saveFontFavorites(); renderFontPickers(); reopenFontPicker(controlName);
+          saveFontFavorites(); reopenFontPicker(controlName);
         });
         row.append(choice, favorite); container.append(row);
       });
@@ -298,16 +317,10 @@ export function createFontManager({ controls, onFontChange, onFontLoaded }) {
       list.querySelectorAll('.font-picker-group').forEach(group => { group.hidden = !group.querySelector('.font-picker-row:not([hidden])'); });
     });
     menu.append(tools, list);
-    trigger.addEventListener('click', () => { const opening = menu.hidden; closeFontPickers(opening ? menu : null); menu.hidden = !opening; trigger.setAttribute('aria-expanded', String(opening)); });
-    trigger.addEventListener('keydown', event => {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-      event.preventDefault(); stepFontPicker(controlName, event.key === 'ArrowDown' ? 1 : -1);
-    });
-    picker.replaceChildren(trigger, menu);
   }
 
   function renderFontPickers() {
-    FONT_CONTROL_NAMES.forEach(renderFontPicker);
+    FONT_CONTROL_NAMES.forEach(controlName => renderFontPicker(controlName));
     window.lucide?.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 } });
   }
 

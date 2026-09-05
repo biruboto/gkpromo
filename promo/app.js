@@ -1,11 +1,12 @@
 import { createCrtPipeline, CRT_CONTROL_IDS, CRT_LOOKS } from './crt.js?v=266';
-import { createFontManager } from './fonts.js?v=266';
+import { createFontManager } from './fonts.js?v=268';
 import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=266';
-import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=266';
-import { createMonochromeImageBlock } from './image-block.js?v=266';
-import { createPromoRenderer } from './renderer.js?v=267';
-import { createRichTextEditor } from './rich-text-editor.js?v=266';
+import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=268';
+import { createMonochromeImageBlock } from './image-block.js?v=268';
+import { createPromoRenderer } from './renderer.js?v=268';
+import { createRichTextEditor } from './rich-text-editor.js?v=268';
 import { populateTemplateSelect, templates } from './templates.js?v=266';
+import { recordCanvas } from './recording.js?v=268';
 
 let activeOutputFormatId = DEFAULT_OUTPUT_FORMAT;
 const initialFormat = outputFormat(activeOutputFormatId);
@@ -184,7 +185,8 @@ const { getFontSetting, loadFont, populateFonts, loadSelectedFont, prepareProjec
   }
 });
 let recording = false;
-const gameBackgrounds = createGameBackgrounds({ context: ctx, width: initialFormat.logicalWidth, height: initialFormat.logicalHeight, images: moonLanderImages, getStyle: () => controls.gameStyle.value, getModel: () => controls.model.value, getModelSettings: () => activeModelSettings });
+let recordingSession = null;
+const gameBackgrounds = createGameBackgrounds({ context: ctx, width: initialFormat.logicalWidth, height: initialFormat.logicalHeight, images: moonLanderImages, getStyle: () => controls.gameStyle.value, getModel: () => controls.model.value, getModelSettings: () => activeModelSettings, onError: error => { controls.status.textContent = `Could not load 3D background: ${error.message}`; } });
 controls.modelEdgeAngle.addEventListener('input', scheduleModelSettings); controls.modelDetail.addEventListener('input', scheduleModelSettings); controls.modelOpacity.addEventListener('input', scheduleModelSettings);
 const imageBlock = createMonochromeImageBlock({
   getSettings: getImageSettings,
@@ -427,8 +429,8 @@ async function loadImageSource(loader, successMessage) {
   resetImageClearConfirmation();
   controls.imageFile.disabled = true; controls.imageUrlLoad.disabled = true; controls.imageClear.disabled = true; controls.imageAutoThreshold.disabled = true;
   try {
-    await loader();
-    controls.status.textContent = successMessage;
+    const applied = await loader();
+    if (applied !== false) controls.status.textContent = successMessage;
   } catch (error) {
     controls.status.textContent = `Could not load image: ${error.message}`;
   } finally {
@@ -553,7 +555,15 @@ let animationId = null;
 function frame(now) { promoRenderer.render(now, { exportFrame: recording }); animationId = requestAnimationFrame(frame); }
 function pauseFrame() { if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; } }
 function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') animationId = requestAnimationFrame(frame); }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pauseFrame(); else resumeFrame(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    if (recording) {
+      recordingSession?.cancel();
+      controls.status.textContent = 'MP4 export cancelled because the tab was hidden. Keep this tab visible and export again.';
+    }
+    pauseFrame();
+  } else resumeFrame();
+});
 function download(blob, name) { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 function canvasBlob(canvas, type) { return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not create image data.')), type)); }
 function pngCrc32(bytes) {
@@ -981,13 +991,20 @@ controls.record.addEventListener('click', () => {
   const mimeType = MP4_MIME_TYPES.find(type => MediaRecorder.isTypeSupported(type));
   if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4. Use Safari on iOS or macOS.'; return; }
   promoRenderer.render(performance.now(), { exportFrame: true });
-  const stream = exportCanvas.captureStream(30); const chunks = []; let recorder;
-  try { recorder = new MediaRecorder(stream, { mimeType }); } catch (error) { stream.getTracks().forEach(track => track.stop()); controls.status.textContent = `Could not start MP4 recording: ${error.message}`; return; }
   const recordingFormat = outputFormat(activeOutputFormatId);
   recording = true; controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
-  recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-  recorder.onstop = () => { download(new Blob(chunks, { type: recorder.mimeType || mimeType }), `gk-promo-${recordingFormat.exportWidth}x${recordingFormat.exportHeight}.mp4`); recording = false; controls.record.textContent = 'EXPORT 15 SEC MP4'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = false; }); stream.getTracks().forEach(track => track.stop()); };
-  recorder.start(); setTimeout(() => recorder.stop(), 15000);
+  const finish = () => {
+    recording = false; recordingSession = null; controls.record.textContent = 'EXPORT 15 SEC MP4';
+    controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = false; });
+  };
+  try {
+    recordingSession = recordCanvas({
+      canvas: exportCanvas, mimeType,
+      onComplete: blob => download(blob, `gk-promo-${recordingFormat.exportWidth}x${recordingFormat.exportHeight}.mp4`),
+      onFinish: finish,
+      onError: error => { controls.status.textContent = `MP4 export failed: ${error.message}`; }
+    });
+  } catch (error) { finish(); controls.status.textContent = `Could not start MP4 recording: ${error.message}`; }
 });
 async function initializeFonts() {
   try {
@@ -1013,5 +1030,5 @@ hydrateInlineRichEditor('hours');
 hydrateInlineRichEditor('footer');
 controls.status.textContent = 'Loading header font library...';
 initializeFonts();
-loadLegacyGlyphs().then(drawBorderGlyphPreviews).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; });
+loadLegacyGlyphs().then(() => { promoRenderer.clearFontCaches(); drawBorderGlyphPreviews(); }).catch(error => { controls.glyphGrid.textContent = `Could not load glyphs: ${error.message}`; });
 resumeFrame();

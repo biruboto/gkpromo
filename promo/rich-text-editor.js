@@ -8,8 +8,8 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     'atascii-60': '♦', 'atascii-7B': '♠', 'atascii-7D': '◢', 'atascii-7E': '◀', 'atascii-7F': '▶',
     'petscii-upper-51': '●', 'petscii-upper-56': '✕', 'petscii-upper-57': '○', 'petscii-upper-58': '♣', 'petscii-upper-5A': '▲'
   };
-  let activeTextControl = controls.bodyEditor, savedBodyRange = null, savedHeaderRange = null, savedDetailRange = null, savedCtaRange = null;
-  const savedInlineRanges = { footer: null, hours: null };
+  let activeTextControl = controls.bodyEditor;
+  const savedRanges = {};
   function drawGlyphTile(canvasElement, glyphData) {
     drawGlyphPreview(canvasElement, glyphData, getGlyphColor());
   }
@@ -26,142 +26,69 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     const marker = document.createElement('span'); marker.className = 'editor-leader-tab'; marker.dataset.leaderTab = 'true'; marker.contentEditable = 'false'; marker.textContent = '⇥';
     marker.setAttribute('aria-label', 'Leader tab'); marker.title = 'Leader tab'; return marker;
   }
-  function hydrateBodyEditor() {
-    const editor = controls.bodyEditor; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
+  function hydrateEditor(section) {
+    const editor = editorForSection(section), source = sourceForSection(section);
+    const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
     const targets = [editor]; let position = 0; let match;
-    editor.replaceChildren();
+    editor.replaceChildren(); savedRanges[section] = null;
     const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
-    while ((match = expression.exec(controls.body.value))) {
-      appendText(controls.body.value.slice(position, match.index));
+    while ((match = expression.exec(source.value))) {
+      appendText(source.value.slice(position, match.index));
       const marker = match[1].toLowerCase();
       if (marker === '/effect' && targets.length > 1) targets.pop();
       else if (marker.startsWith('effect')) {
         const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span');
-        span.dataset.effect = effect; if (effect === 'shadow') span.className = 'editor-effect-shadow'; else if (effect === 'highlight') span.className = 'editor-effect-highlight'; else if (effect === 'underline') span.className = 'editor-effect-underline'; else if (effect === 'superscript') span.className = 'editor-effect-superscript'; else if (effect === 'subscript') span.className = 'editor-effect-subscript'; else if (effect === 'stroke') span.className = 'editor-effect-stroke'; else if (['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect)) span.className = `editor-effect-${effect}`;
+        span.dataset.effect = effect;
+        span.className = `editor-effect-${effect}`;
         targets.at(-1).append(span); targets.push(span);
       } else {
         const glyphData = legacyGlyphs.get(marker);
         if (glyphData) targets.at(-1).append(createEditorGlyph(glyphData));
-        else if (marker === 'leader-tab') targets.at(-1).append(createEditorLeaderTab());
-        else appendText(match[0]);
-      }
-      position = expression.lastIndex;
-    }
-    appendText(controls.body.value.slice(position));
-  }
-  function hydrateHeaderEditor() {
-    const editor = controls.headerEditor; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
-    const targets = [editor]; let position = 0; let match; editor.replaceChildren();
-    const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
-    while ((match = expression.exec(controls.headline.value))) {
-      appendText(controls.headline.value.slice(position, match.index)); const marker = match[1].toLowerCase();
-      if (marker === '/effect' && targets.length > 1) targets.pop();
-      else if (marker.startsWith('effect')) {
-        const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
-        targets.at(-1).append(span); targets.push(span);
-      } else appendText(match[0]);
-      position = expression.lastIndex;
-    }
-    appendText(controls.headline.value.slice(position));
-  }
-  function hydrateDetailEditor() {
-    const editor = controls.detailEditor; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
-    const targets = [editor]; let position = 0; let match; editor.replaceChildren();
-    const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
-    while ((match = expression.exec(controls.detail.value))) {
-      appendText(controls.detail.value.slice(position, match.index)); const marker = match[1].toLowerCase();
-      if (marker === '/effect' && targets.length > 1) targets.pop();
-      else if (marker.startsWith('effect')) {
-        const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
-        targets.at(-1).append(span); targets.push(span);
-      } else appendText(match[0]);
-      position = expression.lastIndex;
-    }
-    appendText(controls.detail.value.slice(position));
-  }
-  function hydrateCtaEditor() {
-    const editor = controls.ctaEditor; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
-    const targets = [editor]; let position = 0; let match; editor.replaceChildren();
-    const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
-    while ((match = expression.exec(controls.cta.value))) {
-      appendText(controls.cta.value.slice(position, match.index)); const marker = match[1].toLowerCase();
-      if (marker === '/effect' && targets.length > 1) targets.pop();
-      else if (marker.startsWith('effect')) {
-        const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
-        targets.at(-1).append(span); targets.push(span);
-      } else {
-        const glyphData = legacyGlyphs.get(marker);
-        if (glyphData) targets.at(-1).append(createEditorGlyph(glyphData));
-        else appendText(match[0]);
-      }
-      position = expression.lastIndex;
-    }
-    appendText(controls.cta.value.slice(position));
-  }
-  function inlineRichField(section) {
-    return section === 'footer' ? { editor: controls.footerEditor, source: controls.footer } : { editor: controls.hoursEditor, source: controls.hours };
-  }
-  function hydrateInlineRichEditor(section) {
-    const { editor, source } = inlineRichField(section); const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
-    const targets = [editor]; let position = 0; let match; editor.replaceChildren();
-    const appendText = value => { if (value) targets.at(-1).append(document.createTextNode(value)); };
-    while ((match = expression.exec(source.value))) {
-      appendText(source.value.slice(position, match.index)); const marker = match[1].toLowerCase();
-      if (marker === '/effect' && targets.length > 1) targets.pop();
-      else if (marker.startsWith('effect')) {
-        const effect = marker.split(':')[1] || 'none'; const span = document.createElement('span'); span.dataset.effect = effect;
-        span.className = effect === 'shadow' ? 'editor-effect-shadow' : effect === 'highlight' ? 'editor-effect-highlight' : effect === 'underline' ? 'editor-effect-underline' : effect === 'superscript' ? 'editor-effect-superscript' : effect === 'subscript' ? 'editor-effect-subscript' : effect === 'stroke' ? 'editor-effect-stroke' : ['blink', 'flash', 'reflect', 'wave', 'sweep', 'spin'].includes(effect) ? `editor-effect-${effect}` : '';
-        targets.at(-1).append(span); targets.push(span);
-      } else {
-        const glyphData = legacyGlyphs.get(marker);
-        if (glyphData) targets.at(-1).append(createEditorGlyph(glyphData));
+        else if (marker === 'leader-tab' && section === 'body') targets.at(-1).append(createEditorLeaderTab());
         else appendText(match[0]);
       }
       position = expression.lastIndex;
     }
     appendText(source.value.slice(position));
   }
-  function syncInlineRichSource(section) {
-    const { editor, source } = inlineRichField(section);
-    source.value = serializeEditorContents(editor);
+  function hydrateBodyEditor() { hydrateEditor('body'); }
+  function hydrateHeaderEditor() { hydrateEditor('header'); }
+  function hydrateDetailEditor() { hydrateEditor('detail'); }
+  function hydrateCtaEditor() { hydrateEditor('cta'); }
+  function hydrateInlineRichEditor(section) { hydrateEditor(section); }
+  function syncSource(section) { sourceForSection(section).value = serializeEditorContents(editorForSection(section)); }
+  function saveSelection(section) {
+    const editor = editorForSection(section), selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.startContainer) && editor.contains(range.endContainer)) savedRanges[section] = range.cloneRange();
   }
-  function saveInlineRichSelection(section) {
-    const { editor } = inlineRichField(section); const selection = window.getSelection();
-    if (selection.rangeCount && editor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedInlineRanges[section] = selection.getRangeAt(0).cloneRange();
+  function editorRange(section) {
+    saveSelection(section);
+    const range = savedRanges[section], editor = editorForSection(section);
+    return range && editor.contains(range.startContainer) && editor.contains(range.endContainer) ? range.cloneRange() : null;
   }
-  function inlineRichPointAt(editor, offset) {
-    let remaining = Math.max(0, offset);
-    const find = node => {
-      if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) };
-      for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; }
-      return { container: node, offset: node.childNodes.length };
-    };
-    return find(editor);
+  function toggleEditorEffect(section, effect) {
+    const editor = editorForSection(section), source = sourceForSection(section), range = editorRange(section);
+    if (!range || range.collapsed) return;
+    const { start, end } = selectionOffsets(editor, range), units = bodyStyledUnits(source.value);
+    const selected = units.filter(unit => unit.start < end && unit.end > start);
+    if (!toggleUnitEffect(selected, effect)) return;
+    source.value = serializeBodyUnits(units); hydrateEditor(section);
+    editor.focus();
+    const restored = document.createRange(), startPoint = editorPointAtOffset(editor, start), endPoint = editorPointAtOffset(editor, end);
+    restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset);
+    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(restored);
+    savedRanges[section] = restored.cloneRange();
   }
-  function toggleInlineRichEffect(section, effect) {
-    const { editor, source } = inlineRichField(section); const selection = window.getSelection(); let range = null;
-    if (selection.rangeCount) {
-      const current = selection.getRangeAt(0);
-      if (!current.collapsed && editor.contains(current.startContainer) && editor.contains(current.endContainer)) { savedInlineRanges[section] = current.cloneRange(); range = current; }
-    }
-    range ||= savedInlineRanges[section]; if (!range || range.collapsed) return;
-    const before = document.createRange(); before.selectNodeContents(editor); before.setEnd(range.startContainer, range.startOffset);
-    const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(source.value);
-    const selected = units.filter(unit => unit.start < end && unit.end > start); if (!toggleUnitEffect(selected, effect)) return;
-    source.value = serializeBodyUnits(units); hydrateInlineRichEditor(section);
-    editor.focus(); const restored = document.createRange(); const startPoint = inlineRichPointAt(editor, start); const endPoint = inlineRichPointAt(editor, end);
-    restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedInlineRanges[section] = restored.cloneRange();
-  }
-  function insertInlineRichGlyph(section, glyphData) {
-    const { editor } = inlineRichField(section); const selection = window.getSelection();
-    const range = savedInlineRanges[section]?.cloneRange() || document.createRange();
-    if (!savedInlineRanges[section]) { range.selectNodeContents(editor); range.collapse(false); }
-    range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
-    range.setStartAfter(glyph); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); savedInlineRanges[section] = range.cloneRange();
-    editor.focus(); syncInlineRichSource(section);
+  function insertEditorNode(section, node) {
+    const editor = editorForSection(section);
+    let range = editorRange(section);
+    if (!range) { range = document.createRange(); range.selectNodeContents(editor); range.collapse(false); }
+    range.deleteContents(); range.insertNode(node); range.setStartAfter(node); range.collapse(true);
+    editor.focus();
+    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    savedRanges[section] = range.cloneRange(); syncSource(section);
   }
   function serializeBodyNode(node) {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent;
@@ -182,24 +109,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     });
     return value.replace(/\n+$/, '');
   }
-  function syncBodySource() { controls.body.value = serializeEditorContents(controls.bodyEditor); }
-  function saveBodySelection() {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-    const range = selection.getRangeAt(0);
-    if (controls.bodyEditor.contains(range.startContainer) && controls.bodyEditor.contains(range.endContainer)) savedBodyRange = range.cloneRange();
-  }
-  function bodyEffectSelectionRange() {
-    const selection = window.getSelection();
-    if (selection.rangeCount) {
-      const range = selection.getRangeAt(0);
-      if (!range.collapsed && controls.bodyEditor.contains(range.startContainer) && controls.bodyEditor.contains(range.endContainer)) {
-        savedBodyRange = range.cloneRange();
-        return range.cloneRange();
-      }
-    }
-    return savedBodyRange && !savedBodyRange.collapsed ? savedBodyRange.cloneRange() : null;
-  }
+  function syncBodySource() { syncSource('body'); }
   function bodyNodeLength(node) {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent.length;
     if (node.nodeType !== Node.ELEMENT_NODE && node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return 0;
@@ -208,11 +118,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     const length = [...node.childNodes].reduce((total, child) => total + bodyNodeLength(child), 0);
     return /^(DIV|P)$/.test(node.tagName) ? length + 1 : length;
   }
-  function bodySelectionOffsets(range) {
-    const before = document.createRange(); before.selectNodeContents(controls.bodyEditor); before.setEnd(range.startContainer, range.startOffset);
-    return { start: bodyNodeLength(before.cloneContents()), end: bodyNodeLength(before.cloneContents()) + bodyNodeLength(range.cloneContents()) };
-  }
-  function bodyPointAtOffset(offset) {
+  function editorPointAtOffset(editor, offset) {
     let remaining = Math.max(0, offset);
     const findPoint = (node, parent = null) => {
       if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) };
@@ -227,13 +133,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       }
       return { container: node, offset: node.childNodes.length };
     };
-    return findPoint(controls.bodyEditor);
-  }
-  function restoreBodySelection(start, end) {
-    controls.bodyEditor.focus();
-    const range = document.createRange(); const startPoint = bodyPointAtOffset(start); const endPoint = bodyPointAtOffset(end);
-    range.setStart(startPoint.container, startPoint.offset); range.setEnd(endPoint.container, endPoint.offset);
-    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); savedBodyRange = range.cloneRange();
+    return findPoint(editor);
   }
   function bodyStyledUnits(value) {
     const units = []; const expression = /\[\[(\/?effect(?::[a-z-]+)?|[a-z0-9-]+)\]\]/ig;
@@ -285,69 +185,6 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     effectable.forEach(unit => { unit.effects = removing ? unit.effects.filter(item => item !== effect) : unit.effects.includes(effect) ? unit.effects : [...unit.effects, effect]; });
     return true;
   }
-  function toggleBodyEffect(effect) {
-    const range = bodyEffectSelectionRange();
-    if (!range) return;
-    const { start, end } = bodySelectionOffsets(range); const units = bodyStyledUnits(controls.body.value);
-    const selected = units.filter(unit => unit.start < end && unit.end > start);
-    if (!toggleUnitEffect(selected, effect)) return;
-    controls.body.value = serializeBodyUnits(units); hydrateBodyEditor(); restoreBodySelection(start, end);
-  }
-  function toggleHeaderEffect(effect) {
-    const selection = window.getSelection(); let range = null;
-    if (selection.rangeCount) {
-      const current = selection.getRangeAt(0);
-      if (!current.collapsed && controls.headerEditor.contains(current.startContainer) && controls.headerEditor.contains(current.endContainer)) { savedHeaderRange = current.cloneRange(); range = current; }
-    }
-    range ||= savedHeaderRange;
-    if (!range || range.collapsed) return;
-    const before = document.createRange(); before.selectNodeContents(controls.headerEditor); before.setEnd(range.startContainer, range.startOffset);
-    const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(controls.headline.value);
-    const selected = units.filter(unit => unit.start < end && unit.end > start); if (!toggleUnitEffect(selected, effect)) return;
-    controls.headline.value = serializeBodyUnits(units); hydrateHeaderEditor();
-    const pointAt = offset => {
-      let remaining = Math.max(0, offset);
-      const find = node => {
-        if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) };
-        for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; }
-        return { container: node, offset: node.childNodes.length };
-      };
-      return find(controls.headerEditor);
-    };
-    controls.headerEditor.focus(); const restored = document.createRange(); const startPoint = pointAt(start); const endPoint = pointAt(end); restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedHeaderRange = restored.cloneRange();
-  }
-  function toggleDetailEffect(effect) {
-    const selection = window.getSelection(); let range = null;
-    if (selection.rangeCount) { const current = selection.getRangeAt(0); if (!current.collapsed && controls.detailEditor.contains(current.startContainer) && controls.detailEditor.contains(current.endContainer)) { savedDetailRange = current.cloneRange(); range = current; } }
-    range ||= savedDetailRange; if (!range || range.collapsed) return;
-    const before = document.createRange(); before.selectNodeContents(controls.detailEditor); before.setEnd(range.startContainer, range.startOffset);
-    const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(controls.detail.value); const selected = units.filter(unit => unit.start < end && unit.end > start); if (!toggleUnitEffect(selected, effect)) return;
-    controls.detail.value = serializeBodyUnits(units); hydrateDetailEditor();
-    const pointAt = offset => { let remaining = Math.max(0, offset); const find = node => { if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) }; for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; } return { container: node, offset: node.childNodes.length }; }; return find(controls.detailEditor); };
-    controls.detailEditor.focus(); const restored = document.createRange(); const startPoint = pointAt(start); const endPoint = pointAt(end); restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedDetailRange = restored.cloneRange();
-  }
-  function toggleCtaEffect(effect) {
-    const selection = window.getSelection(); let range = null;
-    if (selection.rangeCount) { const current = selection.getRangeAt(0); if (!current.collapsed && controls.ctaEditor.contains(current.startContainer) && controls.ctaEditor.contains(current.endContainer)) { savedCtaRange = current.cloneRange(); range = current; } }
-    range ||= savedCtaRange; if (!range || range.collapsed) return;
-    const before = document.createRange(); before.selectNodeContents(controls.ctaEditor); before.setEnd(range.startContainer, range.startOffset);
-    const start = bodyNodeLength(before.cloneContents()); const end = start + bodyNodeLength(range.cloneContents()); const units = bodyStyledUnits(controls.cta.value); const selected = units.filter(unit => unit.start < end && unit.end > start); if (!toggleUnitEffect(selected, effect)) return;
-    controls.cta.value = serializeBodyUnits(units); hydrateCtaEditor();
-    const pointAt = offset => { let remaining = Math.max(0, offset); const find = node => { if (node.nodeType === Node.TEXT_NODE) return { container: node, offset: Math.min(remaining, node.textContent.length) }; for (const child of node.childNodes) { const length = bodyNodeLength(child); if (remaining <= length) return find(child); remaining -= length; } return { container: node, offset: node.childNodes.length }; }; return find(controls.ctaEditor); };
-    controls.ctaEditor.focus(); const restored = document.createRange(); const startPoint = pointAt(start); const endPoint = pointAt(end); restored.setStart(startPoint.container, startPoint.offset); restored.setEnd(endPoint.container, endPoint.offset); selection.removeAllRanges(); selection.addRange(restored); savedCtaRange = restored.cloneRange();
-  }
-  function toggleInputEffect(control, effect) {
-    const start = control.selectionStart, end = control.selectionEnd;
-    if (start === null || end === null || start === end) return;
-    const units = bodyStyledUnits(control.value);
-    const selected = units.filter(unit => unit.sourceStart < end && unit.sourceEnd > start);
-    if (!toggleUnitEffect(selected, effect)) return;
-    control.value = serializeBodyUnits(units); control.focus(); control.setSelectionRange(selected[0].outputStart, selected.at(-1).outputEnd);
-  }
-  function setBodySelectionAfter(node) {
-    const range = document.createRange(); range.setStartAfter(node); range.collapse(true);
-    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); savedBodyRange = range.cloneRange();
-  }
   function adjacentEditorNode(node, direction) {
     const sibling = direction === 'backward' ? node.previousSibling : node.nextSibling;
     if (sibling) return sibling;
@@ -376,55 +213,14 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     if (!glyph) return;
     event.preventDefault(); const parent = glyph.parentNode; const index = [...parent.childNodes].indexOf(glyph);
     glyph.remove(); const range = document.createRange(); range.setStart(parent, index); range.collapse(true);
-    selection.removeAllRanges(); selection.addRange(range); savedBodyRange = range.cloneRange(); syncBodySource();
+    selection.removeAllRanges(); selection.addRange(range); savedRanges.body = range.cloneRange(); syncBodySource();
   }
-  function insertBodyGlyph(glyphData) {
-    const range = savedBodyRange || document.createRange();
-    if (!savedBodyRange) range.selectNodeContents(controls.bodyEditor), range.collapse(false);
-    range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
-    setBodySelectionAfter(glyph); controls.bodyEditor.focus(); syncBodySource();
-  }
-  function insertBodyLeaderTab() {
-    const range = savedBodyRange || document.createRange();
-    if (!savedBodyRange) range.selectNodeContents(controls.bodyEditor), range.collapse(false);
-    range.deleteContents(); const marker = createEditorLeaderTab(); range.insertNode(marker);
-    setBodySelectionAfter(marker); controls.bodyEditor.focus(); syncBodySource();
-  }
-  function insertHeaderGlyph(glyphData) {
-    const range = savedHeaderRange || document.createRange();
-    if (!savedHeaderRange) range.selectNodeContents(controls.headerEditor), range.collapse(false);
-    range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
-    const next = document.createRange(); next.setStartAfter(glyph); next.collapse(true); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(next); savedHeaderRange = next.cloneRange(); controls.headerEditor.focus(); controls.headline.value = serializeEditorContents(controls.headerEditor);
-  }
-  function insertCtaGlyph(glyphData) {
-    const range = savedCtaRange || document.createRange();
-    if (!savedCtaRange) range.selectNodeContents(controls.ctaEditor), range.collapse(false);
-    range.deleteContents(); const glyph = createEditorGlyph(glyphData); range.insertNode(glyph);
-    const next = document.createRange(); next.setStartAfter(glyph); next.collapse(true); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(next); savedCtaRange = next.cloneRange(); controls.ctaEditor.focus(); controls.cta.value = serializeEditorContents(controls.ctaEditor);
-  }
-  function insertCtaLineBreak() {
-    const selection = window.getSelection(); const range = selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedCtaRange || document.createRange();
-    if (!range.commonAncestorContainer.parentNode) range.selectNodeContents(controls.ctaEditor), range.collapse(false);
-    range.deleteContents(); const lineBreak = document.createElement('br'); range.insertNode(lineBreak);
-    range.setStartAfter(lineBreak); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); savedCtaRange = range.cloneRange(); controls.ctaEditor.focus(); controls.cta.value = serializeEditorContents(controls.ctaEditor);
-  }
+  function insertBodyLeaderTab() { insertEditorNode('body', createEditorLeaderTab()); }
   function applyCharacterEffect(section, effect) {
     const scaleControl = { header: 'headerScale', detail: 'detailScale', body: 'bodyScale', cta: 'ctaScale', footer: 'footerScale', hours: 'footerScale' }[section];
     if (['superscript', 'subscript'].includes(effect) && getTextScale(scaleControl) === 1) return;
-    if (section === 'body') {
-      toggleBodyEffect(effect);
-    } else if (section === 'header') {
-      toggleHeaderEffect(effect);
-    } else if (section === 'detail') {
-      toggleDetailEffect(effect);
-    } else if (section === 'cta') {
-      toggleCtaEffect(effect);
-    } else if (section === 'footer' || section === 'hours') {
-      toggleInlineRichEffect(section, effect);
-    } else {
-      const control = { header: controls.headline, detail: controls.detail }[section];
-      toggleInputEffect(control, effect);
-    }
+    if (!editorForSection(section)) return;
+    toggleEditorEffect(section, effect);
     syncEffectToolbarState(section);
   }
   const TEXT_EDITOR_SECTIONS = ['header', 'detail', 'body', 'cta', 'footer', 'hours'];
@@ -484,14 +280,8 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
       const selected = tile.dataset.glyphId === glyphId;
       tile.classList.toggle('is-selected', selected); tile.setAttribute('aria-pressed', String(selected));
     });
-    if (activeTextControl === controls.bodyEditor) { insertBodyGlyph(legacyGlyphs.get(glyphId)); return; }
-    if (activeTextControl === controls.headerEditor) { insertHeaderGlyph(legacyGlyphs.get(glyphId)); return; }
-    if (activeTextControl === controls.ctaEditor) { insertCtaGlyph(legacyGlyphs.get(glyphId)); return; }
-    if (activeTextControl === controls.footerEditor) { insertInlineRichGlyph('footer', legacyGlyphs.get(glyphId)); return; }
-    if (activeTextControl === controls.hoursEditor) { insertInlineRichGlyph('hours', legacyGlyphs.get(glyphId)); return; }
-    const control = activeTextControl || controls.headline;
-    control.setRangeText(`[[${glyphId}]]`, control.selectionStart, control.selectionEnd, 'end');
-    control.focus();
+    const section = TEXT_EDITOR_SECTIONS.find(name => editorForSection(name) === activeTextControl) || 'header';
+    insertEditorNode(section, createEditorGlyph(legacyGlyphs.get(glyphId)));
   }
   async function loadLegacyGlyphs() {
     const response = await fetch('./assets/glyphs/legacy-glyphs.json');
@@ -504,7 +294,7 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     await Promise.all(library.glyphs.filter(glyphData => glyphData.image).map(glyphData => new Promise((resolve, reject) => {
       const image = new Image(); image.onload = () => { glyphData.imageElement = image; resolve(); }; image.onerror = () => reject(new Error(`emoji image could not be loaded: ${glyphData.image}`)); image.src = `./assets/images/emoji/${glyphData.image}`;
     })));
-    hydrateBodyEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer');
+    TEXT_EDITOR_SECTIONS.forEach(hydrateEditor);
     const pickerGlyphs = library.glyphs.filter(glyphData => {
       return glyphData.system === 'EMOJI' || glyphData.system === 'ATASCII' && ATASCII_PICKER_SLOTS.has(glyphData.slot) || glyphData.system === 'PETSCII' && PETSCII_PICKER_SLOTS.has(glyphData.slot);
     }).sort((first, second) => (PICKER_GLYPH_ORDER_INDEX.get(first.id) ?? Number.MAX_SAFE_INTEGER) - (PICKER_GLYPH_ORDER_INDEX.get(second.id) ?? Number.MAX_SAFE_INTEGER));
@@ -521,42 +311,21 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     section.append(title, grid);
     controls.glyphGrid.replaceChildren(section);
   }
-  function wireInlineRichEditor(section, allowLineBreaks) {
-    const { editor } = inlineRichField(section);
-    editor.addEventListener('focus', () => { activeTextControl = editor; saveInlineRichSelection(section); });
-    editor.addEventListener('input', () => { activeTextControl = editor; syncInlineRichSource(section); saveInlineRichSelection(section); });
-    editor.addEventListener('keydown', event => { if (!allowLineBreaks && event.key === 'Enter') event.preventDefault(); });
-    editor.addEventListener('keyup', () => saveInlineRichSelection(section));
-    editor.addEventListener('mouseup', () => saveInlineRichSelection(section));
-  }
-  wireInlineRichEditor('hours', false);
-  wireInlineRichEditor('footer', true);
-  controls.headerEditor.addEventListener('focus', () => { activeTextControl = controls.headerEditor; });
-  controls.headerEditor.addEventListener('input', () => { activeTextControl = controls.headerEditor; controls.headline.value = serializeEditorContents(controls.headerEditor); });
-  controls.headerEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedHeaderRange = selection.getRangeAt(0).cloneRange(); });
-  controls.headerEditor.addEventListener('mouseup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedHeaderRange = selection.getRangeAt(0).cloneRange(); });
-  controls.detailEditor.addEventListener('focus', () => { activeTextControl = controls.detailEditor; });
-  controls.detailEditor.addEventListener('input', () => { activeTextControl = controls.detailEditor; controls.detail.value = serializeEditorContents(controls.detailEditor); });
-  controls.detailEditor.addEventListener('keydown', event => { if (event.key === 'Enter') event.preventDefault(); });
-  controls.detailEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedDetailRange = selection.getRangeAt(0).cloneRange(); });
-  controls.detailEditor.addEventListener('mouseup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedDetailRange = selection.getRangeAt(0).cloneRange(); });
-  controls.ctaEditor.addEventListener('focus', () => { activeTextControl = controls.ctaEditor; });
-  controls.ctaEditor.addEventListener('input', () => { activeTextControl = controls.ctaEditor; controls.cta.value = serializeEditorContents(controls.ctaEditor); });
-  controls.ctaEditor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); insertCtaLineBreak(); } });
-  controls.ctaEditor.addEventListener('keyup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedCtaRange = selection.getRangeAt(0).cloneRange(); });
-  controls.ctaEditor.addEventListener('mouseup', () => { const selection = window.getSelection(); if (selection.rangeCount) savedCtaRange = selection.getRangeAt(0).cloneRange(); });
-  controls.bodyEditor.addEventListener('focus', () => { activeTextControl = controls.bodyEditor; saveBodySelection(); });
-  controls.bodyEditor.addEventListener('input', () => { activeTextControl = controls.bodyEditor; syncBodySource(); saveBodySelection(); });
-  controls.bodyEditor.addEventListener('keydown', removeAdjacentBodyGlyph);
-  controls.bodyEditor.addEventListener('keyup', saveBodySelection);
-  controls.bodyEditor.addEventListener('mouseup', saveBodySelection);
+  TEXT_EDITOR_SECTIONS.forEach(section => {
+    const editor = editorForSection(section);
+    editor.addEventListener('focus', () => { activeTextControl = editor; saveSelection(section); });
+    editor.addEventListener('input', () => { activeTextControl = editor; syncSource(section); saveSelection(section); });
+    editor.addEventListener('keyup', () => saveSelection(section));
+    editor.addEventListener('mouseup', () => saveSelection(section));
+    editor.addEventListener('keydown', event => {
+      if (section === 'body') removeAdjacentBodyGlyph(event);
+      if (event.key !== 'Enter') return;
+      if (section === 'detail' || section === 'hours') event.preventDefault();
+      if (section === 'cta') { event.preventDefault(); insertEditorNode(section, document.createElement('br')); }
+    });
+  });
   document.addEventListener('selectionchange', () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount && controls.bodyEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) saveBodySelection();
-    if (selection.rangeCount && controls.headerEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedHeaderRange = selection.getRangeAt(0).cloneRange();
-    if (selection.rangeCount && controls.detailEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedDetailRange = selection.getRangeAt(0).cloneRange();
-    if (selection.rangeCount && controls.ctaEditor.contains(selection.getRangeAt(0).commonAncestorContainer)) savedCtaRange = selection.getRangeAt(0).cloneRange();
-    ['hours', 'footer'].forEach(section => saveInlineRichSelection(section));
+    TEXT_EDITOR_SECTIONS.forEach(saveSelection);
     syncEffectToolbarState();
   });
   return {

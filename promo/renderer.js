@@ -97,9 +97,12 @@ export function createPromoRenderer({
   const legacyGlyphCache = new Map();
   const legacyGlyphBoundsCache = new Map();
   const reflectedGlyphCache = new Map();
+  const textLayoutCache = new Map();
+  const wrappedTextCache = new Map();
   let bodyFont = null, headerFont = null, detailFont = null, ctaFont = null, footerFont = null, hoursFont = null;
   let textAnimationDisabled = false;
-  const logoPixels = document.createElement('canvas');
+  const logoFrames = new Map();
+  let logoSource = null, logoPaletteKey = '', classicColor = '';
   const classicPixels = document.createElement('canvas');
   const STACKED_LOGO_SHIP_WIDTH = 12;
   const LOGO_COLOR_BANDS = { '24,29,48': 0, '69,47,77': 1, '153,61,104': 2, '218,68,112': 3, '251,63,99': 4, '0,0,0': 0, '102,102,102': 1, '153,153,153': 2, '204,204,204': 3, '255,255,255': 4 };
@@ -268,6 +271,12 @@ export function createPromoRenderer({
   const HEADER_TEXT_SPACING = { letterGap: 1, spaceWidth: 6 };
   function textLayout(value, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) {
     scale = Math.max(1, Math.round(scale));
+    const cacheKey = JSON.stringify([fontKey, font?.id, scale, spacing.letterGap, spacing.spaceWidth, value]);
+    const cached = textLayoutCache.get(cacheKey);
+    if (cached) {
+      cached.missing.forEach(character => recordMissingArcadeGlyph(font, fontKey, character));
+      return cached;
+    }
     const tokens = tokenize(value);
     const boundsForToken = token => token.character === ' ' ? null : token.type === 'legacy' ? legacyGlyphBounds(token.glyphData) : glyphBounds(token.character, font, fontKey);
     const referenceBoundsForScript = index => {
@@ -303,7 +312,11 @@ export function createPromoRenderer({
       glyphs.push({ ...token, bounds, scale: glyphScale, yOffset, underlineRun: isUnderlined ? underlineRun : 0, x: cursor - bounds.left * glyphScale });
       cursor += bounds.width * glyphScale; previousWasGlyph = true;
     }
-    return { glyphs, width: cursor };
+    const missing = [...new Set(tokens.filter(token => token.type === 'font' && token.character !== ' ' && isArcadeFont(font) && !glyphBounds(token.character, font, fontKey)).map(token => token.character))];
+    const layout = { glyphs, width: cursor, missing };
+    if (textLayoutCache.size >= 2048) textLayoutCache.clear();
+    textLayoutCache.set(cacheKey, layout);
+    return layout;
   }
   function textWidth(value, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING) { return textLayout(value, scale, font, fontKey, spacing).width; }
   function text(value, x, y, color, scale = 1, align = 'left', font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING, forceShadow = false, shadowColor = activeShadowColor) {
@@ -441,6 +454,12 @@ export function createPromoRenderer({
     });
   }
   function wrapWithLineBreaks(value, maximumWidth, scale = 1, font = bodyFont, fontKey = 'body', spacing = BODY_TEXT_SPACING, maximumLines = 4, preserveSpaces = false) {
+    const cacheKey = JSON.stringify([fontKey, font?.id, scale, spacing.letterGap, spacing.spaceWidth, maximumWidth, maximumLines, preserveSpaces, value]);
+    const cached = wrappedTextCache.get(cacheKey);
+    if (cached) {
+      cached.missing.forEach(character => recordMissingArcadeGlyph(font, fontKey, character));
+      return cached.lines;
+    }
     const lines = [];
     value.replace(/\r\n?/g, '\n').split('\n').forEach(paragraph => {
       if (!paragraph.trim()) { lines.push(''); return; }
@@ -451,7 +470,11 @@ export function createPromoRenderer({
         else lines.push(...(preserveSpaces ? wrapPreservingSpaces(paragraph, maximumWidth, scale, font, fontKey, spacing) : wrap(paragraph, maximumWidth, scale, font, fontKey, spacing)));
       }
     });
-    return normalizeEffectsAcrossLines(lines).slice(0, maximumLines);
+    const wrapped = normalizeEffectsAcrossLines(lines).slice(0, maximumLines);
+    const missing = [...new Set(lines.flatMap(line => textLayout(line, scale, font, fontKey, spacing).missing))];
+    if (wrappedTextCache.size >= 256) wrappedTextCache.clear();
+    wrappedTextCache.set(cacheKey, { lines: wrapped, missing });
+    return wrapped;
   }
   function drawImageCentered(image, y, scale = 4, centerX = W / 2) {
     if (!image.complete || !image.naturalWidth) return;
@@ -464,11 +487,18 @@ export function createPromoRenderer({
   }
   function drawAnimatedLogo(y, palette, time, scale = 4, centerX = W / 2, image = logoImages.pixel, staticLogo = false) {
     if (!image.complete || !image.naturalWidth) return;
+    const paletteKey = `${palette.accent}:${palette.shadow}`;
+    if (logoSource !== image || logoPaletteKey !== paletteKey) {
+      logoFrames.clear(); logoSource = image; logoPaletteKey = paletteKey;
+    }
+    const phase = staticLogo ? 0 : Math.floor(time * 4) % LOGO_REFLECTION_LEVELS.length;
+    const cached = logoFrames.get(phase);
+    if (cached) { ctx.drawImage(cached, Math.round(centerX - cached.width * scale / 2), y, cached.width * scale, cached.height * scale); return; }
+    const logoPixels = document.createElement('canvas');
     logoPixels.width = image.naturalWidth; logoPixels.height = image.naturalHeight;
     const logoCtx = logoPixels.getContext('2d', { willReadFrequently: true }); logoCtx.drawImage(image, 0, 0);
     const imageData = logoCtx.getImageData(0, 0, logoPixels.width, logoPixels.height);
     const reflection = logoReflectionColors(palette.accent);
-    const phase = staticLogo ? 0 : Math.floor(time * 4) % reflection.length;
     const shadow = palette.shadow.match(/\w\w/g).map(value => Number.parseInt(value, 16));
     for (let index = 0; index < imageData.data.length; index += 4) {
       if (!imageData.data[index + 3]) continue;
@@ -479,11 +509,13 @@ export function createPromoRenderer({
       imageData.data[index] = color[0]; imageData.data[index + 1] = color[1]; imageData.data[index + 2] = color[2];
     }
     logoCtx.putImageData(imageData, 0, 0);
+    logoFrames.set(phase, logoPixels);
     ctx.drawImage(logoPixels, Math.round(centerX - logoPixels.width * scale / 2), y, logoPixels.width * scale, logoPixels.height * scale);
   }
   function drawClassicArcade(y, palette, scale = 4, centerX = W / 2) {
     const image = logoImages.classic;
     if (!image.complete || !image.naturalWidth) return;
+    if (classicColor === palette.accent) { ctx.drawImage(classicPixels, Math.round(centerX - classicPixels.width * scale / 2), y, classicPixels.width * scale, classicPixels.height * scale); return; }
     classicPixels.width = image.naturalWidth; classicPixels.height = image.naturalHeight;
     const classicCtx = classicPixels.getContext('2d', { willReadFrequently: true }); classicCtx.drawImage(image, 0, 0);
     const imageData = classicCtx.getImageData(0, 0, classicPixels.width, classicPixels.height);
@@ -493,6 +525,7 @@ export function createPromoRenderer({
       imageData.data[index] = color[0]; imageData.data[index + 1] = color[1]; imageData.data[index + 2] = color[2];
     }
     classicCtx.putImageData(imageData, 0, 0);
+    classicColor = palette.accent;
     ctx.drawImage(classicPixels, Math.round(centerX - classicPixels.width * scale / 2), y, classicPixels.width * scale, classicPixels.height * scale);
   }
   function drawTextBoundaries(rectangles, palette) {
@@ -684,6 +717,10 @@ export function createPromoRenderer({
     crtPipeline.resize({ sourceWidth: W, sourceHeight: H, outputWidth: W, outputHeight: H });
   }
   function clearFontCaches() {
+    textLayoutCache.clear();
+    wrappedTextCache.clear();
+    legacyGlyphCache.clear();
+    legacyGlyphBoundsCache.clear();
     glyphCache.clear();
     glyphBoundsCache.clear();
     reflectedGlyphCache.clear();

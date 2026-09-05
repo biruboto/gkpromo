@@ -1,5 +1,3 @@
-import { createWireframeCabinet } from '../sequence/cabinet-wireframe.js?v=29';
-
 export const MODEL_SOURCES = {
   asteroids: { label: 'Asteroids upright', url: './models/asteroids.3ds', excludeMeshes: ['Mesh09'], removeDanglers: true },
   elvira: { label: 'Elvira', url: './models/elvira.3ds' },
@@ -10,7 +8,7 @@ export const MODEL_SOURCES = {
   pacman: { label: 'Pac-Man arcade cabinet', url: './models/pac-man_arcade_cabinet.glb', format: 'glb', targetVertices: 500 },
 };
 
-export function createGameBackgrounds({ context: ctx, width: initialWidth, height: initialHeight, images: moonLanderImages, getStyle, getModel, getModelSettings }) {
+export function createGameBackgrounds({ context: ctx, width: initialWidth, height: initialHeight, images: moonLanderImages, getStyle, getModel, getModelSettings, onError = () => {} }) {
   let W = initialWidth, H = initialHeight;
   const MODEL_BACKGROUND_OPACITY = .48;
   const moonLanderTintCache = new Map();
@@ -256,6 +254,7 @@ export function createGameBackgrounds({ context: ctx, width: initialWidth, heigh
     drawTiledMoonLanderLayer(tintedMoonLanderLayer('city', palette.accent), mountainY + 46 * MOON_LANDER_SCALE, time, 29);
   }
   let wireframeCabinet = null;
+  let modelRendererRequest = null;
   let loadedModelId = null;
   let loadingModelId = null;
   let failedModelId = null;
@@ -275,8 +274,11 @@ export function createGameBackgrounds({ context: ctx, width: initialWidth, heigh
     });
   }
   function drawModelBackground(palette, time) {
-    if (!wireframeCabinet) {
-      wireframeCabinet = createWireframeCabinet({ width: Math.round(W / 3), height: Math.round(H / 3) });
+    if (!wireframeCabinet && !modelRendererRequest) {
+      modelRendererRequest = import('../sequence/cabinet-wireframe.js?v=29').then(({ createWireframeCabinet }) => {
+        wireframeCabinet = createWireframeCabinet({ width: Math.round(W / 3), height: Math.round(H / 3) });
+        if (!wireframeCabinet) throw new Error('WebGL is unavailable.');
+      }).catch(error => onError(error));
     }
     if (!wireframeCabinet) return;
     const modelId = getModel?.() || 'asteroids';

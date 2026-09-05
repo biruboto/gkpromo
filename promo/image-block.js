@@ -160,6 +160,7 @@ export function createMonochromeImageBlock({ getSettings, onChange = () => {} })
   let maskHeight = 0;
   let suggestedThreshold = 128;
   let revision = 0;
+  let sourceVersion = 0;
 
   function process() {
     tintedCanvases.clear();
@@ -185,32 +186,41 @@ export function createMonochromeImageBlock({ getSettings, onChange = () => {} })
     onChange();
   }
 
-  async function setSource(dataUrl, name, normalize = true) {
+  async function setSource(dataUrl, name, normalize, version) {
     const decoded = await decodeImage(dataUrl);
+    if (version !== sourceVersion) return false;
     const normalizedSource = normalize ? normalizeSource(decoded) : dataUrl;
-    sourceImage = normalize ? await decodeImage(normalizedSource) : decoded;
+    const nextImage = normalize ? await decodeImage(normalizedSource) : decoded;
+    if (version !== sourceVersion) return false;
+    sourceImage = nextImage;
     sourceDataUrl = normalizedSource;
     sourceName = name || 'image';
     process();
+    return true;
   }
 
-  async function loadBlob(blob, name) {
+  async function loadBlob(blob, name, version) {
+    if (version !== sourceVersion) return false;
     if (!RASTER_IMAGE_TYPE.test(blob.type) && !RASTER_IMAGE_NAME.test(name)) throw new Error('Use a PNG, JPEG, WebP, GIF, BMP, ICO, or AVIF image.');
     if (blob.size > MAX_SOURCE_BYTES) throw new Error('Images must be 20 MB or smaller.');
-    await setSource(await readBlobAsDataUrl(blob), name, true);
+    const dataUrl = await readBlobAsDataUrl(blob);
+    if (version !== sourceVersion) return false;
+    return setSource(dataUrl, name, true, version);
   }
 
   async function loadFile(file) {
-    await loadBlob(file, file.name);
+    return loadBlob(file, file.name, ++sourceVersion);
   }
 
   async function loadBundledSource(value, name) {
+    const version = ++sourceVersion;
     const response = await fetch(value, { credentials: 'same-origin' });
     if (!response.ok) throw new Error(`The bundled image returned HTTP ${response.status}.`);
-    await loadBlob(await response.blob(), name);
+    return loadBlob(await response.blob(), name, version);
   }
 
   async function loadUrl(value) {
+    const version = ++sourceVersion;
     let url;
     try { url = new URL(value); } catch { throw new Error('Enter a complete image URL.'); }
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Image URLs must use HTTP or HTTPS.');
@@ -219,10 +229,11 @@ export function createMonochromeImageBlock({ getSettings, onChange = () => {} })
     catch { throw new Error('The image could not be downloaded. The source server may block cross-origin requests.'); }
     if (!response.ok) throw new Error(`The image server returned HTTP ${response.status}.`);
     const blob = await response.blob();
-    await loadBlob(blob, url.pathname.split('/').filter(Boolean).at(-1) || url.hostname);
+    return loadBlob(blob, url.pathname.split('/').filter(Boolean).at(-1) || url.hostname, version);
   }
 
   function clear() {
+    sourceVersion += 1;
     sourceImage = null; sourceDataUrl = ''; sourceName = ''; process();
   }
 
@@ -258,7 +269,7 @@ export function createMonochromeImageBlock({ getSettings, onChange = () => {} })
     hasImage: () => Boolean(sourceImage),
     loadBundledSource,
     loadFile,
-    loadProjectSource: (dataUrl, name) => setSource(dataUrl, name, false),
+    loadProjectSource: (dataUrl, name) => setSource(dataUrl, name, false, ++sourceVersion),
     loadUrl,
     process
   };

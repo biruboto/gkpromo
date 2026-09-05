@@ -314,26 +314,7 @@ www.groundkontrol.com</textarea>
   </main>
   <script src="https://unpkg.com/lucide@1.27.0/dist/umd/lucide.min.js" defer></script>
   <script type="module">
-    const modules = [
-      ['CRT', './promo/crt.js?v=266'],
-      ['fonts', './promo/fonts.js?v=266'],
-      ['output formats', './promo/formats.js?v=266'],
-      ['game backgrounds', './promo/game-backgrounds.js?v=266'],
-      ['image block', './promo/image-block.js?v=266'],
-      ['renderer', './promo/renderer.js?v=267'],
-      ['rich text editor', './promo/rich-text-editor.js?v=266'],
-      ['templates', './promo/templates.js?v=266'],
-    ];
-    (async () => {
-      for (const [name, source] of modules) {
-        try {
-          await import(source);
-        } catch (error) {
-          throw new Error(`${name} module: ${error.message}`, { cause: error });
-        }
-      }
-      await import('./promo/app.js?v=267');
-    })().catch(error => {
+    import('./promo/app.js?v=268').catch(error => {
       document.querySelector('#status').textContent = `Could not load composer: ${error.message}`;
       console.error('Promo Composer startup failed:', error, error.cause || '');
     });
