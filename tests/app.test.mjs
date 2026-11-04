@@ -35,6 +35,12 @@ test('composer starts without loading 3D and cancels an interrupted recording', 
   assert.equal(document.querySelectorAll('.font-picker-choice').length, 0);
   assert.ok(requests.every(path => !path.includes('models/') && !path.includes('three')));
   const frame = [...frames.values()][0]; frames.clear(); frame(1000);
+  const previewContext = controls.preview.getContext('2d');
+  const drawCount = previewContext.calls.length;
+  let next = [...frames.values()][0]; frames.clear(); next(1016);
+  assert.equal(previewContext.calls.length, drawCount, 'preview skips frames inside the 30 fps interval');
+  next = [...frames.values()][0]; frames.clear(); next(1034);
+  assert.ok(previewContext.calls.length > drawCount, 'preview renders after the interval');
   controls.record.click();
   assert.equal(controls.record.textContent, 'RECORDING...');
   assert.ok([...controls.outputFormat.querySelectorAll('button')].every(button => button.disabled));

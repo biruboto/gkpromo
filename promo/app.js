@@ -548,16 +548,16 @@ syncCrtControls();
 });
 
 let animationId = null;
-let lastRecordingFrame = -Infinity;
+let lastRenderedFrame = -Infinity;
 function frame(now) {
-  if (!recording || now - lastRecordingFrame >= 1000 / 30 - 1) {
+  if (now - lastRenderedFrame >= 1000 / 30 - 1) {
     promoRenderer.render(now, { exportFrame: recording });
-    if (recording) lastRecordingFrame = now;
+    lastRenderedFrame = now;
   }
   animationId = requestAnimationFrame(frame);
 }
 function pauseFrame() { if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; } }
-function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') animationId = requestAnimationFrame(frame); }
+function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') { lastRenderedFrame = -Infinity; animationId = requestAnimationFrame(frame); } }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     if (recording) {
@@ -965,7 +965,7 @@ controls.record.addEventListener('click', () => {
   if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4. Use Safari on iOS or macOS.'; return; }
   promoRenderer.render(performance.now(), { exportFrame: true });
   const recordingFormat = outputFormat(activeOutputFormatId);
-  recording = true; lastRecordingFrame = performance.now(); controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
+  recording = true; lastRenderedFrame = performance.now(); controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
   controls.template.disabled = true; controls.projectLoad.disabled = true; controls.png.disabled = true;
   document.querySelectorAll('.dock').forEach(dock => { dock.inert = true; });
   const finish = () => {
