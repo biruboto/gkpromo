@@ -315,6 +315,12 @@ export function createRichTextEditor({ controls, legacyGlyphs, leaderTabToken, g
     const editor = editorForSection(section);
     editor.addEventListener('focus', () => { activeTextControl = editor; saveSelection(section); });
     editor.addEventListener('input', () => { activeTextControl = editor; syncSource(section); saveSelection(section); });
+    editor.addEventListener('paste', event => {
+      event.preventDefault();
+      let text = event.clipboardData?.getData('text/plain') || '';
+      if (section === 'detail' || section === 'hours') text = text.replace(/[\r\n]+/g, ' ');
+      document.execCommand('insertText', false, text);
+    });
     editor.addEventListener('keyup', () => saveSelection(section));
     editor.addEventListener('mouseup', () => saveSelection(section));
     editor.addEventListener('keydown', event => {

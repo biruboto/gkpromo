@@ -3,8 +3,8 @@ import { createFontManager } from './fonts.js?v=268';
 import { DEFAULT_OUTPUT_FORMAT, OUTPUT_FORMATS, outputFormat } from './formats.js?v=266';
 import { createGameBackgrounds, MODEL_SOURCES } from './game-backgrounds.js?v=268';
 import { createMonochromeImageBlock } from './image-block.js?v=268';
-import { createPromoRenderer } from './renderer.js?v=268';
-import { createRichTextEditor } from './rich-text-editor.js?v=268';
+import { createPromoRenderer } from './renderer.js?v=270';
+import { createRichTextEditor } from './rich-text-editor.js?v=269';
 import { populateTemplateSelect, templates } from './templates.js?v=266';
 import { recordCanvas } from './recording.js?v=268';
 
@@ -22,11 +22,7 @@ exportCanvas.width = initialFormat.exportWidth;
 exportCanvas.height = initialFormat.exportHeight;
 const exportCtx = exportCanvas.getContext('2d');
 exportCtx.imageSmoothingEnabled = false;
-const PRINT_W = 2550, PRINT_H = 3300, PRINT_SCALE = 2, PRINT_DPI = 300;
-const PRINT_ART_W = 1080 * PRINT_SCALE, PRINT_ART_H = 1350 * PRINT_SCALE, PRINT_X = (PRINT_W - PRINT_ART_W) / 2, PRINT_Y = (PRINT_H - PRINT_ART_H) / 2;
-const printCanvas = document.createElement('canvas'); printCanvas.width = PRINT_W; printCanvas.height = PRINT_H;
-const printContext = printCanvas.getContext('2d'); printContext.imageSmoothingEnabled = false;
-const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'modelField', 'model', 'modelEdgeAngle', 'modelEdgeAngleOutput', 'modelDetail', 'modelDetailOutput', 'modelOpacity', 'modelOpacityOutput', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'outputFormat', 'outputResolution', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'print', 'printBackground', 'status', 'overflowStatus'].map(id => [id, document.querySelector(`#${id}`)]));
+const controls = Object.fromEntries(['headline', 'headerEditor', 'detail', 'detailEditor', 'detailToggle', 'detailFont', 'detailScale', 'body', 'bodyEditor', 'bodyScale', 'footer', 'footerEditor', 'footerScale', 'hours', 'hoursEditor', 'hoursToggle', 'cta', 'ctaEditor', 'ctaToggle', 'ctaFont', 'ctaScale', 'font', 'headerFont', 'headerScale', 'footerFont', 'logo', 'classic', 'imageFile', 'imageUrl', 'imageUrlLoad', 'imageClear', 'imageResolution', 'imageResolutionOutput', 'imageThreshold', 'imageThresholdOutput', 'imageAutoThreshold', 'imageContrast', 'imageContrastOutput', 'imageDither', 'imageDitherAmount', 'imageDitherAmountOutput', 'imageColor', 'imageAlign', 'imageScale', 'imageScaleOutput', 'imageOpacity', 'imageOpacityOutput', 'imageInvert', 'theme', 'themePreview', 'template', 'gameStyle', 'modelField', 'model', 'modelEdgeAngle', 'modelEdgeAngleOutput', 'modelDetail', 'modelDetailOutput', 'modelOpacity', 'modelOpacityOutput', 'boundaries', 'crtLook', 'crt', 'crtCurve', 'crtRgb', 'crtScanline', 'crtMask', 'crtVignette', 'crtDrift', 'crtBloom', 'crtGlow', 'composerTitle', 'outputFormat', 'outputResolution', 'projectSave', 'projectLoad', 'projectFile', 'png', 'record', 'status', 'overflowStatus'].map(id => [id, document.querySelector(`#${id}`)]));
 controls.glyphGrid = document.querySelector('#glyph-grid');
 controls.projectSave.disabled = true;
 controls.projectLoad.disabled = true;
@@ -552,7 +548,14 @@ syncCrtControls();
 });
 
 let animationId = null;
-function frame(now) { promoRenderer.render(now, { exportFrame: recording }); animationId = requestAnimationFrame(frame); }
+let lastRecordingFrame = -Infinity;
+function frame(now) {
+  if (!recording || now - lastRecordingFrame >= 1000 / 30 - 1) {
+    promoRenderer.render(now, { exportFrame: recording });
+    if (recording) lastRecordingFrame = now;
+  }
+  animationId = requestAnimationFrame(frame);
+}
 function pauseFrame() { if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; } }
 function resumeFrame() { if (animationId === null && document.visibilityState === 'visible') animationId = requestAnimationFrame(frame); }
 document.addEventListener('visibilitychange', () => {
@@ -565,30 +568,6 @@ document.addEventListener('visibilitychange', () => {
   } else resumeFrame();
 });
 function download(blob, name) { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-function canvasBlob(canvas, type) { return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not create image data.')), type)); }
-function pngCrc32(bytes) {
-  let crc = 0xffffffff;
-  for (const byte of bytes) { crc ^= byte; for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0); }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-function pngChunk(type, data) {
-  const chunk = new Uint8Array(data.length + 12), view = new DataView(chunk.buffer);
-  view.setUint32(0, data.length); chunk.set([...type].map(character => character.charCodeAt(0)), 4); chunk.set(data, 8);
-  view.setUint32(data.length + 8, pngCrc32(chunk.subarray(4, data.length + 8))); return chunk;
-}
-async function withPngDpi(blob, dpi) {
-  const bytes = new Uint8Array(await blob.arrayBuffer()), chunks = [bytes.slice(0, 8)]; let offset = 8, inserted = false;
-  const pixelsPerMeter = Math.round(dpi / .0254), resolution = new Uint8Array(9), resolutionView = new DataView(resolution.buffer);
-  resolutionView.setUint32(0, pixelsPerMeter); resolutionView.setUint32(4, pixelsPerMeter); resolution[8] = 1;
-  while (offset < bytes.length) {
-    const length = new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0), end = offset + length + 12;
-    const type = String.fromCharCode(...bytes.subarray(offset + 4, offset + 8));
-    if (type !== 'pHYs') chunks.push(bytes.slice(offset, end));
-    if (type === 'IHDR' && !inserted) { chunks.push(pngChunk('pHYs', resolution)); inserted = true; }
-    offset = end;
-  }
-  return new Blob(chunks, { type: 'image/png' });
-}
 function syncDetailToggle() { const enabled = contentVisibility.detail; controls.detailToggle.setAttribute('aria-pressed', String(enabled)); controls.detailToggle.textContent = enabled ? 'ON' : 'OFF'; }
 controls.detailToggle.addEventListener('click', () => { contentVisibility.detail = !contentVisibility.detail; syncDetailToggle(); }); syncDetailToggle();
 function syncCtaToggle() { const enabled = contentVisibility.cta; controls.ctaToggle.setAttribute('aria-pressed', String(enabled)); controls.ctaToggle.textContent = enabled ? 'ON' : 'OFF'; }
@@ -792,6 +771,12 @@ function validateProject(value) {
     }
   };
 }
+function syncCompositionControls() {
+  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes();
+  syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers();
+  hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor();
+  hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState();
+}
 async function applyProject(project) {
   await prepareProjectFonts(project);
   const { copy, settings } = validateProject(project);
@@ -806,8 +791,7 @@ async function applyProject(project) {
   layoutProfiles = settings.layoutProfiles; activeOutputFormatId = settings.outputFormat;
   const fontLoad = applyLayoutProfile(layoutProfiles[activeOutputFormatId]); promoRenderer.resize(outputFormat(activeOutputFormatId)); syncOutputFormatUI();
   const imageLoad = settings.image.source.dataUrl ? imageBlock.loadProjectSource(settings.image.source.dataUrl, settings.image.source.name) : Promise.resolve(imageBlock.clear());
-  syncCrtControls(); PROJECT_SCALE_CONTROLS.forEach(syncScaleOutput); syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls();
-  renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState(); setCustomProjectTemplate();
+  syncCrtControls(); PROJECT_SCALE_CONTROLS.forEach(syncScaleOutput); syncCompositionControls(); setCustomProjectTemplate();
   await Promise.all([imageLoad, fontLoad]);
 }
 async function applyTemplate(template) {
@@ -828,7 +812,7 @@ async function applyTemplate(template) {
     toolbar.querySelectorAll('[data-vertical-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.verticalAlignment === textVerticalAlignments[section])));
     toolbar.querySelectorAll('[data-alignment]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.alignment === textAlignments[section])));
   });
-  syncThemePreview(); syncDetailToggle(); syncCtaToggle(); syncHoursToggle(); syncScrollModes(); syncCharacterToolAvailability(); syncBodyBorderControls(); renderFontPickers(); hydrateBodyEditor(); hydrateHeaderEditor(); hydrateDetailEditor(); hydrateCtaEditor(); hydrateInlineRichEditor('hours'); hydrateInlineRichEditor('footer'); syncEffectToolbarState();
+  syncCompositionControls();
   await Promise.all([imageLoad, fontLoad]);
 }
 controls.template.addEventListener('change', () => {
@@ -958,6 +942,7 @@ controls.projectFile.addEventListener('change', async () => {
   const [file] = controls.projectFile.files;
   controls.projectFile.value = '';
   if (!file) return;
+  if (recording) { controls.status.textContent = 'Wait for MP4 recording to finish before loading a project.'; return; }
   controls.projectSave.disabled = true; controls.projectLoad.disabled = true;
   try {
     await applyProject(JSON.parse(await file.text()));
@@ -969,22 +954,10 @@ controls.projectFile.addEventListener('change', async () => {
   }
 });
 controls.png.addEventListener('click', () => {
+  if (recording) { controls.status.textContent = 'Wait for MP4 recording to finish before exporting a PNG.'; return; }
   const format = outputFormat(activeOutputFormatId);
   promoRenderer.render(performance.now(), { exportFrame: true, staticText: true });
   exportCanvas.toBlob(blob => { download(blob, `gk-promo-${format.exportWidth}x${format.exportHeight}.png`); controls.status.textContent = `PNG exported at ${format.exportWidth} x ${format.exportHeight}.`; }, 'image/png');
-});
-controls.print.addEventListener('click', async () => {
-  if (recording) { controls.status.textContent = 'Wait for MP4 recording to finish before exporting a print PNG.'; return; }
-  if (activeOutputFormatId !== 'portrait') { controls.status.textContent = 'Select the 1080 x 1350 portrait format for 8.5 x 11 export.'; return; }
-  controls.print.disabled = true; controls.status.textContent = 'Preparing 8.5 x 11 print PNG...';
-  try {
-    const palette = colors[controls.theme.value], background = palette[controls.printBackground.value] || palette.background;
-    promoRenderer.render(performance.now(), { exportFrame: true, staticText: true, backgroundColor: background });
-    printContext.fillStyle = background; printContext.fillRect(0, 0, PRINT_W, PRINT_H); printContext.drawImage(exportCanvas, PRINT_X, PRINT_Y, PRINT_ART_W, PRINT_ART_H);
-    download(await withPngDpi(await canvasBlob(printCanvas, 'image/png'), PRINT_DPI), 'gk-promo-8.5x11-300dpi.png');
-    controls.status.textContent = 'Print PNG exported at 2550 x 3300 / 300 DPI.';
-  } catch (error) { controls.status.textContent = `Could not export print PNG: ${error.message}`; }
-  finally { controls.print.disabled = false; }
 });
 controls.record.addEventListener('click', () => {
   if (recording || !window.MediaRecorder) return;
@@ -992,9 +965,13 @@ controls.record.addEventListener('click', () => {
   if (!mimeType) { controls.status.textContent = 'This browser cannot export MP4. Use Safari on iOS or macOS.'; return; }
   promoRenderer.render(performance.now(), { exportFrame: true });
   const recordingFormat = outputFormat(activeOutputFormatId);
-  recording = true; controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
+  recording = true; lastRecordingFrame = performance.now(); controls.record.textContent = 'RECORDING...'; controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = true; });
+  controls.template.disabled = true; controls.projectLoad.disabled = true; controls.png.disabled = true;
+  document.querySelectorAll('.dock').forEach(dock => { dock.inert = true; });
   const finish = () => {
     recording = false; recordingSession = null; controls.record.textContent = 'EXPORT 15 SEC MP4';
+    document.querySelectorAll('.dock').forEach(dock => { dock.inert = false; });
+    controls.template.disabled = false; controls.projectLoad.disabled = false; controls.png.disabled = false;
     controls.outputFormat.querySelectorAll('button').forEach(button => { button.disabled = false; });
   };
   try {

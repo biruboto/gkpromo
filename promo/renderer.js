@@ -537,6 +537,7 @@ export function createPromoRenderer({
   function alignedStart(x, width, itemWidth, alignment) { return alignment === 'right' ? x + width - itemWidth : alignment === 'center' ? Math.round(x + (width - itemWidth) / 2) : x; }
   function verticallyAlignedStart(y, height, itemHeight, alignment) { return alignment === 'bottom' ? y + height - itemHeight : alignment === 'center' ? Math.round(y + (height - itemHeight) / 2) : y; }
   let previousOverflowKey = '', previousMissingGlyphsKey = '';
+  let geometryKey = '', geometryCache = null;
   function render(now, { exportFrame = false, staticText = false, backgroundColor = null } = {}) {
     ({ body: bodyFont, header: headerFont, detail: detailFont, cta: ctaFont, footer: footerFont, hours: hoursFont } = getFonts());
     missingArcadeGlyphs = new Map();
@@ -594,7 +595,11 @@ export function createPromoRenderer({
     const footerHeight = hoursLines.length * hoursLineHeight + hoursGap + footerLines.length * footerLineHeight;
     const footerFieldHeight = Math.max(FOOTER_FIELD_HEIGHT, footerHeight);
 
+    const nextGeometryKey = JSON.stringify([W, H, isLandscape, sectionOrder, detailFieldHeight, ctaFieldHeight, footerFieldHeight, Boolean(showDetail), showCta, imageBitmap?.width, imageBitmap?.height, controls.imageScale.value]);
     let imageWidth = 0, imageHeight = 0, rectangles;
+    if (geometryCache && geometryKey === nextGeometryKey) {
+      ({ imageWidth, imageHeight, rectangles } = geometryCache);
+    } else {
     if (isLandscape) {
       const imageSlotWidth = landscapeSlotsSwapped ? headerFieldWidth : 272;
       const desiredImageWidth = imageBitmap ? Math.round(imageSlotWidth * Number(controls.imageScale.value) / 100) : 0;
@@ -628,6 +633,9 @@ export function createPromoRenderer({
       };
     }
 
+    geometryKey = nextGeometryKey;
+    geometryCache = { imageWidth, imageHeight, rectangles };
+    }
     const boundaries = []; const logoCenterX = rectangles.logo.x + rectangles.logo.width / 2; const stackedLogo = isLandscape && controls.logo.value === 'pixel'; const logoScale = stackedLogo ? 4 : isLandscape ? 2 : 4; const logoY = rectangles.logo.y + (isLandscape ? 10 : 0);
     if (controls.logo.value === 'pixel') drawAnimatedLogo(logoY, palette, time, logoScale, logoCenterX, stackedLogo ? logoImages.stacked : logoImages.pixel, staticText);
     else drawImageCentered(logoImages[controls.logo.value], logoY, logoScale, logoCenterX);

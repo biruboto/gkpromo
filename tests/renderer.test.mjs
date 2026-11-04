@@ -7,7 +7,7 @@ import { composerDOM, canvasContexts } from './helpers.mjs';
 function setup(t) {
   const { dom, controls } = composerDOM(t), pixels = canvasContexts(t, dom.window);
   const canvas = controls.preview, context = canvas.getContext('2d'), exportCanvas = document.createElement('canvas');
-  const state = { font: new Uint8Array(768).fill(255), format: 'portrait', warnings: [] };
+  const state = { font: new Uint8Array(768).fill(255), format: 'portrait', warnings: [], order: ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'], visibility: { detail: false, cta: false, hours: false } };
   controls.headline.value = 'TEST TITLE'; controls.body.value = 'BODY TEXT'; controls.footer.value = '';
   controls.theme.value = 'yuNo'; controls.logo.value = 'pixel'; controls.classic.checked = true;
   const colors = {
@@ -18,10 +18,10 @@ function setup(t) {
   const renderer = createPromoRenderer({
     context, canvas, exportContext: exportCanvas.getContext('2d'), width: 540, height: 675, exportScale: 2,
     controls, colors, logoImages, legacyGlyphs: new Map(), gameBackgrounds: { draw() {}, resize() {} }, imageBlock: { getBitmap: () => null },
-    crtPipeline: { render: () => canvas, resize() {} }, contentVisibility: { detail: false, cta: false, hours: false }, scrollModes: { detail: 'off', hours: 'off' },
+    crtPipeline: { render: () => canvas, resize() {} }, contentVisibility: state.visibility, scrollModes: { detail: 'off', hours: 'off' },
     textAlignments: { header: 'center', body: 'left', footer: 'center' }, textVerticalAlignments: { header: 'center', body: 'center', footer: 'bottom' }, getBodyBorderStyle: () => 'none',
     getFonts: () => Object.fromEntries(['body', 'header', 'detail', 'cta', 'footer', 'hours'].map(key => [key, state.font])),
-    getTextScale: name => [1, 2, 4][Number(controls[name].value)], getSectionOrder: () => ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'],
+    getTextScale: name => [1, 2, 4][Number(controls[name].value)], getSectionOrder: () => state.order,
     getOutputFormat: () => outputFormat(state.format), onMissingGlyphsChange: warnings => { state.warnings = warnings; },
     animationState: { time: 0 }, leaderTabToken: '[[leader-tab]]'
   });
@@ -41,6 +41,22 @@ test('warm logo frames reuse recolored pixels without changing drawing positions
   assert.equal(pixels.reads, 5, 'four main logo phases plus one Classic Arcade image');
   draw(1000); draw(1250); draw(1500); draw(1750);
   assert.equal(pixels.reads, 5);
+});
+
+test('section positions update after visibility and order changes', t => {
+  const { controls, state, draw } = setup(t);
+  controls.detail.value = 'DETAIL';
+  const original = draw();
+  assert.deepEqual(draw(), original);
+  state.visibility.detail = true;
+  const visible = draw();
+  assert.notDeepEqual(visible, original);
+  state.order = ['logo', 'image', 'detail', 'header', 'body', 'cta', 'footer'];
+  const reordered = draw();
+  assert.notDeepEqual(reordered, visible);
+  state.visibility.detail = false;
+  state.order = ['logo', 'image', 'header', 'detail', 'body', 'cta', 'footer'];
+  assert.deepEqual(draw(), original);
 });
 
 test('theme and output format changes invalidate the appropriate logo frames', t => {
